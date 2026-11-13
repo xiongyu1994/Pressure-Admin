@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html class="x-admin-sm">
+    
+    <head>
+        <meta charset="UTF-8">
+        <title>提交报告</title>
+        <meta charset="UTF-8">
+<title>安全阀检验数字管理平台</title>
+<meta name="renderer" content="webkit">
+<meta http-equiv="X-UA-CoMPatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width,user-scalable=yes, minimum-scale=0.4, initial-scale=0.8,target-densitydpi=low-dpi" />
+<link rel="stylesheet" href="/static/examination/css/font.css">
+<link rel="stylesheet" href="/static/examination/css/xadmin.css?v=2.1">
+<!-- <link rel="stylesheet" href="./css/theme5.css"> -->
+<script src="/static/examination/lib/layui/layui.js?v=2.13.2" charset="utf-8"></script>
+<script type="text/javascript" src="/static/examination/js/xadmin.js?v=1"></script>
+<script type="text/javascript" src="/static/js/decimal.js"></script>
+<link crossorigin="" rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=1"/>
+
+<!-- 让IE8/9支持媒体查询，从而兼容栅格 -->
+        <!--[if lt IE 9]>
+          <script src="https://cdn.staticfile.org/html5shiv/r29/html5.min.js"></script>
+          <script src="https://cdn.staticfile.org/respond.js/1.4.2/respond.min.js"></script>
+        <![endif]-->
+<script>
+    // 是否开启刷新记忆tab功能
+    // var is_remember = false;
+</script>
+<style>
+    .print_weituodan .layui-layer-btn .layui-layer-btn2 {
+        border-color: #002f6e;
+        background-color: #002f6e;
+        color: #fff;
+    }
+    .layui-input-group {
+        width: 100%;
+    }
+    .layui-form-pane .layui-input-inline{
+        width: calc(100% - 220px);
+
+    }
+    .layui-form-pane .layui-inline {
+        width: 100%;
+        margin-bottom: 0;
+        margin-right: 0;
+        height: 28px;
+    }
+    .layui-form-pane .layui-form-item[pane] .layui-input-inline{
+        width: calc(50% - 16px);
+        margin-left: 0;
+    }
+    .layui-form-pane .layui-form-item[pane] .layui-input-inline:last-child{
+        margin-right: 0;
+    }
+    .layui-form-pane .layui-input-block{
+        min-height: 26px;
+    }
+    .layui-form-pane .layui-form-item[pane]{
+        margin-right: 0;
+        margin-bottom: 0;
+    }
+    .layui-form-pane .layui-form-item[pane] .layui-form-label{
+        height: 28px;
+    }
+    .layui-form-pane .layui-form-item[pane] .layui-input-inline .layui-input-group .layui-input{
+        border-top-width: 0px;
+        border-bottom-width: 0px;
+        height: 28px;
+    }
+    .layui-form-pane .layui-form-item[pane] .layui-input-inline .layui-input-group .layui-input-split{
+        border-top-width: 0px;
+        border-bottom-width: 0px;
+    }
+    .layui-form-pane .layui-form-item[pane] .layui-input-inline:last-child .layui-input-group .layui-input-split{
+        border-right-width: 0px;
+    }
+    .layui-form-mid {
+        line-height: 28px;
+        padding: 0 !important;
+    }
+</style>
+
+        <style type="text/css">
+        	.david_newtitle{ font-weight: bold; margin:10px 0; }
+        	.david_nli{ width: 33%; display: inline-flex; margin: 5px 0;}
+        	.david_nli input{ width: 120px; }
+        	.david_nli b{ height: 32px; line-height: 32px; margin-left: 10px;font-weight: normal; }
+        	.david_w100{ width: 100%; margin-top: 5px;}
+        	.layui-textarea{ width: 99%; }
+
+        	.david_nwi{display: inline-flex; margin: 5px 30px 5px 0; }
+
+        </style>
+       </head>
+    
+    <body style="background: #f8f8f8">
+        <div class="layui-fluid">
+            <div class="layui-row">
+                <form class="layui-form">
+                	<div class="david_bgbai">
+                            <input type="hidden" name="id" id="id" value="">
+                            <div class="david_ns">
+                                <div class="david_nsbox">                           
+                                    <label class="layui-form-label w150"><span class="x-red">*</span>校验编号</label>
+                                    <div class="layui-input-inline w220">
+                                        <input type="text" name="order_code" value="" placeholder="请输入" autocomplete="off" readonly="readonly" class="layui-input" style="background-color: #ddd">
+                                    </div>
+                                </div>
+                                <div class="david_nsbox">                           
+                                    <label class="layui-form-label w150">要求密封压力</label>
+                                    <div class="layui-input-inline w220">
+                                        <input type="text" name="tightness_press" value="" placeholder="请输入" autocomplete="off" disabled="disabled" class="layui-input" style="background-color: #ddd">
+                                    </div>
+                                </div>
+                                <div class="david_nsbox">                           
+                                    <label class="layui-form-label w150">要求整定压力MPa</label>
+                                    <div class="layui-input-inline w220">
+                                        <input type="text" name="set_press" value="" placeholder="请输入" autocomplete="off" disabled="disabled" class="layui-input" style="background-color: #ddd">
+                                    </div>
+                                </div>
+                                <div class="david_nsbox">                           
+                                    <label class="layui-form-label w150">校验介质</label>
+                                    <div class="layui-input-inline w220">
+                                        <input type="text" name="test_media" value="" placeholder="请输入" class="layui-input" lay-verify="test_media">
+                                    </div>
+                                </div>
+                                <div class="david_nsbox">                           
+                                    <label class="layui-form-label w150">校验介质温度</label>
+                                    <div class="layui-input-inline w220">
+                                        <input type="text" name="test_temprature" value="" placeholder="请输入"  class="layui-input" lay-verify="test_temprature">
+                                    </div>
+                                </div>
+                                <div class="david_nsbox">                           
+                                    <label class="layui-form-label w150">校验方式</label>
+                                    <div class="layui-input-inline w220">
+
+                                        <input 
+                                            type="radio"
+                                            name="parity"
+                                            value="离线校验"
+                                            }
+                                                checked
+                                                                                        title="离线校验" />
+                                        <input 
+                                            type="radio"
+                                            name="parity"
+                                            value="在线校验"
+                                            }
+                                                                                        title="在线校验" />
+                                    </div>
+                                </div>
+                                <div class="david_nsbox">                           
+                                    <label class="layui-form-label w150">外观检查</label>
+                                    <div class="layui-input-inline w220">
+                                        <input type="text" name="visual_examination" value="合格" placeholder="请输入"  class="layui-input" lay-verify="visual_examination">
+                                    </div>
+                                </div>
+                                <div class="david_nsbox">                           
+                                    <label class="layui-form-label w150">拆卸检查</label>
+                                    <div class="layui-input-inline w220">
+                                        <input type="text" name="disassembly_inspection" value="合格" placeholder="请输入"  class="layui-input" lay-verify="disassembly_inspection">
+                                    </div>
+                                </div>
+                                <div class="david_nsbox" style="width: 810px;">                           
+                                    <label class="layui-form-label w150">备注</label>
+                                    <div class="layui-input-inline w220" style="width: 630px;">
+                                        <textarea name="note" value="" placeholder="请输入"  class="layui-textarea" lay-verify="note">无</textarea>
+                                    </div>
+                                </div>
+                            </div>
+                    	</div>
+                        <script src="/static/examination/js/jquery.min.js"></script>
+                        <script src="/static/examination/js/select2/js/select2.full.js"></script>
+                        <link rel="stylesheet" href="/static/examination/js/select2/css/select2.min.css"/>
+                        <div class="david_newtitle">执行标准</div>
+                        <div class="david_bgbai">
+                            <select name="standard_number" id="standard_number" lay-verify="standard_number"  lay-ignore>
+
+                            </select>
+                        </div>
+
+                        <script>
+                            $('#standard_number').select2({
+                                language:'zh-cn',
+                                multiple : true,
+                                tags:true,
+                                width:'100%',
+                                tokenSeparators: [',', ' '],
+                                allowClear:true,
+                                placeholder: {
+                                    id: '-1',
+                                    text: '请选择'
+                                },
+                                data:[
+                                        /**/
+                                        { id: 'TSG 92-2026', text: 'TSG 92-2026' },
+                                        /**/
+                                        { id: 'GB/T12241-2021', text: 'GB/T12241-2021' },
+                                        /**/
+                                        { id: 'GB/T12243-2021', text: 'GB/T12243-2021' },
+                                        /**/
+                                        { id: 'TSGZF001-2006及修改单', text: 'TSGZF001-2006及修改单' },
+                                        /**/
+                                ]
+                            });
+                            $('#standard_number').val(['TSG 92-2026', 'GB/T12241-2021', 'GB/T12243-2021']).trigger('change');
+                        </script>
+
+
+                        <div class="david_newtitle">校验设备</div>
+                        <div class="david_bgbai">
+                            <div class="david_nsbox">                           
+                                <label class="layui-form-label w150">压力表编号</label>
+                                <div class="layui-input-inline w220">
+                                    <input type="text" name="pressure_gauge_num" value="" placeholder="请输入" autocomplete="off" class="layui-input" lay-verify="pressure_gauge_num">
+                                </div>
+                            </div>
+                            <div class="david_nsbox">                           
+                                <label class="layui-form-label w150">压力表有效期</label>
+                                <div class="layui-input-inline w220">
+                                    <input type="text" name="pressure_gauge_lifespan" value="" placeholder="请输入" autocomplete="off" class="layui-input" lay-verify="pressure_gauge_lifespan">
+                                </div>
+                            </div>
+                            <div class="david_nsbox">                           
+                                <label class="layui-form-label w150">压力表2编号</label>
+                                <div class="layui-input-inline w220">
+                                    <input type="text" name="pressure_gauge_num2" value="" placeholder="请输入" autocomplete="off" class="layui-input" lay-verify="pressure_gauge_num2">
+                                </div>
+                            </div>
+                            <div class="david_nsbox">                           
+                                <label class="layui-form-label w150">压力表2有效期</label>
+                                <div class="layui-input-inline w220">
+                                    <input type="text" name="pressure_gauge_lifespan2" value="" placeholder="请输入" autocomplete="off" class="layui-input" lay-verify="pressure_gauge_lifespan2">
+                                </div>
+                            </div>
+                            <div class="david_nsbox">                           
+                                <label class="layui-form-label w150">压力表精度</label>
+                                <div class="layui-input-inline w220">
+                                    <input type="text" name="pressure_gauge_accuracy" value="" placeholder="请输入" autocomplete="off" class="layui-input" lay-verify="pressure_gauge_accuracy">
+                                </div>
+                            </div>
+                            <div class="david_nsbox">                           
+                                <label class="layui-form-label w150">压力表量程MPa</label>
+                                <div class="layui-input-inline w220">
+                                    <input type="text" name="pressure_gauge_range" value="" placeholder="请输入" autocomplete="off" class="layui-input" lay-verify="pressure_gauge_range">
+                                </div>
+                            </div>
+                            <div class="david_nsbox">                           
+                                <label class="layui-form-label w150">校验设备型号</label>
+                                <div class="layui-input-inline w220">
+                                    <input type="text" name="device_model" value="" placeholder="请输入"  class="layui-input" lay-verify="device_model">
+                                </div>
+                            </div>
+                            <div class="david_nsbox">                           
+                                <label class="layui-form-label w150">校验设备编号</label>
+                                <div class="layui-input-inline w220">
+                                    <input type="text" name="device_sn" value="" placeholder="请输入"  class="layui-input" lay-verify="device_sn">
+                                </div>
+                            </div>
+                        </div>
+
+                    	<div class="david_newtitle">密封试验压力</div>
+                		<div class="david_bgbai layui-row layui-col-space16">
+                			<div class="david_nli layui-col-sm3" style="width:25%">
+                				<input type="text" name="testing_pressure" value="" placeholder="请输入" autocomplete="off" class="layui-input" lay-verify="required"><b>MPa</b>
+                			</div>
+                			<div class="david_nli layui-col-sm3" style="width:25%">
+                				<input type="text" name="testing_pressure2" value="" placeholder="请输入" autocomplete="off" class="layui-input" lay-verify="required"><b>MPa</b>
+                			</div>
+                            <div class="david_nli layui-col-sm3" style="width:25%">
+                                <input type="text" name="testing_pressure3" value="" placeholder="请输入" autocomplete="off" class="layui-input" lay-verify="required"><b>MPa</b>
+                            </div>
+                            <div class="david_nli layui-col-sm3" style="width:25%">
+                                <input type="text" name="bubble_count" value="0" placeholder="请输入" autocomplete="off" class="layui-input" ><b>气泡数/min</b>
+                            </div>
+                		</div>
+
+                		<div class="david_newtitle">整定压力</div>
+                		<div class="david_bgbai">
+                			<div class="david_nli">
+                				<input type="text" name="set_pressure1" value="" placeholder="请输入" autocomplete="off" class="layui-input" lay-verify="required"><b>MPa</b>
+                			</div>
+                			<div class="david_nli">
+                				<input type="text" name="set_pressure2" value="" placeholder="请输入" autocomplete="off" class="layui-input" lay-verify="required"><b>MPa</b>
+                			</div>
+                			<div class="david_nli">
+                				<input type="text" name="set_pressure3" value="" placeholder="请输入" autocomplete="off" class="layui-input" lay-verify="required"><b>MPa</b>
+                			</div>
+                		</div>
+
+                		<div class="david_newtitle">维护检修情况</div>
+                		<div class="david_bgbai check_str">
+                                            			<div class="david_w100">
+                				<textarea placeholder="请输入" id="qita" name="qita" class="layui-textarea" style="min-height: 50px;"></textarea>
+                			</div>
+                		</div>
+
+                		<div class="david_newtitle">检验结果</div>
+                		<div class="david_bgbai">
+
+
+                			<div class="david_nwi">
+                			<input type="radio" name="test_status" value="1" checked title="该安全阀经检验合格">
+                			</div>
+                			<div class="david_nwi">
+                			<input type="radio" name="test_status"  value="2" title="该安全阀经检验不合格，不能投入使用">
+                			</div>              			
+                		</div>
+                        <!--  -->
+                		<div class="david_nsbox">                           
+                            <label class="layui-form-label w150"><span class="x-red">*</span>校验员</label>
+                            <div class="layui-input-inline w220">
+                                <input type="text" name="inspector" value="" placeholder="请输入" readonly="readonly" autocomplete="off" class="layui-input" lay-verify="required"  style="background-color: #ddd">
+                                <input type="hidden" name="inspector_id" id="inspector_id" value="">
+                            </div>
+                        </div>
+                        <!--  -->
+                        <div class="david_nsbox">                           
+                            <label class="layui-form-label w150"><span class="x-red">*</span>校验日期</label>
+                            <div class="layui-input-inline w220">
+                                <input type="text" name="inspector_time" id="inspector_time" value="" placeholder="请输入" autocomplete="off" class="layui-input" lay-verify="required">
+                            </div>
+                        </div>
+
+        <div class="layui-form-item">
+            <button class="layui-btn david_dabtn" lay-filter="add" lay-submit="">确认提交</button></div>
+        </form>
+        </div>
+        </div>
+          
+        <script>
+        layui.use('laydate',function() {
+            var laydate = layui.laydate;
+
+            //执行一个laydate实例
+            laydate.render({
+                elem: '#inspector_time', //指定元素
+                min: '2026-05-13',
+                max: '2026-11-13',
+                value: '2026-11-13' // 设置默认值为当天
+            });
+
+          
+
+        });
+
+        $('[name=parity]').on('change',function(){
+            if($('[name=parity]:checked').val() == '在线校验')
+            {
+                $('[name=tightness_press],[name=testing_pressure],[name=testing_pressure2],[name=testing_pressure3]').val('/');
+                $('[name=bubble_count]').val('');
+            }
+            else
+            {
+                $('[name=tightness_press],[name=testing_pressure],[name=testing_pressure2],[name=testing_pressure3]').val('0.00');
+            }
+
+        });
+
+
+        
+
+
+        var flag = true;
+        layui.use(['form', 'layer'],
+            function() {
+                $ = layui.jquery;
+                var form = layui.form,
+                layer = layui.layer;
+
+                $('#qita').on('change',function(){
+                    if($(this).val())
+                    {
+                        $('.site_ids[cd=-1]').attr('checked',true);
+                    }
+                    else
+                    {
+                        $('.site_ids[cd=-1]').removeAttr('checked');
+                    }
+                    form.render('checkbox');
+                });
+
+                //自定义验证规则
+                form.verify({
+                    required: function(value, item){ //value：表单的值、item：表单的DOM对象
+                      if(!value){
+                        return '此项是必填的，不可不选'; //这里的提示信息可以根据需要进行自定义
+                      }
+                    },
+                    equip_type:function(value,item){
+                        if (!value) {
+                            return '请选择设备类型';
+                        }
+                    },
+
+                    test_media:function(value,item){
+                        if(!value) return '请输入校验介质';
+                    },
+                    test_temprature:function(value,item){
+                        if(!value) return '请输入校验介质温度';
+                    },
+                    visual_examination:function(value,item){
+                        if(!value) return '请输入外观检查';
+                    },
+                    disassembly_inspection:function(value,item){
+                        if(!value) return '请输入拆卸检查';
+                    },
+                    standard_number:function(value,item){
+                        if(!value) return '请输入执行标准';
+                    },
+                   
+                });
+                /**/
+
+                //监听提交
+                form.on('submit(add)',function(data) {
+                let address_json = [];
+                $('.site_ids').each(function(){
+                    let contents = '';
+                    if ($(this).val() == '其他' && $(this).prop('checked')) {
+                        contents = $('#qita').val();
+                    }
+
+
+                    let bb = {'id':$(this).attr('cd'),'category_name':$(this).val(),'contents':contents,'xuan': $(this).prop('checked') ? 1 : 2};
+                        address_json.push(bb);
+                    })
+                    if (flag) {
+                        flag = false;
+                        data.field.json = JSON.stringify(address_json);
+                        data.field.standard_number = $('#standard_number').val().join(';');
+                        $.ajax({
+                            url: '/examination/workorder/workorder_action',
+                            type: 'post',
+                            data: data.field,
+                            dataType: 'json',
+                            success: function(data) {
+                            flag = true;
+                                if (data.code == 0) {
+                                    //发异步，把数据提交给php
+                                    layer.alert("提交成功", {
+                                            icon: 6
+                                        },
+                                        function() {
+                                            //关闭当前frame
+                                            xadmin.close();
+
+                                            /**/
+
+                                            // 可以对父窗口进行刷新 
+                                            xadmin.father_reload();
+                                        });
+                                } else {
+                                    layer.msg(data.message,{icon: 5,anim: 6});
+                                }
+                            },
+                            error: function(data) {
+                                flag = true;
+                                layer.msg(data.responseJSON.message,{icon: 5,anim: 6});
+                            }
+                        });
+                    }
+                    return false;
+                });
+
+            });</script>
+    </body>
+
+</html>

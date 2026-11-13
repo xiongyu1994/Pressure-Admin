@@ -1,0 +1,1655 @@
+<!DOCTYPE html>
+<html class="x-admin-sm">
+
+<head>
+    <meta charset="UTF-8">
+<title>安全阀检验数字管理平台</title>
+<meta name="renderer" content="webkit">
+<meta http-equiv="X-UA-CoMPatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width,user-scalable=yes, minimum-scale=0.4, initial-scale=0.8,target-densitydpi=low-dpi" />
+<link rel="stylesheet" href="/static/examination/css/font.css">
+<link rel="stylesheet" href="/static/examination/css/xadmin.css?v=2.1">
+<!-- <link rel="stylesheet" href="./css/theme5.css"> -->
+<script src="/static/examination/lib/layui/layui.js?v=2.13.2" charset="utf-8"></script>
+<script type="text/javascript" src="/static/examination/js/xadmin.js?v=1"></script>
+<script type="text/javascript" src="/static/js/decimal.js"></script>
+<link crossorigin="" rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=1"/>
+
+<!-- 让IE8/9支持媒体查询，从而兼容栅格 -->
+        <!--[if lt IE 9]>
+          <script src="https://cdn.staticfile.org/html5shiv/r29/html5.min.js"></script>
+          <script src="https://cdn.staticfile.org/respond.js/1.4.2/respond.min.js"></script>
+        <![endif]-->
+<script>
+    // 是否开启刷新记忆tab功能
+    // var is_remember = false;
+</script>
+<style>
+    .print_weituodan .layui-layer-btn .layui-layer-btn2 {
+        border-color: #002f6e;
+        background-color: #002f6e;
+        color: #fff;
+    }
+    .layui-input-group {
+        width: 100%;
+    }
+    .layui-form-pane .layui-input-inline{
+        width: calc(100% - 220px);
+
+    }
+    .layui-form-pane .layui-inline {
+        width: 100%;
+        margin-bottom: 0;
+        margin-right: 0;
+        height: 28px;
+    }
+    .layui-form-pane .layui-form-item[pane] .layui-input-inline{
+        width: calc(50% - 16px);
+        margin-left: 0;
+    }
+    .layui-form-pane .layui-form-item[pane] .layui-input-inline:last-child{
+        margin-right: 0;
+    }
+    .layui-form-pane .layui-input-block{
+        min-height: 26px;
+    }
+    .layui-form-pane .layui-form-item[pane]{
+        margin-right: 0;
+        margin-bottom: 0;
+    }
+    .layui-form-pane .layui-form-item[pane] .layui-form-label{
+        height: 28px;
+    }
+    .layui-form-pane .layui-form-item[pane] .layui-input-inline .layui-input-group .layui-input{
+        border-top-width: 0px;
+        border-bottom-width: 0px;
+        height: 28px;
+    }
+    .layui-form-pane .layui-form-item[pane] .layui-input-inline .layui-input-group .layui-input-split{
+        border-top-width: 0px;
+        border-bottom-width: 0px;
+    }
+    .layui-form-pane .layui-form-item[pane] .layui-input-inline:last-child .layui-input-group .layui-input-split{
+        border-right-width: 0px;
+    }
+    .layui-form-mid {
+        line-height: 28px;
+        padding: 0 !important;
+    }
+</style>
+    <style type="text/css">
+        .david_zk{ float: right; margin-right: 20px; cursor: pointer;}
+        .david_zk img{ width: 12px; vertical-align: top; margin: 4px 0 0 4px;}
+        .david_zk2{ float: right; margin-right: 20px; cursor: pointer;}
+        .david_zk2 img{ width: 12px; vertical-align: top; margin: 4px 0 0 4px;}
+
+
+        .david_span{ display: none ; }
+        .david_span2{ display: none ; }
+        
+    </style>
+</head>
+
+<body>
+    <div class="layui-fluid">
+        <div class="layui-row layui-col-space15">
+            <div class="layui-col-md12">
+                
+                <form class="layui-form" lay-filter="myFormFilter">
+                    <div class="david_bgbai">
+                        <input type="hidden" name="id" id="id" value="">
+                        <input type="hidden" name="order_detail_id" id="order_detail_id" value="">
+                        <div class="david_tit">
+                            <div class="david_tit_txt">设备信息</div>
+                            <div class="david_zk">展开<img src="/static/examination/images/david_xia.png"></div>
+                        </div>
+
+                        <div class="david_ns david_tgb">
+            <div class="david_nsbox ">                         
+                <label class="layui-form-label w150">设备类型<span class="x-red">*</span></label>
+                <div class="layui-input-inline w220 layui-select-add-new">
+                    <select name="equip_type" id="equip_type" lay-verify="required" lay-search="" lay-creatable="" lay-filter="equip_type"  required>
+                        <option value="">请选择</option>
+                                                <option value="/" >/</option>
+                                                <option value="1#冷干机" >1#冷干机</option>
+                                                <option value="1#冷渣机" >1#冷渣机</option>
+                                                <option value="1#压缩机" >1#压缩机</option>
+                                                <option value="1#微干机" >1#微干机</option>
+                                                <option value="1#燃气锅炉" >1#燃气锅炉</option>
+                                                <option value="10区1#改质塔二层" >10区1#改质塔二层</option>
+                                                <option value="10区1系改质沥青循环塔" >10区1系改质沥青循环塔</option>
+                                                <option value="10区2#改质塔二层" >10区2#改质塔二层</option>
+                                                <option value="10区2系循环塔" >10区2系循环塔</option>
+                                                <option value="10区改质1系汽化器" >10区改质1系汽化器</option>
+                                                <option value="10区改质2系汽化器" >10区改质2系汽化器</option>
+                                                <option value="12区配油槽A" >12区配油槽A</option>
+                                                <option value="12区配油槽B" >12区配油槽B</option>
+                                                <option value="16米平台除氧器" >16米平台除氧器</option>
+                                                <option value="16米平台除氧气" >16米平台除氧气</option>
+                                                <option value="1号压缩机" >1号压缩机</option>
+                                                <option value="1车间储气罐" >1车间储气罐</option>
+                                                <option value="2#冷干机" >2#冷干机</option>
+                                                <option value="2#冷渣机" >2#冷渣机</option>
+                                                <option value="2#压缩机" >2#压缩机</option>
+                                                <option value="2#微干机" >2#微干机</option>
+                                                <option value="2#燃气锅炉" >2#燃气锅炉</option>
+                                                <option value="2区氮气储罐" >2区氮气储罐</option>
+                                                <option value="2区液氮A汽化前" >2区液氮A汽化前</option>
+                                                <option value="2区液氮A汽化器后" >2区液氮A汽化器后</option>
+                                                <option value="2区液氮罐A汽化器前" >2区液氮罐A汽化器前</option>
+                                                <option value="2区液氮罐A汽化器后" >2区液氮罐A汽化器后</option>
+                                                <option value="2区液氮罐B汽化器前" >2区液氮罐B汽化器前</option>
+                                                <option value="2区液氮罐B汽化器后" >2区液氮罐B汽化器后</option>
+                                                <option value="2区空气储罐" >2区空气储罐</option>
+                                                <option value="2车间储气罐" >2车间储气罐</option>
+                                                <option value="2车间高压泵" >2车间高压泵</option>
+                                                <option value="3#冷干机" >3#冷干机</option>
+                                                <option value="3#微干机" >3#微干机</option>
+                                                <option value="3区2#导热油出口" >3区2#导热油出口</option>
+                                                <option value="3车间氨储罐A/B" >3车间氨储罐A/B</option>
+                                                <option value="3车间氨站换热器" >3车间氨站换热器</option>
+                                                <option value="3车间氨站氨贮槽B" >3车间氨站氨贮槽B</option>
+                                                <option value="3车间氨站液氨贮槽A" >3车间氨站液氨贮槽A</option>
+                                                <option value="3车间氨站液氨贮槽B" >3车间氨站液氨贮槽B</option>
+                                                <option value="3车间氨站鹤管" >3车间氨站鹤管</option>
+                                                <option value="5车间储气罐" >5车间储气罐</option>
+                                                <option value="6车间储气罐" >6车间储气罐</option>
+                                                <option value="7区初塔塔顶管" >7区初塔塔顶管</option>
+                                                <option value="9区1#导热油出口" >9区1#导热油出口</option>
+                                                <option value="9区减温减压装置" >9区减温减压装置</option>
+                                                <option value="9区改沥青低温成型主管" >9区改沥青低温成型主管</option>
+                                                <option value="LNG气化撬" >LNG气化撬</option>
+                                                <option value="LNG泵撬" >LNG泵撬</option>
+                                                <option value="P3202A高压隔膜泵出口管道" >P3202A高压隔膜泵出口管道</option>
+                                                <option value="R744卧室低压" >R744卧室低压</option>
+                                                <option value="SCR声波吹灰器" >SCR声波吹灰器</option>
+                                                <option value="一车间集气罐" >一车间集气罐</option>
+                                                <option value="三车间氨解釜" >三车间氨解釜</option>
+                                                <option value="三车间甲苯处理釜" >三车间甲苯处理釜</option>
+                                                <option value="二氧化碳压缩机" >二氧化碳压缩机</option>
+                                                <option value="二车间" >二车间</option>
+                                                <option value="五车间R-W5-006" >五车间R-W5-006</option>
+                                                <option value="五车间R-W5-008" >五车间R-W5-008</option>
+                                                <option value="五车间真空泵" >五车间真空泵</option>
+                                                <option value="余热锅炉气罐" >余热锅炉气罐</option>
+                                                <option value="余热锅炉汽包" >余热锅炉汽包</option>
+                                                <option value="余热锅炉过热器" >余热锅炉过热器</option>
+                                                <option value="储气瓶组" >储气瓶组</option>
+                                                <option value="储气罐" >储气罐</option>
+                                                <option value="储罐" >储罐</option>
+                                                <option value="储罐车" >储罐车</option>
+                                                <option value="充装间管道" >充装间管道</option>
+                                                <option value="冰机上" >冰机上</option>
+                                                <option value="冷凝器" >冷凝器</option>
+                                                <option value="减压阀后" >减压阀后</option>
+                                                <option value="减温减压器" >减温减压器</option>
+                                                <option value="分气缸" >分气缸</option>
+                                                <option value="分汽缸" >分汽缸</option>
+                                                <option value="制水器" >制水器</option>
+                                                <option value="制胶分气缸" >制胶分气缸</option>
+                                                <option value="加气机" >加气机</option>
+                                                <option value="加液机" >加液机</option>
+                                                <option value="加紧台管路" >加紧台管路</option>
+                                                <option value="压力容器" >压力容器</option>
+                                                <option value="压力容器上" >压力容器上</option>
+                                                <option value="压力水柜" >压力水柜</option>
+                                                <option value="压力罐" >压力罐</option>
+                                                <option value="压力罐顶部" >压力罐顶部</option>
+                                                <option value="压缩撬" >压缩撬</option>
+                                                <option value="压缩机" >压缩机</option>
+                                                <option value="压缩机房循环机出口" >压缩机房循环机出口</option>
+                                                <option value="压缩机房循环机进口" >压缩机房循环机进口</option>
+                                                <option value="压缩橇" >压缩橇</option>
+                                                <option value="压缩空气主储气罐" >压缩空气主储气罐</option>
+                                                <option value="压缩空气缓冲储气罐" >压缩空气缓冲储气罐</option>
+                                                <option value="压缩空气罐" >压缩空气罐</option>
+                                                <option value="压缩空气（布袋）" >压缩空气（布袋）</option>
+                                                <option value="去碳吸收蒸汽支管" >去碳吸收蒸汽支管</option>
+                                                <option value="双氧水泵出口" >双氧水泵出口</option>
+                                                <option value="反应冷凝器" >反应冷凝器</option>
+                                                <option value="反应冷疑器" >反应冷疑器</option>
+                                                <option value="四车间氨解釜" >四车间氨解釜</option>
+                                                <option value="四车间真空泵" >四车间真空泵</option>
+                                                <option value="回收罐" >回收罐</option>
+                                                <option value="固化车间1#储气罐" >固化车间1#储气罐</option>
+                                                <option value="固化车间2#储气罐" >固化车间2#储气罐</option>
+                                                <option value="增压机" >增压机</option>
+                                                <option value="增压机中部" >增压机中部</option>
+                                                <option value="天然气总管" >天然气总管</option>
+                                                <option value="夹紧台管路" >夹紧台管路</option>
+                                                <option value="导热油管道" >导热油管道</option>
+                                                <option value="工艺气体排" >工艺气体排</option>
+                                                <option value="工艺气体控制板管路" >工艺气体控制板管路</option>
+                                                <option value="布袋除尘器(气包)" >布袋除尘器(气包)</option>
+                                                <option value="布袋除尘器气罐" >布袋除尘器气罐</option>
+                                                <option value="弹簧式" >弹簧式</option>
+                                                <option value="打气泵" >打气泵</option>
+                                                <option value="排污扩容器" >排污扩容器</option>
+                                                <option value="排空阀" >排空阀</option>
+                                                <option value="撬块-储液器" >撬块-储液器</option>
+                                                <option value="撬块-换热器" >撬块-换热器</option>
+                                                <option value="撬块-气分" >撬块-气分</option>
+                                                <option value="撬装设备" >撬装设备</option>
+                                                <option value="放空阀" >放空阀</option>
+                                                <option value="数控机床" >数控机床</option>
+                                                <option value="杀菌锅" >杀菌锅</option>
+                                                <option value="柱塞泵放散" >柱塞泵放散</option>
+                                                <option value="检验科" >检验科</option>
+                                                <option value="橇块-储液器" >橇块-储液器</option>
+                                                <option value="橇块-换热器" >橇块-换热器</option>
+                                                <option value="橇块-气分" >橇块-气分</option>
+                                                <option value="气液分离器" >气液分离器</option>
+                                                <option value="气源压力罐" >气源压力罐</option>
+                                                <option value="氟利昂压缩机" >氟利昂压缩机</option>
+                                                <option value="氢气压缩机4级分离器出口管道" >氢气压缩机4级分离器出口管道</option>
+                                                <option value="氢气压缩机5级分离器出口管道" >氢气压缩机5级分离器出口管道</option>
+                                                <option value="氧舱舱体" >氧舱舱体</option>
+                                                <option value="氮气储罐" >氮气储罐</option>
+                                                <option value="氮气总管" >氮气总管</option>
+                                                <option value="水洗釜" >水洗釜</option>
+                                                <option value="污水三效蒸发⬅️" >污水三效蒸发⬅️</option>
+                                                <option value="污水三效蒸发右" >污水三效蒸发右</option>
+                                                <option value="污水车间气浮机储气罐" >污水车间气浮机储气罐</option>
+                                                <option value="汽化器" >汽化器</option>
+                                                <option value="油分离器" >油分离器</option>
+                                                <option value="流化风机1" >流化风机1</option>
+                                                <option value="流化风机2" >流化风机2</option>
+                                                <option value="液氧站" >液氧站</option>
+                                                <option value="液氧管道" >液氧管道</option>
+                                                <option value="灭活罐" >灭活罐</option>
+                                                <option value="灭菌器" >灭菌器</option>
+                                                <option value="灭菌锅" >灭菌锅</option>
+                                                <option value="烫平机" >烫平机</option>
+                                                <option value="热力式旋膜除氧器1" >热力式旋膜除氧器1</option>
+                                                <option value="热力式旋膜除氧器2" >热力式旋膜除氧器2</option>
+                                                <option value="热力式旋膜除氧气1" >热力式旋膜除氧气1</option>
+                                                <option value="热水锅炉" >热水锅炉</option>
+                                                <option value="物化车间储气罐" >物化车间储气罐</option>
+                                                <option value="物化车间气浮机储气罐" >物化车间气浮机储气罐</option>
+                                                <option value="生产线" >生产线</option>
+                                                <option value="电除尘器输灰风机" >电除尘器输灰风机</option>
+                                                <option value="碳吸收罐A" >碳吸收罐A</option>
+                                                <option value="空压机" >空压机</option>
+                                                <option value="空压机1" >空压机1</option>
+                                                <option value="空压机2" >空压机2</option>
+                                                <option value="空压机3" >空压机3</option>
+                                                <option value="空压机储气罐" >空压机储气罐</option>
+                                                <option value="空压机储罐" >空压机储罐</option>
+                                                <option value="空压机房1#气罐" >空压机房1#气罐</option>
+                                                <option value="空压机房2#气罐" >空压机房2#气罐</option>
+                                                <option value="空压机房制氮机" >空压机房制氮机</option>
+                                                <option value="空压机房气罐" >空压机房气罐</option>
+                                                <option value="空压机气罐" >空压机气罐</option>
+                                                <option value="立式高压" >立式高压</option>
+                                                <option value="站内氧管" >站内氧管</option>
+                                                <option value="管路" >管路</option>
+                                                <option value="管道" >管道</option>
+                                                <option value="紧急喷水罐" >紧急喷水罐</option>
+                                                <option value="缓冲罐" >缓冲罐</option>
+                                                <option value="脱水装置" >脱水装置</option>
+                                                <option value="蒸压釜" >蒸压釜</option>
+                                                <option value="蒸发器上" >蒸发器上</option>
+                                                <option value="蒸发式冷凝器管道" >蒸发式冷凝器管道</option>
+                                                <option value="蒸汽发生器" >蒸汽发生器</option>
+                                                <option value="蒸汽管道" >蒸汽管道</option>
+                                                <option value="试压台" >试压台</option>
+                                                <option value="调压撬" >调压撬</option>
+                                                <option value="调压柜" >调压柜</option>
+                                                <option value="质检楼" >质检楼</option>
+                                                <option value="贮气罐" >贮气罐</option>
+                                                <option value="贮罐" >贮罐</option>
+                                                <option value="输油管" >输油管</option>
+                                                <option value="输灰风机1" >输灰风机1</option>
+                                                <option value="输灰风机2" >输灰风机2</option>
+                                                <option value="连排扩容器" >连排扩容器</option>
+                                                <option value="锅炉" >锅炉</option>
+                                                <option value="锅炉汽包1" >锅炉汽包1</option>
+                                                <option value="锅炉汽包2" >锅炉汽包2</option>
+                                                <option value="除尘器压缩空气罐" >除尘器压缩空气罐</option>
+                                                <option value="除氧器" >除氧器</option>
+                                                <option value="集装箱管道" >集装箱管道</option>
+                                                <option value="高压分离器出口" >高压分离器出口</option>
+                                                <option value="高压泵上" >高压泵上</option>
+                                                <option value="高压管道" >高压管道</option>
+                                                <option value="公用管道" >公用管道</option>
+                                                <option value="固定式压力容器" >固定式压力容器</option>
+                                                <option value="工业管道" >工业管道</option>
+                                                <option value="氧舱" >氧舱</option>
+                                                <option value="长输管道" >长输管道</option>
+                                            </select>
+                </div>
+            </div>
+                        <div class="david_nsbox ">                         
+                <label class="layui-form-label w150" data-red="working_media">工作介质</label>
+                <div class="layui-input-inline w220 layui-select-add-new">
+                    <select name="working_media" id="working_media" lay-verify="required" lay-search="" lay-creatable="" >
+                        <option value="">请选择</option>
+                                                <option value="" ></option>
+                                                <option value="CNG" >CNG</option>
+                                                <option value="LNG" >LNG</option>
+                                                <option value="R134a" >R134a</option>
+                                                <option value="R22" >R22</option>
+                                                <option value="三氯甲烷" >三氯甲烷</option>
+                                                <option value="二氧化碳" >二氧化碳</option>
+                                                <option value="二氧化碳气体" >二氧化碳气体</option>
+                                                <option value="双氧水" >双氧水</option>
+                                                <option value="反应放空气" >反应放空气</option>
+                                                <option value="天然气" >天然气</option>
+                                                <option value="天然气石油气" >天然气石油气</option>
+                                                <option value="天燃气" >天燃气</option>
+                                                <option value="导热油" >导热油</option>
+                                                <option value="工业萘" >工业萘</option>
+                                                <option value="柴油" >柴油</option>
+                                                <option value="气体.水.油品" >气体.水.油品</option>
+                                                <option value="气体/液体" >气体/液体</option>
+                                                <option value="气体/液体等" >气体/液体等</option>
+                                                <option value="氟利昂" >氟利昂</option>
+                                                <option value="氢气" >氢气</option>
+                                                <option value="氦气" >氦气</option>
+                                                <option value="氧气" >氧气</option>
+                                                <option value="氨" >氨</option>
+                                                <option value="氨气" >氨气</option>
+                                                <option value="氩气" >氩气</option>
+                                                <option value="氮气" >氮气</option>
+                                                <option value="水" >水</option>
+                                                <option value="水.药液" >水.药液</option>
+                                                <option value="水/空气" >水/空气</option>
+                                                <option value="水洗汽" >水洗汽</option>
+                                                <option value="水蒸汽" >水蒸汽</option>
+                                                <option value="油" >油</option>
+                                                <option value="液体" >液体</option>
+                                                <option value="液体/气体" >液体/气体</option>
+                                                <option value="液化石油气" >液化石油气</option>
+                                                <option value="液氧" >液氧</option>
+                                                <option value="液氮" >液氮</option>
+                                                <option value="混合油" >混合油</option>
+                                                <option value="烟气" >烟气</option>
+                                                <option value="热水" >热水</option>
+                                                <option value="甲苯" >甲苯</option>
+                                                <option value="甲醇甲酯" >甲醇甲酯</option>
+                                                <option value="石油气/天然气" >石油气/天然气</option>
+                                                <option value="石油气、天然气" >石油气、天然气</option>
+                                                <option value="石油气天然气" >石油气天然气</option>
+                                                <option value="硫化氢" >硫化氢</option>
+                                                <option value="空气" >空气</option>
+                                                <option value="空气.水" >空气.水</option>
+                                                <option value="空气.蒸汽" >空气.蒸汽</option>
+                                                <option value="空气/氮气" >空气/氮气</option>
+                                                <option value="空气/蒸汽/水" >空气/蒸汽/水</option>
+                                                <option value="腐蚀液体" >腐蚀液体</option>
+                                                <option value="蒸气" >蒸气</option>
+                                                <option value="蒸汽" >蒸汽</option>
+                                                <option value="蒸汽.空气" >蒸汽.空气</option>
+                                                <option value="蒸汽.空气.无腐蚀性气体" >蒸汽.空气.无腐蚀性气体</option>
+                                                <option value="蒸汽.空气等" >蒸汽.空气等</option>
+                                                <option value="蒸汽/空气" >蒸汽/空气</option>
+                                                <option value="蒸汽/空气/水" >蒸汽/空气/水</option>
+                                                <option value="蒸汽、空气、无腐蚀性气体" >蒸汽、空气、无腐蚀性气体</option>
+                                                <option value="制冷剂R404A" >制冷剂R404A</option>
+                                                <option value="压缩空气" >压缩空气</option>
+                                                <option value="气体" >气体</option>
+                                            </select>
+                </div>
+            </div>
+                        <div class="david_nsbox ">                         
+                <label class="layui-form-label w150" data-red="set_press">要求整定压力MPa<span class="x-red">*</span></label>
+                <div class="layui-input-inline w220">
+                    <div class="layui-input-group">
+                        <input type="text" name="set_press" id="set_press" value="" lay-filter="set_press" placeholder="请输入" lay-verify="required" autocomplete="off" class="layui-input" lay-affix="number" step="0.01" required>
+                        <div class="layui-input-split layui-input-suffix">
+                            MPa
+                        </div>
+                    </div>
+                </div>
+            </div>
+                        <div class="david_nsbox ">                         
+                <label class="layui-form-label w150" data-red="working_press">工作压力MPa</label>
+                <div class="layui-input-inline w220">
+                    <div class="layui-input-group">
+                        <input type="text" name="working_press" value="" placeholder="请输入" lay-verify="required" autocomplete="off" class="layui-input" >
+                        <div class="layui-input-split layui-input-suffix">
+                            MPa
+                        </div>
+                    </div>
+                </div>
+            </div>
+                        <div class="david_nsbox ">                         
+                <label class="layui-form-label w150" data-red="tag_no">安装位置</label>
+                <div class="layui-input-inline w220">
+                    <input type="text" name="tag_no" id="tag_no" value="" placeholder="请输入" lay-verify="required" autocomplete="off" class="layui-input" >
+                </div>
+            </div>
+                        <div class="david_nsbox ">                         
+                <label class="layui-form-label w150" data-red="id_no">设备代码</label>
+                <div class="layui-input-inline w220">
+                    <input type="text" name="id_no" value="" placeholder="请输入" lay-verify="required" autocomplete="off" class="layui-input" >
+                </div>
+            </div>
+                        <div class="david_nsbox david_span">                         
+                <label class="layui-form-label w150" data-red="design_press">设计压力MPa</label>
+                <div class="layui-input-inline w220">
+                    <div class="layui-input-group">
+                        <input type="text" name="design_press" value="" placeholder="请输入" autocomplete="off" class="layui-input" lay-verify="required" >
+                        <div class="layui-input-split layui-input-suffix">
+                            MPa
+                        </div>
+                    </div>
+                </div>
+            </div>
+                        <div class="david_nsbox david_span">                         
+                <label class="layui-form-label w150" data-red="working_temp">工作温度&deg;C</label>
+                <div class="layui-input-inline w220">
+                    <div class="layui-input-group">
+                        <input type="text" name="working_temp" value="" placeholder="请输入" autocomplete="off" class="layui-input" lay-verify="required" >
+                        <div class="layui-input-split layui-input-suffix">
+                            °C
+                        </div>
+                    </div>
+                </div>
+            </div>
+                                        </div>
+                    </div>
+                    <div class="david_bgbai">
+                        <div class="david_tit">
+                            <div class="david_tit_txt">安全阀信息</div>
+                            <div class="david_zk2">展开<img src="/static/examination/images/david_xia.png"></div>
+                        </div>
+                        <div class="david_ns david_tgb2">
+            <div class="david_nsbox ">                            
+                <label class="layui-form-label w150" data-red="vavle_model">安全阀型号</label>
+                <div class="layui-input-inline w220 layui-select-add-new">
+                    <select name="vavle_model" id="vavle_model" lay-verify="required" lay-search="" lay-creatable="" >
+                        <option value="">请选择</option>
+                                                <option value="08AWF-18.4-A08" >08AWF-18.4-A08</option>
+                                                <option value="11DG11MN-TF" >11DG11MN-TF</option>
+                                                <option value="11EH10MGFN-TF" >11EH10MGFN-TF</option>
+                                                <option value="25A22Y-100" >25A22Y-100</option>
+                                                <option value="25A22Y-64" >25A22Y-64</option>
+                                                <option value="316-RVH-MF-4N-1" >316-RVH-MF-4N-1</option>
+                                                <option value="36/0.6/0.9" >36/0.6/0.9</option>
+                                                <option value="4373.2622" >4373.2622</option>
+                                                <option value="4590.0022" >4590.0022</option>
+                                                <option value="4590.0022 220V50V66" >4590.0022 220V50V66</option>
+                                                <option value="A17W-16" >A17W-16</option>
+                                                <option value="A17W-16P" >A17W-16P</option>
+                                                <option value="A17W-16T" >A17W-16T</option>
+                                                <option value="A17W-25T" >A17W-25T</option>
+                                                <option value="A21F-40C" >A21F-40C</option>
+                                                <option value="A21H-10" >A21H-10</option>
+                                                <option value="A21W-16T" >A21W-16T</option>
+                                                <option value="A21Y-320" >A21Y-320</option>
+                                                <option value="A22F-160P" >A22F-160P</option>
+                                                <option value="A22F-250P" >A22F-250P</option>
+                                                <option value="A22F-25C" >A22F-25C</option>
+                                                <option value="A22F-40C" >A22F-40C</option>
+                                                <option value="A22F-50C" >A22F-50C</option>
+                                                <option value="A22H-16" >A22H-16</option>
+                                                <option value="A22H-250P" >A22H-250P</option>
+                                                <option value="A22X-320R" >A22X-320R</option>
+                                                <option value="A22Y-100C" >A22Y-100C</option>
+                                                <option value="A22Y-160C" >A22Y-160C</option>
+                                                <option value="A22Y-16P" >A22Y-16P</option>
+                                                <option value="A22Y-250C" >A22Y-250C</option>
+                                                <option value="A22Y-25C" >A22Y-25C</option>
+                                                <option value="A22Y-320" >A22Y-320</option>
+                                                <option value="A22Y-40C" >A22Y-40C</option>
+                                                <option value="A22Y-64" >A22Y-64</option>
+                                                <option value="A22Y-64C" >A22Y-64C</option>
+                                                <option value="A27H-10" >A27H-10</option>
+                                                <option value="A27T-16" >A27T-16</option>
+                                                <option value="A27W-10T" >A27W-10T</option>
+                                                <option value="A27W-16" >A27W-16</option>
+                                                <option value="A27W-16P" >A27W-16P</option>
+                                                <option value="A28H-10" >A28H-10</option>
+                                                <option value="A28H-16" >A28H-16</option>
+                                                <option value="A28H-16 DN25" >A28H-16 DN25</option>
+                                                <option value="A28H-16C" >A28H-16C</option>
+                                                <option value="A28H-16Q" >A28H-16Q</option>
+                                                <option value="A28H-1C" >A28H-1C</option>
+                                                <option value="A28H-25" >A28H-25</option>
+                                                <option value="A28H-40" >A28H-40</option>
+                                                <option value="A28H-40C" >A28H-40C</option>
+                                                <option value="A28HP-16I" >A28HP-16I</option>
+                                                <option value="A28HP-16T" >A28HP-16T</option>
+                                                <option value="A28W-16" >A28W-16</option>
+                                                <option value="A28W-16P" >A28W-16P</option>
+                                                <option value="A28W-16T" >A28W-16T</option>
+                                                <option value="A28X-16T" >A28X-16T</option>
+                                                <option value="A28X-40T" >A28X-40T</option>
+                                                <option value="A28Y-10P" >A28Y-10P</option>
+                                                <option value="A28Y-16C" >A28Y-16C</option>
+                                                <option value="A40Y-16C" >A40Y-16C</option>
+                                                <option value="A41H-16C" >A41H-16C</option>
+                                                <option value="A41Y-2.0F" >A41Y-2.0F</option>
+                                                <option value="A41Y-320P" >A41Y-320P</option>
+                                                <option value="A42A-25" >A42A-25</option>
+                                                <option value="A42A-25C" >A42A-25C</option>
+                                                <option value="A42F-16" >A42F-16</option>
+                                                <option value="A42F-16C" >A42F-16C</option>
+                                                <option value="A42F-16P" >A42F-16P</option>
+                                                <option value="A42F-25" >A42F-25</option>
+                                                <option value="A42F-25C" >A42F-25C</option>
+                                                <option value="A42F-25P" >A42F-25P</option>
+                                                <option value="A42F-40C" >A42F-40C</option>
+                                                <option value="A42F-50C" >A42F-50C</option>
+                                                <option value="A42Y-160" >A42Y-160</option>
+                                                <option value="A42Y-160C" >A42Y-160C</option>
+                                                <option value="A42Y-160P" >A42Y-160P</option>
+                                                <option value="A42Y-16C" >A42Y-16C</option>
+                                                <option value="A42Y-16P" >A42Y-16P</option>
+                                                <option value="A42Y-16R" >A42Y-16R</option>
+                                                <option value="A42Y-16RL" >A42Y-16RL</option>
+                                                <option value="A42Y-25" >A42Y-25</option>
+                                                <option value="A42Y-2500LB" >A42Y-2500LB</option>
+                                                <option value="A42Y-25C" >A42Y-25C</option>
+                                                <option value="A42Y-320C" >A42Y-320C</option>
+                                                <option value="A42Y-40" >A42Y-40</option>
+                                                <option value="A42Y-40C" >A42Y-40C</option>
+                                                <option value="A42Y-64" >A42Y-64</option>
+                                                <option value="A42Y-900LB" >A42Y-900LB</option>
+                                                <option value="A44Y-16C" >A44Y-16C</option>
+                                                <option value="A47H-16C" >A47H-16C</option>
+                                                <option value="A47H-16Q" >A47H-16Q</option>
+                                                <option value="A47Y-16C" >A47Y-16C</option>
+                                                <option value="A48H-16" >A48H-16</option>
+                                                <option value="A48H-16C" >A48H-16C</option>
+                                                <option value="A48Y-" >A48Y-</option>
+                                                <option value="A48Y-16" >A48Y-16</option>
+                                                <option value="A48Y-16C" >A48Y-16C</option>
+                                                <option value="A48Y-16P" >A48Y-16P</option>
+                                                <option value="A48Y-16Q" >A48Y-16Q</option>
+                                                <option value="A48Y-25C" >A48Y-25C</option>
+                                                <option value="A48Y-40" >A48Y-40</option>
+                                                <option value="A48Y-40C" >A48Y-40C</option>
+                                                <option value="A48Y-40l" >A48Y-40l</option>
+                                                <option value="A48Y-40P" >A48Y-40P</option>
+                                                <option value="A48Y-64C" >A48Y-64C</option>
+                                                <option value="A62Y-160" >A62Y-160</option>
+                                                <option value="A81X-10PL" >A81X-10PL</option>
+                                                <option value="AF126I-483" >AF126I-483</option>
+                                                <option value="AF46Y-1.6MPa" >AF46Y-1.6MPa</option>
+                                                <option value="AF46Y-2.5MPa" >AF46Y-2.5MPa</option>
+                                                <option value="AF46Y-6.3MPa" >AF46Y-6.3MPa</option>
+                                                <option value="AF4Q-10" >AF4Q-10</option>
+                                                <option value="AH42F-25" >AH42F-25</option>
+                                                <option value="AH42F-25C" >AH42F-25C</option>
+                                                <option value="AH42F-40C" >AH42F-40C</option>
+                                                <option value="AH42Y-16P" >AH42Y-16P</option>
+                                                <option value="AK28W-16T" >AK28W-16T</option>
+                                                <option value="AK28X-16T" >AK28X-16T</option>
+                                                <option value="AL-150" >AL-150</option>
+                                                <option value="AYF12H-50E" >AYF12H-50E</option>
+                                                <option value="C64-WMF1216N4002-C" >C64-WMF1216N4002-C</option>
+                                                <option value="CSA-22C2500T" >CSA-22C2500T</option>
+                                                <option value="DA-08B-230" >DA-08B-230</option>
+                                                <option value="DA-08C" >DA-08C</option>
+                                                <option value="DA-08G1(001)" >DA-08G1(001)</option>
+                                                <option value="DA21-40P" >DA21-40P</option>
+                                                <option value="DA21F-40P" >DA21F-40P</option>
+                                                <option value="DA22F-40P" >DA22F-40P</option>
+                                                <option value="DA22F-40T" >DA22F-40T</option>
+                                                <option value="DA22F-64T" >DA22F-64T</option>
+                                                <option value="DA22Y-40P" >DA22Y-40P</option>
+                                                <option value="DA25-40P" >DA25-40P</option>
+                                                <option value="DAF-15-BW2" >DAF-15-BW2</option>
+                                                <option value="DKF-15-BW-2" >DKF-15-BW-2</option>
+                                                <option value="FY08-A355" >FY08-A355</option>
+                                                <option value="HY-A1-L K" >HY-A1-L K</option>
+                                                <option value="IIA4D2Y-16R" >IIA4D2Y-16R</option>
+                                                <option value="ISV-08A" >ISV-08A</option>
+                                                <option value="KDA22P-40P" >KDA22P-40P</option>
+                                                <option value="KDA22Y-63P" >KDA22Y-63P</option>
+                                                <option value="MV64C-266" >MV64C-266</option>
+                                                <option value="PN365" >PN365</option>
+                                                <option value="PRV9432T230C" >PRV9432T230C</option>
+                                                <option value="PRV9432TP" >PRV9432TP</option>
+                                                <option value="PRVS432F" >PRVS432F</option>
+                                                <option value="PRVS432T" >PRVS432T</option>
+                                                <option value="PV2MF-4N" >PV2MF-4N</option>
+                                                <option value="RV1-F4-03V-J-316-N3190" >RV1-F4-03V-J-316-N3190</option>
+                                                <option value="RV2MF-4N" >RV2MF-4N</option>
+                                                <option value="SFA-220300T1" >SFA-220300T1</option>
+                                                <option value="SFA-22C300t14" >SFA-22C300t14</option>
+                                                <option value="SFA-22C300T14" >SFA-22C300T14</option>
+                                                <option value="SFV 20" >SFV 20</option>
+                                                <option value="SFY 20" >SFY 20</option>
+                                                <option value="SS-R1-M4-F4-F" >SS-R1-M4-F4-F</option>
+                                                <option value="SS-RV-FNT4-4-W" >SS-RV-FNT4-4-W</option>
+                                                <option value="SV60 7DS" >SV60 7DS</option>
+                                                <option value="SVF-10" >SVF-10</option>
+                                                <option value="SVF-50" >SVF-50</option>
+                                                <option value="TYAIB0.24/10" >TYAIB0.24/10</option>
+                                                <option value="V-0.17-8" >V-0.17-8</option>
+                                                <option value="V-0.36-0./0.9" >V-0.36-0./0.9</option>
+                                                <option value="V-0.36-0./0.9/1.0" >V-0.36-0./0.9/1.0</option>
+                                                <option value="V-0.36/0.6/0.9" >V-0.36/0.6/0.9</option>
+                                                <option value="V64-WMF1216" >V64-WMF1216</option>
+                                                <option value="V64-WMF1216N4002-C" >V64-WMF1216N4002-C</option>
+                                                <option value="WFDA42Y-2.0P-D1" >WFDA42Y-2.0P-D1</option>
+                                                <option value="WFDA42Y-2.0P-LD1" >WFDA42Y-2.0P-LD1</option>
+                                                <option value="WFDA42Y-20P-D1" >WFDA42Y-20P-D1</option>
+                                                <option value="WFDA42Y-20P-LD1" >WFDA42Y-20P-LD1</option>
+                                                <option value="YA28X-4T/10II" >YA28X-4T/10II</option>
+                                                <option value="YA28X4T/10II" >YA28X4T/10II</option>
+                                                <option value="YA28X6T" >YA28X6T</option>
+                                                <option value="YA28X6T/10" >YA28X6T/10</option>
+                                                <option value="YAIA0.30/20" >YAIA0.30/20</option>
+                                                <option value="YDAL44/240" >YDAL44/240</option>
+                                                <option value="YDAL44/280" >YDAL44/280</option>
+                                                <option value="YFA22Y-100C" >YFA22Y-100C</option>
+                                                <option value="YFA22Y-16C" >YFA22Y-16C</option>
+                                                <option value="YFA22Y-25" >YFA22Y-25</option>
+                                                <option value="YFA22Y-250C" >YFA22Y-250C</option>
+                                                <option value="YFA22Y-25C" >YFA22Y-25C</option>
+                                                <option value="YFA22Y-320C" >YFA22Y-320C</option>
+                                                <option value="YFA22Y-40" >YFA22Y-40</option>
+                                                <option value="YFA41C-2500C" >YFA41C-2500C</option>
+                                                <option value="YFA42C-1500C" >YFA42C-1500C</option>
+                                                <option value="YFA42C-2500C" >YFA42C-2500C</option>
+                                                <option value="YFA42C-300aC" >YFA42C-300aC</option>
+                                                <option value="YFA42C-600C" >YFA42C-600C</option>
+                                                <option value="YFA42Y-100C" >YFA42Y-100C</option>
+                                                <option value="YIA0.25/5" >YIA0.25/5</option>
+                                                <option value="(T)YA1A0.25/15" >(T)YA1A0.25/15</option>
+                                                <option value="A21F-16C" >A21F-16C</option>
+                                                <option value="A27W-16T" >A27W-16T</option>
+                                            </select>
+                </div>
+            </div>
+                    <div class="david_nsbox ">                            
+                <label class="layui-form-label w150" data-red="manufacturer">制造单位</label>
+                <div class="layui-input-inline w220 layui-select-add-new">
+                    <select name="manufacturer" id="manufacturer" lay-verify="required" lay-search="" lay-creatable="" >
+                        <option value="">请选择</option>
+                                                <option value="" ></option>
+                                                <option value="/" >/</option>
+                                                <option value="////////" >////////</option>
+                                                <option value="BAR" >BAR</option>
+                                                <option value="BHR" >BHR</option>
+                                                <option value="CIR-LOK" >CIR-LOK</option>
+                                                <option value="DK" >DK</option>
+                                                <option value="DK-LOK" >DK-LOK</option>
+                                                <option value="DQF" >DQF</option>
+                                                <option value="FineLok" >FineLok</option>
+                                                <option value="Hy-LOK" >Hy-LOK</option>
+                                                <option value="LOK" >LOK</option>
+                                                <option value="LSER" >LSER</option>
+                                                <option value="SAFETY" >SAFETY</option>
+                                                <option value="ZNLI" >ZNLI</option>
+                                                <option value="上海乔开阀门制造有限公司" >上海乔开阀门制造有限公司</option>
+                                                <option value="上海倍稳阀门制造有限公司" >上海倍稳阀门制造有限公司</option>
+                                                <option value="上海克罗斯阀门有限公司" >上海克罗斯阀门有限公司</option>
+                                                <option value="上海凯特阀门制造有限公司" >上海凯特阀门制造有限公司</option>
+                                                <option value="上海北亭" >上海北亭</option>
+                                                <option value="上海埃弗斯阀门制造有限公司" >上海埃弗斯阀门制造有限公司</option>
+                                                <option value="上海天正" >上海天正</option>
+                                                <option value="上海天正阀门有限公司" >上海天正阀门有限公司</option>
+                                                <option value="上海百图低温阀门有限公司" >上海百图低温阀门有限公司</option>
+                                                <option value="上海贝亭阀门有限公司" >上海贝亭阀门有限公司</option>
+                                                <option value="上海跃进阀门厂" >上海跃进阀门厂</option>
+                                                <option value="东吴机械有限责任公司" >东吴机械有限责任公司</option>
+                                                <option value="中国.双泰阀门有限公司" >中国.双泰阀门有限公司</option>
+                                                <option value="中国.天正阀门有限公司" >中国.天正阀门有限公司</option>
+                                                <option value="中国.永一阀门" >中国.永一阀门</option>
+                                                <option value="中国.永一阀门集团" >中国.永一阀门集团</option>
+                                                <option value="中国.超超安全阀制造有限公司" >中国.超超安全阀制造有限公司</option>
+                                                <option value="中国。立特阀门科技有限公司" >中国。立特阀门科技有限公司</option>
+                                                <option value="中国万能阀门有限公司" >中国万能阀门有限公司</option>
+                                                <option value="中国双泰阀门有限公司" >中国双泰阀门有限公司</option>
+                                                <option value="中国天正阀门有限公司" >中国天正阀门有限公司</option>
+                                                <option value="中国安徽省来安县新兴港1号" >中国安徽省来安县新兴港1号</option>
+                                                <option value="中国恒华阀门有限公司" >中国恒华阀门有限公司</option>
+                                                <option value="中国永一阀门有限公司" >中国永一阀门有限公司</option>
+                                                <option value="中国永一阀门集团" >中国永一阀门集团</option>
+                                                <option value="中国永一阀门集团有限公司" >中国永一阀门集团有限公司</option>
+                                                <option value="中国科科集团有限公司" >中国科科集团有限公司</option>
+                                                <option value="中国立特阀门科技有限公司" >中国立特阀门科技有限公司</option>
+                                                <option value="丹佛斯" >丹佛斯</option>
+                                                <option value="保一集团" >保一集团</option>
+                                                <option value="先导式" >先导式</option>
+                                                <option value="凯特阀门" >凯特阀门</option>
+                                                <option value="南通中集能源装备有限公司" >南通中集能源装备有限公司</option>
+                                                <option value="台州市广易不锈钢阀门有限公司" >台州市广易不锈钢阀门有限公司</option>
+                                                <option value="合飞阀门有限公司" >合飞阀门有限公司</option>
+                                                <option value="吴江市东吴机械有限责任公司" >吴江市东吴机械有限责任公司</option>
+                                                <option value="哈威" >哈威</option>
+                                                <option value="哈电集团哈尔滨电站阀门有限公司" >哈电集团哈尔滨电站阀门有限公司</option>
+                                                <option value="四川成都空分配套阀门有限公司" >四川成都空分配套阀门有限公司</option>
+                                                <option value="四川省简阳市川力机械制造有限责任公司" >四川省简阳市川力机械制造有限责任公司</option>
+                                                <option value="四川长仪油气集输设备股份有限公司" >四川长仪油气集输设备股份有限公司</option>
+                                                <option value="大连中智" >大连中智</option>
+                                                <option value="大连中智精工有限公司" >大连中智精工有限公司</option>
+                                                <option value="大连中智精工科技有限公司" >大连中智精工科技有限公司</option>
+                                                <option value="大连兴元深冷阀门有限公司" >大连兴元深冷阀门有限公司</option>
+                                                <option value="大连精工科技有限公司" >大连精工科技有限公司</option>
+                                                <option value="天正阀门有限公司" >天正阀门有限公司</option>
+                                                <option value="宁波久兴医疗器械制造有限公司" >宁波久兴医疗器械制造有限公司</option>
+                                                <option value="宁波久兴医疗器械有限公司" >宁波久兴医疗器械有限公司</option>
+                                                <option value="宁波杜肯阀门制造有限公司" >宁波杜肯阀门制造有限公司</option>
+                                                <option value="宁波甬安医疗器械制造" >宁波甬安医疗器械制造</option>
+                                                <option value="宁波甬安医疗器械制造有限公司" >宁波甬安医疗器械制造有限公司</option>
+                                                <option value="宇明阀门集团有限公司" >宇明阀门集团有限公司</option>
+                                                <option value="安徽省来安县新星阀门制造有限公司" >安徽省来安县新星阀门制造有限公司</option>
+                                                <option value="山东汇丰阀门制造有限公司" >山东汇丰阀门制造有限公司</option>
+                                                <option value="广易不锈钢阀门有限公司" >广易不锈钢阀门有限公司</option>
+                                                <option value="张家港科尔润低温阀门有限公司" >张家港科尔润低温阀门有限公司</option>
+                                                <option value="德国进口阀门" >德国进口阀门</option>
+                                                <option value="惠田皮带空压机" >惠田皮带空压机</option>
+                                                <option value="惠田空压机" >惠田空压机</option>
+                                                <option value="慧田皮带空压机" >慧田皮带空压机</option>
+                                                <option value="成都川空阀门有限公司" >成都川空阀门有限公司</option>
+                                                <option value="扬中市阀门有限公司" >扬中市阀门有限公司</option>
+                                                <option value="斯派莎克工程（中国）有限公司" >斯派莎克工程（中国）有限公司</option>
+                                                <option value="日本制造" >日本制造</option>
+                                                <option value="永一" >永一</option>
+                                                <option value="永一阀门" >永一阀门</option>
+                                                <option value="江苏无锡市海燕高压泵阀厂" >江苏无锡市海燕高压泵阀厂</option>
+                                                <option value="沪田.惠田" >沪田.惠田</option>
+                                                <option value="河南省高山阀门有限公司" >河南省高山阀门有限公司</option>
+                                                <option value="河南高山阀门有限公司" >河南高山阀门有限公司</option>
+                                                <option value="泸田.慧田皮带机" >泸田.慧田皮带机</option>
+                                                <option value="泸田.慧田空压机" >泸田.慧田空压机</option>
+                                                <option value="泸田空压机" >泸田空压机</option>
+                                                <option value="泸田空压机专用安全阀" >泸田空压机专用安全阀</option>
+                                                <option value="浙江利永兴制冷机械有限公司" >浙江利永兴制冷机械有限公司</option>
+                                                <option value="浙江天和" >浙江天和</option>
+                                                <option value="浙江天和阀门有限公司" >浙江天和阀门有限公司</option>
+                                                <option value="浙江天正阀门有限公司" >浙江天正阀门有限公司</option>
+                                                <option value="浙江富羽阀门制造有限公司" >浙江富羽阀门制造有限公司</option>
+                                                <option value="浙江富羽阀门有限公司" >浙江富羽阀门有限公司</option>
+                                                <option value="浙江富超安全阀制造有限公司" >浙江富超安全阀制造有限公司</option>
+                                                <option value="浙江富超阀门制造有限公司" >浙江富超阀门制造有限公司</option>
+                                                <option value="浙江富超阀门有限公司" >浙江富超阀门有限公司</option>
+                                                <option value="浙江富造安全阀制造有限公司" >浙江富造安全阀制造有限公司</option>
+                                                <option value="浙江海一阀门" >浙江海一阀门</option>
+                                                <option value="浙江海一阀门有限公司" >浙江海一阀门有限公司</option>
+                                                <option value="浙江燕峰安全阀制作有限公司" >浙江燕峰安全阀制作有限公司</option>
+                                                <option value="浙江燕峰安全阀制造有限公司" >浙江燕峰安全阀制造有限公司</option>
+                                                <option value="浙江燕峰阀门制造有限公司" >浙江燕峰阀门制造有限公司</option>
+                                                <option value="浙江燕峰阀门有限公司" >浙江燕峰阀门有限公司</option>
+                                                <option value="浙江立特阀门" >浙江立特阀门</option>
+                                                <option value="浙江超航阀门有限公司" >浙江超航阀门有限公司</option>
+                                                <option value="浙江超超安全阀制造有限公司" >浙江超超安全阀制造有限公司</option>
+                                                <option value="浙江顺景阀门有限公司" >浙江顺景阀门有限公司</option>
+                                                <option value="浙江飞峰阀门有限公司" >浙江飞峰阀门有限公司</option>
+                                                <option value="温州源宇轻工机械有限公司" >温州源宇轻工机械有限公司</option>
+                                                <option value="罗浮阀门集团" >罗浮阀门集团</option>
+                                                <option value="罗浮阀门集团有限公司" >罗浮阀门集团有限公司</option>
+                                                <option value="罗浮阀门集团浙江西高泵阀有限公司" >罗浮阀门集团浙江西高泵阀有限公司</option>
+                                                <option value="良固阀门集团股份有限公司" >良固阀门集团股份有限公司</option>
+                                                <option value="良工阀门有限公司" >良工阀门有限公司</option>
+                                                <option value="莱斯安全阀门（天津）有限公司" >莱斯安全阀门（天津）有限公司</option>
+                                                <option value="莱斯阀门有限公司" >莱斯阀门有限公司</option>
+                                                <option value="诸暨市双凌阀门有限公司" >诸暨市双凌阀门有限公司</option>
+                                                <option value="诸暨市飞润阀门有限公司" >诸暨市飞润阀门有限公司</option>
+                                                <option value="贝亭" >贝亭</option>
+                                                <option value="进口阀门" >进口阀门</option>
+                                                <option value="适配泸田.慧田皮带机" >适配泸田.慧田皮带机</option>
+                                                <option value="郑州高压阀门厂" >郑州高压阀门厂</option>
+                                                <option value="阿司米阀门有限公司" >阿司米阀门有限公司</option>
+                                                <option value="青岛华兴阀门有限公司" >青岛华兴阀门有限公司</option>
+                                                <option value="青岛宏通阀业有限公司" >青岛宏通阀业有限公司</option>
+                                                <option value="青岛汇丰水暖器材有限公司" >青岛汇丰水暖器材有限公司</option>
+                                                <option value="青岛迦南美地机械有限公司" >青岛迦南美地机械有限公司</option>
+                                                <option value="青岛通达阀门有限公司" >青岛通达阀门有限公司</option>
+                                                <option value="韩国DK-LOK" >韩国DK-LOK</option>
+                                                <option value="顺景阀门有限公司" >顺景阀门有限公司</option>
+                                                <option value="Beiting" >Beiting</option>
+                                                <option value="Carrier" >Carrier</option>
+                                                <option value="HEROSE" >HEROSE</option>
+                                            </select>
+                </div>
+            </div>
+            <!--              -->
+                    <div class="david_nsbox ">                            
+                <label class="layui-form-label w150" data-red="vavle_type">安全阀类型</label>
+                <div class="layui-input-inline w220">
+                    <select name="vavle_type" id="vavle_type" >
+                        <option value="弹簧式" >弹簧式</option>
+                        <option value="先导式" >先导式</option>
+                        <option value="杠杆式" >杠杆式</option>
+                        <option value="重锤式" >重锤式</option>
+                        <option value="其他" >其他</option>
+                    </select>
+                </div>
+            </div>
+                    <script src="/static/examination/js/jquery.min.js"></script>
+            <script src="/static/examination/js/select2/js/select2.full.js"></script>
+            <link rel="stylesheet" href="/static/examination/js/select2/css/select2.min.css"/>
+            <link rel="stylesheet" href="/static/examination/js/select2/css/layui-select.css"/>
+            <div class="david_nsbox ">                            
+                <label class="layui-form-label w150" data-red="diameter_nominal">公称通径mm<span class="x-red">*</span></label>
+                <div class="layui-input-inline w220 ">
+                    <div class="layui-input-group">
+                        <select name="diameter_nominal" id="diameter_nominal" lay-filter="diameter_nominal" lay-ignore lay-verify="required" required>
+                            <!--  -->
+                            <option value="4"  data-inch='1/8' >4 1/8</option>
+                            <!--  -->
+                            <option value="5"  data-inch='' >5 </option>
+                            <!--  -->
+                            <option value="6"  data-inch='' >6 </option>
+                            <!--  -->
+                            <option value="7"  data-inch='' >7 </option>
+                            <!--  -->
+                            <option value="8"  data-inch='1/4' >8 1/4</option>
+                            <!--  -->
+                            <option value="9"  data-inch='' >9 </option>
+                            <!--  -->
+                            <option value="10"  data-inch='3/8' >10 3/8</option>
+                            <!--  -->
+                            <option value="15"  data-inch='1/2' >15 1/2</option>
+                            <!--  -->
+                            <option value="20"  data-inch='3/4' >20 3/4</option>
+                            <!--  -->
+                            <option value="25"  data-inch='1' >25 1</option>
+                            <!--  -->
+                            <option value="32"  data-inch='1 - 1/4' >32 1 - 1/4</option>
+                            <!--  -->
+                            <option value="34"  data-inch='' >34 </option>
+                            <!--  -->
+                            <option value="40"  data-inch='1 - 1/2' >40 1 - 1/2</option>
+                            <!--  -->
+                            <option value="50"  data-inch='2' >50 2</option>
+                            <!--  -->
+                            <option value="51"  data-inch='' >51 </option>
+                            <!--  -->
+                            <option value="60"  data-inch='' >60 </option>
+                            <!--  -->
+                            <option value="65"  data-inch='2 - 1/2' >65 2 - 1/2</option>
+                            <!--  -->
+                            <option value="80"  data-inch='3' >80 3</option>
+                            <!--  -->
+                            <option value="100"  data-inch='4' >100 4</option>
+                            <!--  -->
+                            <option value="125"  data-inch='5' >125 5</option>
+                            <!--  -->
+                            <option value="150"  data-inch='6' >150 6</option>
+                            <!--  -->
+                            <option value="200"  data-inch='8' >200 8</option>
+                            <!--  -->
+                            <option value="250"  data-inch='10' >250 10</option>
+                            <!--  -->
+                            <option value="300"  data-inch='12' >300 12</option>
+                            <!--  -->
+                            <option value="350"  data-inch='14' >350 14</option>
+                            <!--  -->
+                            <option value="400"  data-inch='16' >400 16</option>
+                            <!--  -->
+                            <option value="450"  data-inch='18' >450 18</option>
+                            <!--  -->
+                            <option value="500"  data-inch='20' >500 20</option>
+                            <!--  -->
+                        </select>
+                        <div class="layui-input-split layui-input-suffix">
+                            mm
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <script type="text/javascript">
+                $('#diameter_nominal').select2({
+                    width:'100%',
+                    language: {
+                        noResults: function(params) {
+                            return "无匹配数据";
+                        }
+                    },
+                    templateSelection: function (data, container) {
+                        return $(data.element).val();
+                    },
+                    templateResult:function(state){
+
+                        var inch = $(state.element).data('inch');
+                        var val = $(state.element).val();
+
+                        if(inch)
+                        {
+                            return inch + '英寸 ≈ DN ' + val;
+                        }
+                        else
+                        {
+                            return'DN ' + val;
+                        }
+
+                    }
+                });
+            </script>
+                    <div class="david_nsbox ">                            
+                <label class="layui-form-label w150" data-red="license_no">制造许可证号</label>
+                <div class="layui-input-inline w220 layui-select-add-new">
+                    <select name="license_no" id="license_no" lay-verify="required" lay-search="" lay-creatable="" >
+                        <option value="">请选择</option>
+                                                <option value="" ></option>
+                                                <option value="/" >/</option>
+                                                <option value="///" >///</option>
+                                                <option value="059410-1F31" >059410-1F31</option>
+                                                <option value="DK25110400196" >DK25110400196</option>
+                                                <option value="HT872-0214316" >HT872-0214316</option>
+                                                <option value="S211114AA09 316" >S211114AA09 316</option>
+                                                <option value="TS2710144-2011" >TS2710144-2011</option>
+                                                <option value="TS2731095-2013" >TS2731095-2013</option>
+                                                <option value="TS2F31303-2023" >TS2F31303-2023</option>
+                                                <option value="TS2F31303-2027" >TS2F31303-2027</option>
+                                                <option value="TS2F31308-2024" >TS2F31308-2024</option>
+                                                <option value="TS2F31415-2025" >TS2F31415-2025</option>
+                                                <option value="TS2F31415-2029" >TS2F31415-2029</option>
+                                                <option value="TS2F31417-2029" >TS2F31417-2029</option>
+                                                <option value="TS2F31918" >TS2F31918</option>
+                                                <option value="TS2F31920" >TS2F31920</option>
+                                                <option value="TS2F31920-2021" >TS2F31920-2021</option>
+                                                <option value="TS2F31920-2027" >TS2F31920-2027</option>
+                                                <option value="TS2F31930-2029" >TS2F31930-2029</option>
+                                                <option value="TS2F32014-2028" >TS2F32014-2028</option>
+                                                <option value="TS2F32016-2028" >TS2F32016-2028</option>
+                                                <option value="TS2F33015-2027" >TS2F33015-2027</option>
+                                                <option value="TSF101150-2020" >TSF101150-2020</option>
+                                                <option value="TSF210068" >TSF210068</option>
+                                                <option value="TSF237100-2021" >TSF237100-2021</option>
+                                                <option value="TSF237101-2022" >TSF237101-2022</option>
+                                                <option value="TSF237104-2020" >TSF237104-2020</option>
+                                                <option value="TSF237104-2024" >TSF237104-2024</option>
+                                                <option value="TSF237106-2021" >TSF237106-2021</option>
+                                                <option value="TSF237106-2025" >TSF237106-2025</option>
+                                                <option value="TSF237106-2029" >TSF237106-2029</option>
+                                                <option value="TSF237107-2025" >TSF237107-2025</option>
+                                                <option value="TSF237120-2029" >TSF237120-2029</option>
+                                                <option value="TSF237400-2021" >TSF237400-2021</option>
+                                                <option value="TSF33012-2027" >TSF33012-2027</option>
+                                                <option value="TSF700A36-2020" >TSF700A36-2020</option>
+                                                <option value="TSF700E53-2028" >TSF700E53-2028</option>
+                                                <option value="TSF710003-2022" >TSF710003-2022</option>
+                                                <option value="TSF710017-2015" >TSF710017-2015</option>
+                                                <option value="TSF710017-2023" >TSF710017-2023</option>
+                                                <option value="TSF710017-2027" >TSF710017-2027</option>
+                                                <option value="TSF710020-2020" >TSF710020-2020</option>
+                                                <option value="TSF710021" >TSF710021</option>
+                                                <option value="TSF710022-2024" >TSF710022-2024</option>
+                                                <option value="TSF710027-2024" >TSF710027-2024</option>
+                                                <option value="TSF710033-2013" >TSF710033-2013</option>
+                                                <option value="TSF710034-2012" >TSF710034-2012</option>
+                                                <option value="TSF710035-2025" >TSF710035-2025</option>
+                                                <option value="TSF710036-2025" >TSF710036-2025</option>
+                                                <option value="TSF710039" >TSF710039</option>
+                                                <option value="TSF710039-2019" >TSF710039-2019</option>
+                                                <option value="TSF710039-2023" >TSF710039-2023</option>
+                                                <option value="TSF710039-2027" >TSF710039-2027</option>
+                                                <option value="TSF710042-2017" >TSF710042-2017</option>
+                                                <option value="TSF710042-2021" >TSF710042-2021</option>
+                                                <option value="TSF710042-2025" >TSF710042-2025</option>
+                                                <option value="TSF710042-2027" >TSF710042-2027</option>
+                                                <option value="TSF710042-2029" >TSF710042-2029</option>
+                                                <option value="TSF710047-2027" >TSF710047-2027</option>
+                                                <option value="TSF710049" >TSF710049</option>
+                                                <option value="TSF710053-2013" >TSF710053-2013</option>
+                                                <option value="TSF710053-2017" >TSF710053-2017</option>
+                                                <option value="TSF710053-2021" >TSF710053-2021</option>
+                                                <option value="TSF710053-2025" >TSF710053-2025</option>
+                                                <option value="TSF710054-2026" >TSF710054-2026</option>
+                                                <option value="TSF710055-2022" >TSF710055-2022</option>
+                                                <option value="TSF710058-2018" >TSF710058-2018</option>
+                                                <option value="TSF710066-2026" >TSF710066-2026</option>
+                                                <option value="TSF710074-2023" >TSF710074-2023</option>
+                                                <option value="TSF710074-2027" >TSF710074-2027</option>
+                                                <option value="TSF710076-2015" >TSF710076-2015</option>
+                                                <option value="TSF710076-2019" >TSF710076-2019</option>
+                                                <option value="TSF710076-2023" >TSF710076-2023</option>
+                                                <option value="TSF710076-2027" >TSF710076-2027</option>
+                                                <option value="TSF710088-2015" >TSF710088-2015</option>
+                                                <option value="TSF710100-2020" >TSF710100-2020</option>
+                                                <option value="TSF710100-2023" >TSF710100-2023</option>
+                                                <option value="TSF710101-2020" >TSF710101-2020</option>
+                                                <option value="TSF710115-2018" >TSF710115-2018</option>
+                                                <option value="TSF710121-2023" >TSF710121-2023</option>
+                                                <option value="TSF710124-2022" >TSF710124-2022</option>
+                                                <option value="TSF710144-2011" >TSF710144-2011</option>
+                                                <option value="TSF710149-2020" >TSF710149-2020</option>
+                                                <option value="TSF710150-2020" >TSF710150-2020</option>
+                                                <option value="TSF710175-2025" >TSF710175-2025</option>
+                                                <option value="TSF710510-2019" >TSF710510-2019</option>
+                                                <option value="TSF712103" >TSF712103</option>
+                                                <option value="TSF721002-2024" >TSF721002-2024</option>
+                                                <option value="TSF721002-2028" >TSF721002-2028</option>
+                                                <option value="TSF731003-1015" >TSF731003-1015</option>
+                                                <option value="TSF731003-2015" >TSF731003-2015</option>
+                                                <option value="TSF732010-2027" >TSF732010-2027</option>
+                                                <option value="TSF732189-2026" >TSF732189-2026</option>
+                                                <option value="TSF733001-2014" >TSF733001-2014</option>
+                                                <option value="TSF733001-2018" >TSF733001-2018</option>
+                                                <option value="TSF733001-2022" >TSF733001-2022</option>
+                                                <option value="TSF733001-2026" >TSF733001-2026</option>
+                                                <option value="TSF733001-2030" >TSF733001-2030</option>
+                                                <option value="TSF7330015-2027" >TSF7330015-2027</option>
+                                                <option value="TSF733002-2022" >TSF733002-2022</option>
+                                                <option value="TSF733002-2026" >TSF733002-2026</option>
+                                                <option value="TSF733005-2020" >TSF733005-2020</option>
+                                                <option value="TSF733009-2021" >TSF733009-2021</option>
+                                                <option value="TSF733009-2025" >TSF733009-2025</option>
+                                                <option value="TSF733009-2029" >TSF733009-2029</option>
+                                                <option value="TSF733012-2023" >TSF733012-2023</option>
+                                                <option value="TSF733012-2026" >TSF733012-2026</option>
+                                                <option value="TSF733012-2027" >TSF733012-2027</option>
+                                                <option value="TSF733013-2023" >TSF733013-2023</option>
+                                                <option value="TSF733013-2027" >TSF733013-2027</option>
+                                                <option value="TSF733014-2024" >TSF733014-2024</option>
+                                                <option value="TSF733015-2024" >TSF733015-2024</option>
+                                                <option value="TSF733015-2027" >TSF733015-2027</option>
+                                                <option value="TSF733016-2024" >TSF733016-2024</option>
+                                                <option value="TSF733018-2024" >TSF733018-2024</option>
+                                                <option value="TSF733020-2028" >TSF733020-2028</option>
+                                                <option value="TSF733022-2025" >TSF733022-2025</option>
+                                                <option value="TSF733023-2025" >TSF733023-2025</option>
+                                                <option value="TSF733026-2025" >TSF733026-2025</option>
+                                                <option value="TSF733026-2029" >TSF733026-2029</option>
+                                                <option value="TSF733031-2026" >TSF733031-2026</option>
+                                                <option value="TSF733039-2026" >TSF733039-2026</option>
+                                                <option value="TSF733043-2027" >TSF733043-2027</option>
+                                                <option value="TSF733044-2027" >TSF733044-2027</option>
+                                                <option value="TSF733045-2027" >TSF733045-2027</option>
+                                                <option value="TSF733047-2027" >TSF733047-2027</option>
+                                                <option value="TSF733049-2027" >TSF733049-2027</option>
+                                                <option value="TSF733051-2027" >TSF733051-2027</option>
+                                                <option value="TSF733056-2027" >TSF733056-2027</option>
+                                                <option value="TSF733065-2028" >TSF733065-2028</option>
+                                                <option value="TSF733073-2029" >TSF733073-2029</option>
+                                                <option value="TSF733074-2029" >TSF733074-2029</option>
+                                                <option value="TSF733076-2029" >TSF733076-2029</option>
+                                                <option value="TSF733078-2029" >TSF733078-2029</option>
+                                                <option value="TSF7333012-2027" >TSF7333012-2027</option>
+                                                <option value="TSF734001-2024" >TSF734001-2024</option>
+                                                <option value="TSF734003-2029" >TSF734003-2029</option>
+                                                <option value="TSf751X04-2027" >TSf751X04-2027</option>
+                                                <option value="TSF751X04-2027" >TSF751X04-2027</option>
+                                                <option value="TSF751X07" >TSF751X07</option>
+                                                <option value="TSF751X15-2028" >TSF751X15-2028</option>
+                                                <option value="TSF7813149-2026" >TSF7813149-2026</option>
+                                                <option value="TSX710077-2033" >TSX710077-2033</option>
+                                            </select>
+                </div>
+            </div>
+                    <div class="david_nsbox ">                            
+                <label class="layui-form-label w150" data-red="seat_size">流道直径mm</label>
+                <div class="layui-input-inline w220">
+                    <div class="layui-input-group">
+                        <input type="text" name="seat_size" value="" placeholder="请输入" autocomplete="off" class="layui-input " lay-verify="required" >
+                        <div class="layui-input-split layui-input-suffix">
+                            mm
+                        </div>
+                    </div>
+                </div>
+            </div>
+                    <div class="david_nsbox ">                            
+                <label class="layui-form-label w150" data-red="press_nominal">公称压力MPa</label>
+                <div class="layui-input-inline w220">
+                    <div class="layui-input-group">
+                        <input type="text" name="press_nominal" value="" placeholder="请输入" autocomplete="off" class="layui-input pressure" lay-verify="required" >
+                        <div class="layui-input-split layui-input-suffix">
+                            MPa
+                        </div>
+                    </div>
+                </div>
+            </div>
+        
+
+
+            <div class="david_nsbox ">                            
+                <label class="layui-form-label w150" data-red="press_class_range">压力级别范围MPa</label>
+                <div class="layui-input-inline" >
+                    <div class="layui-input-group">
+                        <input type="text" name="press_class_range_min" value="" placeholder="最低压力" autocomplete="off" lay-verify="required"  class="layui-input pressure"  >
+                        <div class="layui-input-split layui-input-suffix">
+                            MPa
+                        </div>
+                    </div>
+                </div>
+
+                <div class="layui-form-mid">至</div>
+                <div class="layui-input-inline" >
+                    <div class="layui-input-group">
+                        <input type="text" name="press_class_range_max" value="" placeholder="最高压力" autocomplete="off" lay-verify="required" class="layui-input pressure"  >
+                        <div class="layui-input-split layui-input-suffix">
+                            MPa
+                        </div>
+                    </div>
+                </div>
+            </div>
+                    <div class="david_nsbox ">                            
+                <label class="layui-form-label w150" data-red="manu_date">出厂日期</label>
+                <div class="layui-input-inline w220">
+                    <input class="layui-input" placeholder="选择日期" name="manu_date" id="manu_date" value="" autocomplete="off"  lay-verify="required" style="width: calc(100% - 40px);    float: left;" >
+                    <button type="button" class="layui-btn layui-btn-sm" id="manu_date_view">
+                        <i class="layui-icon">&#xe637;</i>
+                    </button>
+                </div>
+            </div>
+                    <div class="david_nsbox ">                            
+                <label class="layui-form-label w150" data-red="manu_no">出厂编号</label>
+                <div class="layui-input-inline w220">
+                    <input type="text" name="manu_no" value="" placeholder="请输入" autocomplete="off" lay-verify="required" class="layui-input" >
+                </div>
+            </div>
+                    <div class="david_nsbox david_span2">                            
+                <label class="layui-form-label w150" data-red="tightness_press">密封试验压力MPa<span class="x-red">*</span></label>
+                <div class="layui-input-inline w220">
+                    <input type="text" name="tightness_press" id="tightness_press" value="" placeholder="请输入" autocomplete="off" class="layui-input pressure" lay-verify="required" required>
+                </div>
+            </div>
+                    <div class="david_nsbox david_span2">                            
+                <label class="layui-form-label w150" data-red="press_correction">背压修正</label>
+                <div class="layui-input-inline w220">
+                    <input type="text" name="press_correction" value="" placeholder="请输入" autocomplete="off" class="layui-input pressure"  lay-verify="required" >
+                </div>
+            </div>
+                    <div class="david_nsbox david_span2">                            
+                <label class="layui-form-label w150" data-red="is_new">是否新阀</label>
+                <div class="layui-input-inline w220">
+                                            <input 
+                            type="radio"
+                            name="is_new"
+                            value="2"
+                            }
+                                                                                    title="是" />
+                                            <input 
+                            type="radio"
+                            name="is_new"
+                            value="1"
+                            }
+                             checked                                                        title="否" />
+                                    </div>
+            </div>
+                    <div class="david_nsbox david_span2">                            
+                <label class="layui-form-label w150" data-red="is_removed_cleaning">旧阀是否拆卸清洗</label>
+                <div class="layui-input-inline w220">
+                                            <input 
+                            type="radio"
+                            name="is_removed_cleaning"
+                            value="0"
+                            }
+                             checked                                                        title="无" />
+                                            <input 
+                            type="radio"
+                            name="is_removed_cleaning"
+                            value="1"
+                            }
+                                                                                    title="否" />
+                                            <input 
+                            type="radio"
+                            name="is_removed_cleaning"
+                            value="2"
+                            }
+                                                                                    title="是" />
+                                    </div>
+            </div>
+                    <div class="david_nsbox david_span2">                            
+                <label class="layui-form-label w150" data-red="is_complete">阀体及零部件是否完整</label>
+                <div class="layui-input-inline w220">
+                                            <input 
+                            type="radio"
+                            name="is_complete"
+                            value="0"
+                            }
+                             checked                                                        title="无" />
+                                            <input 
+                            type="radio"
+                            name="is_complete"
+                            value="1"
+                            }
+                                                                                    title="否" />
+                                            <input 
+                            type="radio"
+                            name="is_complete"
+                            value="2"
+                            }
+                                                                                    title="是" />
+                                    </div>
+            </div>
+                    <div class="david_nsbox david_span2">                            
+                <label class="layui-form-label w150" data-red="is_nameplate">是否有金属铭牌</label>
+                <div class="layui-input-inline w220">
+                                            <input 
+                            type="radio"
+                            name="is_nameplate"
+                            value="0"
+                            }
+                             checked                                                        title="无" />
+                                            <input 
+                            type="radio"
+                            name="is_nameplate"
+                            value="1"
+                            }
+                                                                                    title="否" />
+                                            <input 
+                            type="radio"
+                            name="is_nameplate"
+                            value="2"
+                            }
+                                                                                    title="是" />
+                                    </div>
+            </div>
+        
+                        </div>
+                    </div>
+                    <div class="layui-container">
+                        <div class="layui-row" style="display: flex; justify-content: center;">
+                            <div class="layui-col-xs-12 layui-col-md-8">
+                                <button class="layui-btn layui-btn-lg" lay-filter="add" lay-submit="">确认提交</button>
+                                <button type="reset" class="layui-btn  layui-btn-lg layui-btn-primary">清空内容</button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+   
+<script>
+var flag = true;
+layui.use(['form', 'layer', 'laydate'], function() {
+    $ = layui.jquery;
+    var form = layui.form,
+        layer = layui.layer;
+    var laydate = layui.laydate;
+
+    var mousePosition = {x: 0, y: 0};
+            
+    // 监听鼠标移动，记录当前位置
+    document.addEventListener('mousemove', function(e) {
+        mousePosition.x = e.clientX;
+        mousePosition.y = e.clientY;
+    });
+    
+    // 获取鼠标当前位置的元素
+    function getElementAtMousePosition() {
+        return document.elementFromPoint(mousePosition.x, mousePosition.y);
+    }
+
+    $('body').on('blur', '[lay-creatable] + .layui-form-select .layui-input', function(e) {
+        console.log('1');
+
+
+        if(e.bubbles == undefined ) return;
+        // console.log(e.bubbles,'e.bubbles)');
+
+        var temp_value = e.currentTarget.value.trim(); // 去除空格
+        if (temp_value === '') return; // 如果为空，则不执行任何操作
+        var temp_select_box = $(e.currentTarget).closest('.layui-form-select');
+        var true_select = temp_select_box.prev();
+        // 检查是否已经存在该选项
+        var exists = true_select.find('option').filter(function() {
+            return $(this).text().trim() === temp_value;
+        }).length > 0;
+
+        if (!exists && !$(getElementAtMousePosition()).is('dd'))
+        {
+
+            temp_select_box.find('.layui-select-create-option').trigger('click');
+
+        }
+        else if(temp_select_box.find('dd:not(.layui-hide)').length == 1&& !$(getElementAtMousePosition()).is('dd'))
+        {
+            temp_select_box.find('dd:not(.layui-hide)').trigger('click');
+        }
+        return ;
+
+    });
+
+    $('body').on('keydown blur', '[lay-search]:not([lay-creatable]) + .layui-form-select .layui-input', function(e) {
+        console.log('2');
+        var temp_value = e.currentTarget.value.trim(); // 去除空格
+        if (temp_value === '') return; // 如果为空，则不执行任何操作
+        var temp_select_box = $(e.currentTarget).closest('.layui-form-select');
+        var true_select = temp_select_box.prev();
+
+        if(!true_select.is('[lay-creatable]'))
+        {
+            if (e.type === 'keydown' && (e.key === 'Tab' || e.keyCode === 9))
+            {
+                if(temp_select_box.find('dd:not(.layui-hide)').length > 0 )
+                {
+                    temp_select_box.find('dd:not(.layui-hide)').eq(0).trigger('click');
+                }
+            }
+            else if (e.type === 'blur' || e.type ===  'focusout' )
+            {
+
+                if(!$(getElementAtMousePosition()).is('dd') && temp_select_box.find('dd:not(.layui-hide)').length > 0 )
+                {
+                    if(true_select.find('[value='+temp_value+']').length == 0)
+                    {
+                        temp_select_box.find('dd:not(.layui-hide)').eq(0).trigger('click');
+                    }
+                    else
+                    {
+                        true_select.val(temp_value);
+                    }
+
+                }
+            }
+        }
+
+
+        
+        
+        // return false;
+    });
+
+
+    
+
+    $('#manu_date_view').on('click', function() {
+        $('.laydate_hidden').remove();
+        var hidden = $('<input type="hidden" class="laydate_hidden"/>');
+        var id = "h" + Date.now();
+        hidden.attr('id', id);
+        $('#manu_date').after(hidden)
+        test = layui.laydate.render({
+            elem: '#' + id, //指定元素
+            type: 'month',
+            trigger: 'click',
+            position: 'absolute',
+            autoConfirm:true,
+            // show: true,
+            done: function(value) {
+                $('#manu_date').val(value);
+            },
+            ready: function(date) {
+                $('.layui-laydate').css({
+                    top: $('#manu_date').offset().top + 30,
+                    left: $('#manu_date').offset().left
+                });
+            }
+        });
+        setTimeout(function() {
+            hidden.trigger('click')
+        }, 100);
+    });
+    // red_list = red_list ? JSON.parse(red_list) : [];
+    // $.each(red_list, function(index, item) {
+    //  // console.log('[data-red="'+item+'"]');
+    //  $('[data-red="' + item + '"]').html($('[data-red="' + item + '"]').html() + '<span class="x-red">*</span>');
+    // });
+    $('.pressure').on('change', function() {
+        let value = $(this).val();
+        // 1. 清除非法字符（保留数字和小数点）
+        value = value.replace(/[^\d./]/g, "");
+        // 2. 处理首字符为小数点的情况（自动补零）
+        if (value.startsWith('.')) value = "0" + value;
+        // 3. 处理多个小数点（只保留第一个）
+        value = value.replace(/\.+/g, (match, offset) => offset === value.indexOf('.') ? '.' : '');
+        if (value != '/') {
+            // 4. 保障至少两位小数（核心逻辑）
+            if (value.includes('.')) {
+                const [intPart, decPart] = value.split('.');
+                // 关键修改：不再截断decPart，只对不足两位的补零
+                value = intPart + '.' + (decPart.length >= 2 ? decPart : decPart + '0'.repeat(2 - decPart.length));
+            } else if (value) {
+                value += ".00"; // 整数补充两位小数
+            }
+        }
+        $(this).val(value);
+    });
+    $('[name=working_press]').on('change', function() {
+        let value = $(this).val();
+        // 1. 清除非法字符（保留数字和小数点）
+        value = value.replace(/[^\d-~./]/g, "");
+        // console.log(value, 'value');
+        // 2. 处理首字符为小数点的情况（自动补零）
+        if (value.startsWith('.')) value = "0" + value;
+        // 3. 处理多个小数点（只保留第一个）
+        var new_value = value.replace(/\.+/g, (match, offset) => offset === value.indexOf('.') ? '.' : '');
+        if(/^[+-]?\d+(\.\d+)?$/.test(new_value))
+        {
+            value = new_value;
+            if (value != '/') {
+                // 4. 保障至少两位小数（核心逻辑）
+                if (value.includes('.')) {
+                    const [intPart, decPart] = value.split('.');
+                    // 关键修改：不再截断decPart，只对不足两位的补零
+                    value = intPart + '.' + (decPart.length >= 2 ? decPart : decPart + '0'.repeat(2 - decPart.length));
+                } else if (value) {
+                    value += ".00"; // 整数补充两位小数
+                }
+            }
+        }
+        
+        $(this).val(value);
+    });
+
+    $('[name=design_press]').on('change', function() {
+        let value = $(this).val();
+        // 1. 清除非法字符（保留数字和小数点）
+        value = value.replace(/[^\d.≤/]/g, "");
+        // console.log(value, 'value');
+        // 2. 处理首字符为小数点的情况（自动补零）
+        if (value.startsWith('.')) value = "0" + value;
+        // 3. 处理多个小数点（只保留第一个）
+        var new_value = value.replace(/\.+/g, (match, offset) => offset === value.indexOf('.') ? '.' : '');
+        if(/^[+-]?\d+(\.\d+)?$/.test(new_value))
+        {
+            value = new_value;
+            if (value != '/') {
+                // 4. 保障至少两位小数（核心逻辑）
+                if (value.includes('.')) {
+                    const [intPart, decPart] = value.split('.');
+                    // 关键修改：不再截断decPart，只对不足两位的补零
+                    value = intPart + '.' + (decPart.length >= 2 ? decPart : decPart + '0'.repeat(2 - decPart.length));
+                } else if (value) {
+                    value += ".00"; // 整数补充两位小数
+                }
+            }
+        }
+        
+        $(this).val(value);
+    });
+
+
+    function getGCTJ(_this) {
+        var selectDiv = $(_this).closest('.layui-form-select');
+        var dropdown = selectDiv.find('.layui-anim');
+        // 确保下拉框已展开
+        selectDiv.addClass('layui-form-selected');
+        // 检查 dd 元素
+        var options = dropdown.find('dd');
+        // 尝试找到当前高亮的选项
+        var highlightedOption = dropdown.find('dd.layui-this').not('.layui-hide');
+        if (highlightedOption.length) {
+            highlightedOption.trigger('click');
+        } else {
+            var visibleOptions = dropdown.find('dd:visible').not('.layui-disabled, .layui-select-tips');
+            if (visibleOptions.length > 0 && visibleOptions.first().attr('lay-value') !== '') {
+                visibleOptions.first().trigger('click');
+            }
+        }
+        selectDiv.removeClass('layui-form-selected');
+    }
+    $(document).on('keydown', '.layui-form-select input', function(e) {
+        if (e.keyCode === 13) {
+            e.preventDefault(); // 阻止默认行为
+            // getGCTJ(this);
+
+            console.log(this);
+
+            $(this).trigger('blur');
+        }
+    });
+    // $(document).on('blur', '.layui-form-select input', function() {
+    //  getGCTJ(this);
+    // });
+    $('.pressure').trigger('change');
+    $('.david_zk').on('click', function() {
+        if ($(this).html() == '展开<img src="/static/examination/images/david_xia.png">') {
+            $(this).html('收起<img src="/static/examination/images/david_shang.png">')
+            $(".david_span").css("display", "inline-flex");
+        } else {
+            $(this).html('展开<img src="/static/examination/images/david_xia.png">')
+            $(".david_span").css("display", "none");
+        }
+    })
+    $('.david_zk2').on('click', function() {
+        if ($(this).html() == '展开<img src="/static/examination/images/david_xia.png">') {
+            $(this).html('收起<img src="/static/examination/images/david_shang.png">')
+            $(".david_span2").css("display", "inline-flex");
+        } else {
+            $(this).html('展开<img src="/static/examination/images/david_xia.png">')
+            $(".david_span2").css("display", "none");
+        }
+    })
+    form.on('select(equip_type)', function(data) {
+        $('#tag_no').val($("#equip_type option:selected").text() + '顶部')
+    });
+
+    if($('[name="equip"]').length)
+    {
+        form.on('select(equip)', function(data) {
+            $('#tag_no').val($("#equip option:selected").text() + '顶部')
+        });
+    }
+    else
+    {
+        form.on('select(equip_type)', function(data) {
+            $('#tag_no').val($("#equip_type option:selected").text() + '顶部')
+        });
+    }
+
+    $('#set_press').on('change', function() {
+        let value = $(this).val();
+        // 1. 清除非法字符（保留数字和小数点）
+        value = value.replace(/[^\d.]/g, "");
+        // 2. 处理首字符为小数点的情况（自动补零）
+        if (value.startsWith('.')) value = "0" + value;
+        // 3. 处理多个小数点（只保留第一个）
+        value = value.replace(/\.+/g, (match, offset) => offset === value.indexOf('.') ? '.' : '');
+        // 4. 保障至少两位小数（核心逻辑）
+        if (value.includes('.')) {
+            const [intPart, decPart] = value.split('.');
+            // 关键修改：不再截断decPart，只对不足两位的补零
+            value = intPart + '.' + (decPart.length >= 2 ? decPart : decPart + '0'.repeat(2 - decPart.length));
+        } else if (value) {
+            value += ".00"; // 整数补充两位小数
+        }
+        $(this).val(value)
+        if (value <= 0.3) {
+            if(ceilToTwoDecimals(new Decimal(value ).minus(new Decimal(0.03)).toString()) <= 0 )
+            {
+                $('#tightness_press').val(0);
+            }
+            else
+            {
+                $('#tightness_press').val(ceilToTwoDecimals(new Decimal(value ).minus(new Decimal(0.03)).toString()));
+            }
+
+        } else {
+            $('#tightness_press').val(ceilToTwoDecimals(new Decimal(value ).times(new Decimal(0.9)).toString()));
+        }
+
+    })
+    form.on('change(set_press)', function(data) {
+        console.log(data)
+    });
+    $('button[type=reset]').on('click', function() {
+        layui.form.val('myFormFilter', {
+            equip_type: '',
+            working_media: '',
+            set_press: '',
+            working_press: '',
+            tag_no: '',
+            id_no: '',
+            design_press: '',
+            working_temp: '',
+            vavle_model: '',
+            manufacturer: '',
+            vavle_type: '弹簧式',
+            diameter_nominal: '',
+            license_no: '',
+            seat_size: '',
+            press_nominal: '',
+            press_class_range_min: '',
+            press_class_range_max: '',
+            manu_date: '',
+            manu_no: '',
+            tightness_press: '',
+            press_correction: '',
+            is_new: 2,
+        });
+        return false;
+    });
+    //自定义验证规则
+    form.verify({
+        required: function(value, item){ 
+            if(!value && $(item).is(':required'))
+            {
+                switch($(item).attr('name'))
+                {
+                    case 'equip_type': return '请选择设备类型';
+                    case 'equip': return '请选择设备名称';
+                    case 'working_media': return '请选择工作介质';
+                    case 'set_press': return '请输入要求整定压力MPa';
+                    case 'working_press': return '请输入工作压力MPa';
+                    case 'tag_no': return '请输入安装位置';
+                    case 'id_no': return '请输入设备代码';
+                    case 'design_press': return '请输入设计压力';
+                    case 'working_max_press': return '请输入最高允许工作压力';
+                    case 'working_temp': return '请输入工作温度';
+                    case 'vavle_model': return '请选择安全阀型号';
+                    case 'manufacturer': return '请选择制造单位';
+                    case 'license_no': return '请输入制造许可证号';
+                    case 'diameter_nominal': return '请输入公称通径';
+                    case 'seat_size': return '请输入流道直径';
+                    case 'press_nominal': return '请输入公称压力';
+                    case 'press_class_range_min': return '请输入最低压力';
+                    case 'press_class_range_max': return '请输入最高压力';
+                    case 'manu_date': return '请输入出厂日期';
+                    case 'manu_no': return '请输入出厂编号';
+                    case 'tightness_press': return '请输入密封试验压力';
+                    case 'press_correction': return '请输入背压修正';
+                }
+            }
+        }
+    });
+    form.render();
+    //监听提交
+    form.on('submit(add)', function(data) {
+        var _this = this;
+        if (flag) {
+            flag = false;
+            $.ajax({
+                url: '/examination/workorder/safetyvalve_action',
+                type: 'post',
+                data: data.field,
+                dataType: 'json',
+                success: function(data) {
+                    flag = true;
+                    if (data.code == 0) {
+                        //发异步，把数据提交给php
+                        var alert_index = layer.alert("成功", {
+                            icon: 6
+                        }, function() {
+
+                            parent.refresh();
+                            var index = parent.layer.getFrameIndex(window.name);
+                            if($(this).attr('data-continue') != 'true')
+                                parent.layer.close(index);
+
+                        });
+                    } else {
+                        layer.msg(data.message, {
+                            icon: 5,
+                            anim: 6
+                        });
+                    }
+                },
+                error: function(data) {
+                    flag = true;
+                    layer.msg(data.responseJSON.message, {
+                        icon: 5,
+                        anim: 6
+                    });
+                }
+            });
+        }
+        return false;
+    });
+});
+</script>
+</body>
+</html>

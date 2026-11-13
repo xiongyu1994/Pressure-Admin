@@ -1,0 +1,2428 @@
+<!DOCTYPE html>
+<html class="x-admin-sm">
+    
+<head>
+    <meta charset="UTF-8">
+    <title>检验管理</title>
+    <meta charset="UTF-8">
+<title>安全阀检验数字管理平台</title>
+<meta name="renderer" content="webkit">
+<meta http-equiv="X-UA-CoMPatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width,user-scalable=yes, minimum-scale=0.4, initial-scale=0.8,target-densitydpi=low-dpi" />
+<link rel="stylesheet" href="/static/examination/css/font.css">
+<link rel="stylesheet" href="/static/examination/css/xadmin.css?v=2.1">
+<!-- <link rel="stylesheet" href="./css/theme5.css"> -->
+<script src="/static/examination/lib/layui/layui.js?v=2.13.2" charset="utf-8"></script>
+<script type="text/javascript" src="/static/examination/js/xadmin.js?v=1"></script>
+<script type="text/javascript" src="/static/js/decimal.js"></script>
+<link crossorigin="" rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=1"/>
+
+<!-- 让IE8/9支持媒体查询，从而兼容栅格 -->
+        <!--[if lt IE 9]>
+          <script src="https://cdn.staticfile.org/html5shiv/r29/html5.min.js"></script>
+          <script src="https://cdn.staticfile.org/respond.js/1.4.2/respond.min.js"></script>
+        <![endif]-->
+<script>
+    // 是否开启刷新记忆tab功能
+    // var is_remember = false;
+</script>
+<style>
+    .print_weituodan .layui-layer-btn .layui-layer-btn2 {
+        border-color: #002f6e;
+        background-color: #002f6e;
+        color: #fff;
+    }
+    .layui-input-group {
+        width: 100%;
+    }
+    .layui-form-pane .layui-input-inline{
+        width: calc(100% - 220px);
+
+    }
+    .layui-form-pane .layui-inline {
+        width: 100%;
+        margin-bottom: 0;
+        margin-right: 0;
+        height: 28px;
+    }
+    .layui-form-pane .layui-form-item[pane] .layui-input-inline{
+        width: calc(50% - 16px);
+        margin-left: 0;
+    }
+    .layui-form-pane .layui-form-item[pane] .layui-input-inline:last-child{
+        margin-right: 0;
+    }
+    .layui-form-pane .layui-input-block{
+        min-height: 26px;
+    }
+    .layui-form-pane .layui-form-item[pane]{
+        margin-right: 0;
+        margin-bottom: 0;
+    }
+    .layui-form-pane .layui-form-item[pane] .layui-form-label{
+        height: 28px;
+    }
+    .layui-form-pane .layui-form-item[pane] .layui-input-inline .layui-input-group .layui-input{
+        border-top-width: 0px;
+        border-bottom-width: 0px;
+        height: 28px;
+    }
+    .layui-form-pane .layui-form-item[pane] .layui-input-inline .layui-input-group .layui-input-split{
+        border-top-width: 0px;
+        border-bottom-width: 0px;
+    }
+    .layui-form-pane .layui-form-item[pane] .layui-input-inline:last-child .layui-input-group .layui-input-split{
+        border-right-width: 0px;
+    }
+    .layui-form-mid {
+        line-height: 28px;
+        padding: 0 !important;
+    }
+</style>
+    <style type="text/css">
+        .layui-table-cell{height: 50px;line-height: 50px;
+    white-space: normal;text-align: center;}
+    </style>
+</head>
+
+<body>
+    <div class="x-nav">
+        <span class="layui-breadcrumb">
+            <a href="">首页</a>
+            <a href="">检验管理</a>
+            <a><cite>所有工单</cite></a>
+        </span>
+        <a class="layui-btn layui-btn-small" style="float:right" onclick="location.reload()" title="刷新">
+            <i class="layui-icon layui-icon-refresh"></i>
+        </a>
+    </div>
+    <div class="layui-fluid">
+        <div class="layui-row layui-col-space15">
+            <div class="layui-col-md12">
+                <div class="layui-card">
+                    <div class="layui-card-body ">
+                        <form class="layui-form layui-form-pane layui-row layui-col-space16">
+                            <div class="layui-col-sm3" >                       
+                                <label class="layui-form-label">委托单号</label>
+                                <div class="layui-input-block">
+                                    <input type="text" name="code" value="" id="code" placeholder="" autocomplete="off"  class="layui-input">
+                                </div>
+                            </div>
+                            <div class="layui-col-sm3">                           
+                                <label class="layui-form-label">检验编号</label>
+                                <div class="layui-input-block">
+                                    <input type="text" value="" name="order_code" placeholder="请输入检验编号" autocomplete="off" class="layui-input">
+                                </div>
+                            </div>
+                            <div class="layui-col-sm3">                           
+                                <label class="layui-form-label">使用单位</label>
+                                <div class="layui-input-block">
+                                    <select name="cust_id" id="cust_id" lay-search="" lay-filter="cust_id"  >
+                                        <option value="">全部</option>
+                                                                                <option value="4087" >武汉翼华</option>
+                                                                                <option value="4093" >471</option>
+                                                                                <option value="5080" >武穴国众兴合生物医药科技有限公司</option>
+                                                                                <option value="5546" >阳新县妇幼保健院</option>
+                                                                                <option value="6478" >湖北省泽泰婴童用品有限公司</option>
+                                                                                <option value="8612" >武汉远大弘元股份有限公司</option>
+                                                                                <option value="8625" >中国石油天然气股份有限公司湖北武汉销售分公司汉英高速南加油站</option>
+                                                                                <option value="8718" >武汉经发粮食物流产业投资有限公司</option>
+                                                                                <option value="8746" >爱普生技术（深圳）有限公司</option>
+                                                                                <option value="8930" >华润武钢总医院</option>
+                                                                                <option value="8935" >武汉欣久裕汽修汽配有限公司</option>
+                                                                                <option value="8940" >武汉市洁梦洗涤服务部</option>
+                                                                                <option value="9042" >广安市食品药品检验检测中心</option>
+                                                                                <option value="9044" >武汉麦朗医疗科技有限公司</option>
+                                                                                <option value="9053" >武汉龙程汽车零部件有限公司</option>
+                                                                                <option value="9065" >江西恒盛化工有限公司</option>
+                                                                                <option value="9097" >武汉普泰金属制造技术有限公司</option>
+                                                                                <option value="9099" >武汉华彩光电有限公司</option>
+                                                                                <option value="9176" >杭州华电华源环境工程有限公司武汉设备分公司</option>
+                                                                                <option value="9192" >武汉伊士曼有机化工有限公司</option>
+                                                                                <option value="9234" >上海日生威迩商务印刷有限公司</option>
+                                                                                <option value="9261" >远大医药制剂分公司</option>
+                                                                                <option value="9410" >远大医药黄石飞云制药有限公司</option>
+                                                                                <option value="9461" >武汉湘大词料有限公司</option>
+                                                                                <option value="9463" >武汉金佳润不锈钢有限公司</option>
+                                                                                <option value="9478" >武汉湘大饲料有限公司</option>
+                                                                                <option value="9531" >武汉市青山区茂华种养殖开发部</option>
+                                                                                <option value="9659" >天宇服装洗水厂</option>
+                                                                                <option value="9660" >武汉绚丽洗涤服务有限公司</option>
+                                                                                <option value="9689" >武汉澳华海油站管理服务有限公司冶金大道交通服务站</option>
+                                                                                <option value="9780" >武汉萨普科技股份有限公司</option>
+                                                                                <option value="9809" >武汉联德化学品有限公司</option>
+                                                                                <option value="9852" >湖北洁诚洗涤公司</option>
+                                                                                <option value="9857" >武汉市洁云洗涤公司</option>
+                                                                                <option value="9859" >武汉市安洁舒洗涤</option>
+                                                                                <option value="10006" >湖北饶商同一实业有限公司</option>
+                                                                                <option value="10090" >武汉盛鑫永腾洗涤有限公司</option>
+                                                                                <option value="10093" >武汉速洁优洗涤有限公司</option>
+                                                                                <option value="10096" >武汉得发永兴洗涤有限公司</option>
+                                                                                <option value="10141" >武汉南雁新材料科技有限公司</option>
+                                                                                <option value="10159" >中安佳通（咸宁）装备技术有限公司</option>
+                                                                                <option value="10379" >武汉源兴汽车配件有限公司</option>
+                                                                                <option value="10418" >武汉诚兴商贸有限公司</option>
+                                                                                <option value="10437" >江西</option>
+                                                                                <option value="10490" >武汉晟迪电力科技有限公司</option>
+                                                                                <option value="10491" >江西凌富生物科技有限公司</option>
+                                                                                <option value="10515" >武汉钢铁集团物流有限公司</option>
+                                                                                <option value="10555" >武汉善光恩智科技有限公司</option>
+                                                                                <option value="10564" >武汉硅铁钢铁制造有限公司</option>
+                                                                                <option value="10598" >武汉安必洁洗涤有限公司</option>
+                                                                                <option value="10624" >武汉雅凡新材料技术有限公司</option>
+                                                                                <option value="10647" >武汉大北农农牧发展有限公司</option>
+                                                                                <option value="10668" >武汉申广汽车零部件有限公司</option>
+                                                                                <option value="10729" >青川县疾病预防控制中心</option>
+                                                                                <option value="10748" >湖北一禾环保科技有限公司</option>
+                                                                                <option value="10784" >武汉博雅洁后勤服务有限公司</option>
+                                                                                <option value="10817" >武汉硅铁钢材制造有限公司</option>
+                                                                                <option value="10833" >襄阳巨鲸农牧有限公司</option>
+                                                                                <option value="10834" >武汉高斯美创新产业有限公司</option>
+                                                                                <option value="10945" >湖北金亿达建材有限公司</option>
+                                                                                <option value="10977" >武汉天易泽汽车服务有限公司</option>
+                                                                                <option value="11048" >武汉三源特种建材有限责任公司</option>
+                                                                                <option value="11062" >武汉勤易科技有限公司</option>
+                                                                                <option value="11066" >123</option>
+                                                                                <option value="11070" >武汉东方电热科技有限公司</option>
+                                                                                <option value="11082" >武汉东方洗涤公司</option>
+                                                                                <option value="11118" >中交二航武汉港湾新材料有限公司</option>
+                                                                                <option value="11147" >联合优选洗涤有限公司</option>
+                                                                                <option value="11150" >武汉联合优选洗涤有限公司</option>
+                                                                                <option value="11156" >武汉合越精密机械有限公司</option>
+                                                                                <option value="11180" >武汉百羽洗涤服务</option>
+                                                                                <option value="11191" >武汉泰雅洁洗涤有限公司</option>
+                                                                                <option value="11211" >蜂巢能源科技(大治)有限公司</option>
+                                                                                <option value="11248" >武汉市武昌区疾病预防控制中心（武汉市武昌区卫生监督所）</option>
+                                                                                <option value="11250" >武汉东风鸿泰汽车资源循环利用有限公司</option>
+                                                                                <option value="11257" >武汉三源特种建材有限责任公司西藏分公司</option>
+                                                                                <option value="11258" >武汉保发永兴洗涤有限公司</option>
+                                                                                <option value="11305" >东研智能装备科技（湖北）有限公司</option>
+                                                                                <option value="11352" >武汉澄净洗涤有限公司</option>
+                                                                                <option value="11353" >武汉好运佳洗涤公司</option>
+                                                                                <option value="11356" >武汉雅洁蓝洗涤公司</option>
+                                                                                <option value="11361" >武汉好顺佳洗涤公司</option>
+                                                                                <option value="11383" >湖北晟源食品有限公司</option>
+                                                                                <option value="11507" >武汉优力柯洗涤有限公司</option>
+                                                                                <option value="11533" >武汉恒美昕机电有限公司</option>
+                                                                                <option value="11534" >武汉丽森宁氏木业有限公司</option>
+                                                                                <option value="11605" >武汉市黄鹤塑料有限公司</option>
+                                                                                <option value="11615" >中铁电气化局集团有限公司</option>
+                                                                                <option value="12153" >莱纳斯智能装备（湖北）有限公司</option>
+                                                                                <option value="12298" >国药集团动物保健股份有限公司</option>
+                                                                                <option value="12432" >武汉钢铁有限公司炼铁厂</option>
+                                                                                <option value="12676" >湖北广沛水电建设工程有限公司</option>
+                                                                                <option value="12841" >中国葛洲坝集团股份有限公司</option>
+                                                                                <option value="12898" >武汉市鑫绿洲环保有限公司</option>
+                                                                                <option value="13396" >武汉砼辰建筑科技有限公司</option>
+                                                                                <option value="13505" >武汉华森塑胶有限公司</option>
+                                                                                <option value="13783" >武汉齐达康能源装备有限公司</option>
+                                                                                <option value="13784" >武汉市尚境玻璃有限公司</option>
+                                                                                <option value="14286" >武汉市千子山循环经济产业园</option>
+                                                                                <option value="14457" >武汉环投千子山环境产业有限公司</option>
+                                                                                <option value="14472" >黄石屏峰资源开发有限公司</option>
+                                                                                <option value="14918" >武汉昶傲电子科技有限公司</option>
+                                                                                <option value="14928" >乐平东豪气体有限公司</option>
+                                                                                <option value="15630" >武汉博奥天航电子有限公司</option>
+                                                                                <option value="15856" >武汉市天辰兴业投资有限公司</option>
+                                                                                <option value="16175" >湖北祥晨能源开发投资有限公司青化路加油站</option>
+                                                                                <option value="16746" >湖北荆楚药业有限公司</option>
+                                                                                <option value="16764" >长阳丹水润城新材料有限公司</option>
+                                                                                <option value="17289" >武汉顶益食品有限公司</option>
+                                                                                <option value="17294" >武汉乐祥包装新材料有限公司</option>
+                                                                                <option value="17738" >武汉国盟物流有限公司</option>
+                                                                                <option value="17937" >武汉普生制药有限公司</option>
+                                                                                <option value="17990" >武汉中车长客轨道车辆有限公司</option>
+                                                                                <option value="18194" >武汉祺佳包装制品有限公司</option>
+                                                                                <option value="18523" >武汉红桥林食品有限公司</option>
+                                                                                <option value="18855" >武汉宏海科技股份有限公司</option>
+                                                                                <option value="18917" >湖北远大生命科学与技术有限责任公司</option>
+                                                                                <option value="18921" >江西宏柏新材料股份有限公司</option>
+                                                                                <option value="18983" >武汉俱源科技有限公司</option>
+                                                                                <option value="19121" >北京市政路桥有限公司</option>
+                                                                                <option value="19192" >武汉辰曦峰玲科技有限公司</option>
+                                                                                <option value="19194" >武汉宝聚碳材料有限公司</option>
+                                                                                <option value="19204" >湖北华特专用设备有限公司</option>
+                                                                                <option value="19208" >武汉宝聚炭材料有限公司</option>
+                                                                                <option value="19479" >中国石油天然气股份有限公司湖北黄石销售分公司大冶市昌鑫加油站</option>
+                                                                                <option value="19490" >中国石油天然气股份有限公司湖北恩施销售分公司恩施市赵家坝加油站</option>
+                                                                                <option value="19494" >中国石油天然气股份有限公司湖北销售分公司大冶金牛加油站</option>
+                                                                                <option value="19500" >中国石油天然气股份有限公司湖北鄂州销售分公司梧桐湖加油二站</option>
+                                                                                <option value="19950" >中国商用飞机有限责任公司上海飞机设计研究院</option>
+                                                                                <option value="20423" >黄冈漓源饲料有限公司</option>
+                                                                                <option value="20628" >武汉三镇实业控股股份有限公司</option>
+                                                                                <option value="20841" >武汉动车段</option>
+                                                                                <option value="20914" >武汉博达石化工程公司 </option>
+                                                                                <option value="21966" >宜昌云邦商品砼有限公司</option>
+                                                                                <option value="22133" >武汉优利柯洗涤有限公司</option>
+                                                                                <option value="22141" >武汉乐君晨清洁服务有限公司</option>
+                                                                                <option value="22253" >武汉轻工大学</option>
+                                                                                <option value="22489" >武汉锋宇包装材料有限公司</option>
+                                                                                <option value="22614" >武汉市新洲区伊曼洁洗涤服务部</option>
+                                                                                <option value="22615" >武汉市慧洁洗涤公司</option>
+                                                                                <option value="22696" >河北首衡商业管理有限公司孝感分公司</option>
+                                                                                <option value="22974" >四川森联能源发展有限公司</option>
+                                                                                <option value="23178" >武汉慧鹏智能洗涤有限公司</option>
+                                                                                <option value="23179" >武汉市青山区鹏盛洁洗涤经营部</option>
+                                                                                <option value="23197" >汉川市新堰镇经济根发液化气站</option>
+                                                                                <option value="23204" >汉川市汉能燃气新堰灌装站</option>
+                                                                                <option value="23245" >湖北顺安检测有限公司</option>
+                                                                                <option value="23304" >湖北顺安气瓶检测有限公司</option>
+                                                                                <option value="23583" >黄冈华亿新材料有限公司</option>
+                                                                                <option value="23603" >湖北艾特包装有限公司</option>
+                                                                                <option value="23861" >湖北东霖新材料有限公司</option>
+                                                                                <option value="24243" >武汉开元翼唐焊接装备技术有限公司</option>
+                                                                                <option value="24256" >安陆市妇幼保健院</option>
+                                                                                <option value="24258" >武汉开元冀唐焊接装备技术有限公司</option>
+                                                                                <option value="24302" >湖北科技计量检测有限公司</option>
+                                                                                <option value="24304" >湖北科航计量检测有限公司</option>
+                                                                                <option value="24488" >洪湖市宏昆建材有限公司</option>
+                                                                                <option value="25111" >武汉竣宏科技有限公司</option>
+                                                                                <option value="25126" >大同职业技术学院</option>
+                                                                                <option value="25153" >湖北富思特材料科技集团有限公司</option>
+                                                                                <option value="25157" >湖北蓝盾之星科技有限公司</option>
+                                                                                <option value="25162" >汉川市汉兴燃气有限公司马口五福灌装站</option>
+                                                                                <option value="25711" >武汉夏迪汽车销售服务有限公司</option>
+                                                                                <option value="26242" >湖北新巨盾消防科技有限公司</option>
+                                                                                <option value="26365" >山西省大同市职业技术学院</option>
+                                                                                <option value="26385" >达州市鹏源燃气有限责任公司</option>
+                                                                                <option value="27537" >兴山昆仑燃气有限公司古夫镇液化天然气站		</option>
+                                                                                <option value="27540" >中石化荆门销售公司京山四岭加气站</option>
+                                                                                <option value="27608" >大同煤炭职业技术学院</option>
+                                                                                <option value="27756" >鄱阳县华喜气体充装有限公司</option>
+                                                                                <option value="27866" >罗田广惠化工有限责任公司 </option>
+                                                                                <option value="27889" >武汉晟丰洁洗涤服务部</option>
+                                                                                <option value="28028" >长江存储科技有限责任公司</option>
+                                                                                <option value="28088" >湖北豪丰农业装备有限公司</option>
+                                                                                <option value="28292" >武汉艾凯瑞精密模具有限公司</option>
+                                                                                <option value="28345" >脆香香食品有限公司</option>
+                                                                                <option value="29290" >武汉汉星环保工程技术有限公司</option>
+                                                                                <option value="29599" >武钢有限炼铁厂</option>
+                                                                                <option value="30139" >湖北鑫坤再生资源有限公司</option>
+                                                                                <option value="30144" >湖北鸭圣食品有限公司</option>
+                                                                                <option value="30579" >武汉思力博轨道装备有限公司</option>
+                                                                                <option value="30698" >武汉隆星渊智能科技有限公司</option>
+                                                                                <option value="30701" >武汉舜鑫泽磨具热处理有限公司</option>
+                                                                                <option value="30708" >武汉正和瑞达科技有限公司</option>
+                                                                                <option value="31507" >黄石鑫福摩擦材料有限公司</option>
+                                                                                <option value="31706" >武汉舜鑫泽模具热处理有限公司</option>
+                                                                                <option value="32229" >江苏方正安装工程有限公司</option>
+                                                                                <option value="32260" >武汉鑫天兴包装制品有限公司</option>
+                                                                                <option value="32455" >长河蛙基（湖北）建筑科技有限公司</option>
+                                                                                <option value="32458" >长河硅基（湖北）建筑科技有限公司</option>
+                                                                                <option value="33100" >北湖污水处理厂</option>
+                                                                                <option value="33454" >湖北恒鹏物流有限公司</option>
+                                                                                <option value="33618" >武汉市精工密封件有限公司</option>
+                                                                                <option value="33997" >天门市第一人民医院竟陵院区</option>
+                                                                                <option value="34072" >普泰(洪湖市)汽车部件有限公司 </option>
+                                                                                <option value="34576" >湖北泓肽生物科技有限公司</option>
+                                                                                <option value="34591" >潜江华润燃气有限公司</option>
+                                                                                <option value="34627" >湖北星汉飞宏新材料科技有限公 司</option>
+                                                                                <option value="34896" >武汉化学工业区保源胜苍服装辅料加工厂</option>
+                                                                                <option value="34900" >武汉鸿锦优洗洗涤有限公司</option>
+                                                                                <option value="35057" >液化空气(武汉)电子气体有限公司</option>
+                                                                                <option value="35166" >应城新景科技有限公司</option>
+                                                                                <option value="35179" >湖北恒阳化工储运有限公司</option>
+                                                                                <option value="35911" >中氢绿能湖北科技有限公司</option>
+                                                                                <option value="36187" >赤壁市凯迪电厂</option>
+                                                                                <option value="36221" >湖北鼎乾科技有限公司</option>
+                                                                                <option value="36286" >公安县兴成燃气有限公司</option>
+                                                                                <option value="36493" >武汉嘉熠锻造有限责任公司</option>
+                                                                                <option value="36496" >武汉保源胜仓洗涤有限公司</option>
+                                                                                <option value="36710" >武汉星丽洁洗涤有限公司</option>
+                                                                                <option value="36935" >武汉宏盛达科技有限公司</option>
+                                                                                <option value="36984" >松滋市凯迪阳光生物能源开发有限公司</option>
+                                                                                <option value="37028" >无锡智能自控工程股份有限公司</option>
+                                                                                <option value="37148" >濮阳百川逢源节能科技有限公司</option>
+                                                                                <option value="37369" >北京清能创新科技有限公司</option>
+                                                                                <option value="37892" >武汉华利浦防腐工程有限公司</option>
+                                                                                <option value="38582" >武汉驰达动力科技有限公司</option>
+                                                                                <option value="38862" >湖北星汉飞宏新材料科技有限公</option>
+                                                                                <option value="38864" >湖北星汉飞宏新材料科技有限公司</option>
+                                                                            </select>
+                                </div>
+                            </div>
+
+                            <div class="layui-col-sm3">                           
+                                <label class="layui-form-label">使用单位</label>
+                                <div class="layui-input-block">
+                                    <input type="text" value="" name="cust_name" placeholder="请输入使用单位" autocomplete="off" class="layui-input">
+                                </div>
+                            </div>
+                            <div class="layui-col-sm3">                           
+                                <label class="layui-form-label">检验状态</label>
+                                <div class="layui-input-block">
+                                    <select name="test_status" id="test_status" lay-search="" lay-filter="test_status"  >
+                                        <option value="">全部</option>
+                                                                                <option value="0" {if $Think.get.test_status==$key ? 'selected' : '' }>待检验</option>
+                                                                                <option value="1" {if $Think.get.test_status==$key ? 'selected' : '' }>合格</option>
+                                                                                <option value="2" {if $Think.get.test_status==$key ? 'selected' : '' }>不合格</option>
+                                                                            </select>
+                                </div>
+                            </div>
+                            <div class="layui-col-sm3">                           
+                                <label class="layui-form-label">出厂编号</label>
+                                <div class="layui-input-block">
+                                    <input type="text" value="" name="manu_no" placeholder="请输入出厂编号" autocomplete="off" class="layui-input">
+                                </div>
+                            </div>
+                            <div class="layui-col-sm3">                           
+                                <label class="layui-form-label">委托单位</label>
+                                <div class="layui-input-block">
+                                    <input type="text" name="applicant" value="" id="applicant" placeholder="委托单位" autocomplete="off"  class="layui-input">
+                                </div>
+                            </div>
+                            <div class="layui-col-sm4 " >
+                                <div class="layui-form-item" pane>
+                                    <label class="layui-form-label">委托日期</label>
+                             <!--        <div class="layui-input-block">
+                                        <input type="text" name="create_time" value="" id="create_time" placeholder="" autocomplete="off"  class="layui-input">
+                                    </div> -->
+                                    <div class="layui-input-block" id="create_time">
+
+                                        <div class="layui-input-inline">
+                                            <div class="layui-input-group">
+                                                <input type="text" id="create_time_start" name="create_time_start" value="" placeholder="开始日期" autocomplete="off" class="layui-input pressure">
+                                                <div class="layui-input-split layui-input-suffix">
+                                                    <i class="layui-icon layui-icon-date"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="layui-form-mid">至</div>
+                                        <div class="layui-input-inline">
+                                            <div class="layui-input-group">
+                                                <input type="text" id="create_time_end" name="create_time_end" value="" placeholder="结束日期" autocomplete="off" class="layui-input pressure">
+                                                <div class="layui-input-split layui-input-suffix">
+                                                    <i class="layui-icon layui-icon-date"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <script>
+                                    layui.use('laydate', function() {
+                                        var laydate = layui.laydate;
+
+                                        laydate.render({
+                                            elem: '#create_time',
+                                            range: ['#create_time_start', '#create_time_end'],
+                                            rangeLinked: true // 开启日期范围选择时的区间联动标注模式 ---  2.8+ 新增
+                                        });
+                                    });
+                                </script> 
+                            </div>
+                            <div class="layui-col-sm4 " >
+                                <div class="layui-form-item" pane>
+                                    <label class="layui-form-label">校验日期</label>
+                             <!--        <div class="layui-input-block">
+                                        <input type="text" name="create_time" value="" id="create_time" placeholder="" autocomplete="off"  class="layui-input">
+                                    </div> -->
+                                    <div class="layui-input-block" id="inspector_time">
+
+                                        <div class="layui-input-inline">
+                                            <div class="layui-input-group">
+                                                <input type="text" id="inspector_time_start" name="inspector_time_start" value="" placeholder="开始日期" autocomplete="off" class="layui-input pressure">
+                                                <div class="layui-input-split layui-input-suffix">
+                                                    <i class="layui-icon layui-icon-date"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="layui-form-mid">至</div>
+                                        <div class="layui-input-inline">
+                                            <div class="layui-input-group">
+                                                <input type="text" id="inspector_time_end" name="inspector_time_end" value="" placeholder="结束日期" autocomplete="off" class="layui-input pressure">
+                                                <div class="layui-input-split layui-input-suffix">
+                                                    <i class="layui-icon layui-icon-date"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <script>
+                                    layui.use('laydate', function() {
+                                        var laydate = layui.laydate;
+
+                                        laydate.render({
+                                            elem: '#inspector_time',
+                                            range: ['#inspector_time_start', '#inspector_time_end'],
+                                            rangeLinked: true // 开启日期范围选择时的区间联动标注模式 ---  2.8+ 新增
+                                        });
+                                    });
+                                </script> 
+                            </div>  
+                            <div class="layui-btn-container layui-col-sm2" style="float: right;">
+                                <button class="layui-btn" lay-submit="" lay-filter="sreach"><i class="layui-icon" style="margin-right: 6px">&#xe615;</i>查询</button>
+                                <button type="reset" class="layui-btn layui-btn-primary" onclick="refresh();"><i class="iconfont left-nav-li" style="margin-right: 6px;font-size: 12px;">&#xe6aa;</i>重置</button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    
+                    <div class="layui-card-body" style="padding-top: 0;padding-bottom: 1px;">
+                        <table class="layui-table" id="dataTable" lay-filter="test"></table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+<a href="" id="xiazai" download="" style="display: none;"></a>
+<!--表格上方的操作按钮-->
+<script type="text/html" id="toolbarDemo">
+     <div class="layui-btn-container"> 
+        <!--  -->
+        <button class="layui-btn layui-btn-warm david_pldyxybg" lay-event = "sj_all_baogao">
+          批量打印校验报告
+        </button > 
+        <!--  -->
+        <!--  -->
+        <button class = "layui-btn layui-btn-warm david_pldyxyjl" lay-event = "sj_all_jilu">
+          批量打印校验记录
+        </button>
+        <!--  -->
+        <!--  -->
+        <!--  -->
+        <!--  -->
+        <button class = "layui-btn layui-btn-warm david_dytz" lay-event = "sj_all_taizhang">
+          打印台账
+        </button>
+        <!--  -->
+        <!--  -->
+        <button class="layui-btn layui-btn-warm david_dctxt" lay-event="sj_all_dabiao">
+          导出打标记录-txt
+        </button > 
+        <button class="layui-btn layui-btn-warm david_dctxt " lay-event="sj_all_dabiao_tcp" style="display:none">
+              一键打标
+        </button> 
+        <!--  -->
+        已选中 <span id="selectedCount" style="color:#1E9FFF;font-weight:bold;">0</span> 条数据
+    </div>
+</script>
+
+<script type="text/html" id="erweima">
+   <img src="{{d.order_qr_code}}" style="width: 50px;height: 50px;">
+</script>
+
+<script type="text/html" id="operationBar">
+    <!--  -->
+        <a class="layui-btn layui-btn-mini david_kbut" lay-event="info" onclick="xadmin.open('查看','./see_safetyvalve.html?id={{d.id}}',850)">查看</a>
+    <!--  -->
+    <!--  -->
+        <a class="layui-btn layui-btn-mini david_baogo" lay-event="dayinbaogao" >校验报告</a>
+    <!--  -->
+    <!--  -->
+        <a class="layui-btn layui-btn-mini david_jilu" lay-event="dayinjilu" >校验记录</a>
+    <!--  -->
+        <a class="layui-btn layui-btn-mini david_kbut" lay-event="more"><i class="layui-icon layui-icon-down"></i></a>
+</script>
+
+<script type="text/html" id="switchTpl">
+    <!-- 这里的checked的状态只是演示 -->
+    <input type = "checkbox" name = "sex" value = "{{d.id}}" lay-skin = "switch"lay-text = "女|男" lay-filter = "sexDemo" {{ d.id == 10003 ? 'checked': ''}} >
+</script>
+
+<script>
+function refresh() {
+    location.href = "/examination/workorder/all_workorder.html?status=6";
+}
+layui.use('laydate',
+function() {
+    var laydate = layui.laydate;
+
+    //执行一个laydate实例
+    laydate.render({
+        elem: '#start_time' //指定元素
+    });
+
+    //执行一个laydate实例
+    laydate.render({
+        elem: '#end_time' //指定元素
+    });
+
+});
+
+var LaserMarkingMachineSocket = null;
+var LaserMarkingMachineSocket_online = false;
+function LaserMarkingMachineServer() {
+
+
+    LaserMarkingMachineSocket = new WebSocket("ws://127.0.0.1:9301");
+    // console.log("尝试连接...");
+    LaserMarkingMachineSocket.onopen = function() {
+        // console.log("连接成功...");
+        LaserMarkingMachineSocket_online = true;
+
+        $('[lay-event="sj_all_dabiao_tcp"]').show();
+
+
+    };
+    LaserMarkingMachineSocket.onmessage = function(e) {
+        // console.log(e,'e');
+
+        var result = $.parseJSON(e.data); 
+        // console.log(result,'result');
+
+        
+        
+    };
+    LaserMarkingMachineSocket.onclose = function() {
+        LaserMarkingMachineSocket_online = false;
+        // console.log("关闭连接...");
+        setTimeout(LaserMarkingMachineServer,1000)
+    };
+}
+LaserMarkingMachineServer();
+
+var socket = null;
+var socket_online  = false;
+
+function batchPrintingServer() {
+    socket = new WebSocket("ws://127.0.0.1:9898");
+    // console.log("尝试连接...");
+    socket.onopen = function() {
+        // console.log("连接成功...");
+        socket_online = true;
+    };
+    socket.onmessage = function(e) {
+        // console.log(e,'e');
+
+        var result = $.parseJSON(e.data); 
+        // console.log(result,'result');
+
+        
+        
+    };
+    socket.onclose = function() {
+        socket_online = false;
+        // console.log("关闭连接...");
+        setTimeout(batchPrintingServer,1000)
+    };
+}
+batchPrintingServer();
+
+function isBase64(str) {
+    if (typeof str !== 'string' || str.length === 0) return false;
+    try {
+        return btoa(atob(str)) === str;
+    } catch (e) {
+        return false;
+    }
+}
+
+var tableWhere = {
+    status : 6,
+    code : '',
+    order_code : '',
+    cust_id : '',
+    cust_name : '',
+    manu_no : '',
+    applicant : '',
+    create_time_start : '',
+    create_time_end : '',
+    inspector_time_start : '',
+    inspector_time_end : '',
+    test_status : '',
+    
+
+};
+
+layui.use(['table','layer', 'element','dropdown'], function() {
+    var table = layui.table;
+    var dropdown = layui.dropdown;
+    table.render({
+        url: "/examination/workorder/get_workorder_list",
+        where:tableWhere,
+        elem:'#dataTable',
+        defaultToolbar: ['filter'],
+        page: true,
+        toolbar: '#toolbarDemo',
+        id: 'dataTable',
+        limits: [15, 30, 60, 100 , 200 , 500 , 1000 , 2000],
+        limit: 500,
+        title: '工单列表',
+        autoSort:false,
+        height:640,
+        cols:[function (){
+            var cols = [
+                //表头
+                {toolbar: '#operationBar',width:298,fixed: 'left',align:'left', title:'操作'},
+                {type:'checkbox',fixed: 'left',width:80, align:'center', title:'复选'},
+                {field:'status_name',fixed: 'left', minWidth:100, align:'center', title:'状态'},
+                /**/
+                {field:'id_no', minWidth:150, align:'center', title:'设备代码', fixed: 'left'},
+                {field:'order_code', fixed: 'left',minWidth:120, title:'检验编号',sort:true},
+                {field:'set_press', minWidth:120, align:'center', title:'要求整定压力MPa', hide:true,sort:true},
+                {field:'inspector', minWidth:66,title:'校验人'},
+                {field:'inspector_time', minWidth:150,title:'校验时间',sort:true},
+                {field:'update_time', minWidth:80,title:'状态时间',sort:true},
+                {field:'code', minWidth:80,title:'委托单号',sort:true},
+                {field:'manu_no', minWidth:120,title:'出厂编号',sort:true},
+                {field:'cust_name', minWidth:150,title:'使用单位'},
+                {field:'client', minWidth:150,title:'使用单位联系人', templet : function(row){
+                    if(row.device_contacts) return row.device_contacts
+                    return row.client;
+                }},
+                {field:'client_tel',minWidth:120,title:'使用单位联系电话'},
+                {field:'equip_type', minWidth:80, align:'center', title:'设备类型', hide:true},
+                {field:'tightness_press', minWidth:120, align:'center', title:'密封试验压力MPa', hide:true,sort:true},
+                {field:'tag_no', minWidth:100, align:'center', title:'安装位置', hide:true},
+                {field:'vavle_model', minWidth:120, align:'center', title:'安全阀型号', hide:true},
+                {field:'manufacturer', minWidth:120, align:'center', title:'制造单位', hide:true},
+                {field:'license_no', minWidth:120, align:'center', title:'制造许可证号', hide:true},
+                {field:'manu_no', minWidth:120, align:'center', title:'出厂编号', hide:true},
+                {field:'working_media', minWidth:120, align:'center', title:'工作介质', hide:true},
+                {field:'diameter_nominal', width:50, align:'center', title:'公称通径mm', hide:true},
+                {field:'seat_size', width:50, align:'center', title:'流道直径mm', hide:true},
+                {field:'press_nominal', width:50, align:'center', title:'公称压力MPa', hide:true},
+                {field:'working_press', width:50, align:'center', title:'工作压力MPa', hide:true},
+                {field:'vavle_type', width:50, align:'center', title:'安全阀类型', hide:true},
+
+
+                {field:'manu_date', width:50, align:'center', title:'出厂日期', hide:true,sort:true},
+                {field:'press_class_range', width:110, align:'center', title:'压力级别范围MPa', hide:true,templet : function(row){
+                    return row.press_class_range_min + ' - ' + row.press_class_range_max
+                }
+                },
+                {field:'protected_equip_type', width:120, align:'center', title:'被保护设备种类', hide:true},
+
+
+            ];
+            var local = layui.data('table-all_workorder'); // 获取对应的本地记录
+            layui.each(cols, function(index, item) {
+                if (item.field in local) {
+                    item.hide = local[item.field];
+                }
+            });
+            return cols;
+        }()],
+        done: function() {
+            updateSelectedCount();
+            // 记录筛选状态
+            var that = this;
+            that.elem.next().on('mousedown', 'input[lay-filter="LAY_TABLE_TOOL_COLS"]+', function() {
+                var input = $(this).prev()[0];
+                // 此处表名可任意定义
+                layui.data('table-all_workorder', {
+                    key: input.name,
+                    value: input.checked
+                })
+            });
+        }
+    });
+
+    var nowTableName = 'all_workorder';
+
+    table.on('sort(test)', function(obj){
+        var orderName = 's.' + obj.field;
+
+        switch(obj.field) {
+            case 'status_name':
+                orderName = 's.status';
+                break;
+            case 'order_code':
+                orderName = 'orderbysn'
+                break;
+        }
+
+        layui.data('table_orderby',  {
+            key: nowTableName,
+            value: {
+                orderby : orderName + ' ' + obj.type,
+                field: obj.field,
+                type: obj.type
+            }
+        });
+        console.log(obj);
+        table.reload('dataTable', {
+            initSort: obj, // 记录初始排序，如果不设的话，将无法标记表头的排序状态。
+            where: $.extend(true,tableWhere,{
+                orderby : orderName + ' ' + obj.type
+            })
+        });
+    });
+    var local_orderby = layui.data('table_orderby')
+    if(local_orderby[nowTableName])
+    {
+        table.reload('dataTable', {
+            initSort: local_orderby[nowTableName], // 记录初始排序，如果不设的话，将无法标记表头的排序状态。
+            where: $.extend(true,tableWhere,{
+                orderby : local_orderby[nowTableName]['orderby']
+            })
+        });
+    }
+
+    function event_sj_all_baogao(obj)
+    {
+        var table = layui.table;
+        var checkStatus = table.checkStatus(obj.config.id),
+            data = checkStatus.data;
+        var ids = "";
+        let fu = 1;
+        for (var i = 0; i < data.length; i++) {
+            if (checkStatus.data[i].fufei == 2) {
+                fu = 2;
+            }
+            ids += checkStatus.data[i].id + ',';
+        }
+        if (data.length === 0) {
+            layer.msg('请最少选择一行', {
+                icon: 5,
+                anim: 6
+            });
+            return
+        }
+        /**/
+        if (fu == 2) {
+            layer.open({
+                title: '提示',
+                content: '选中的报告有未付费的'
+            });
+            return
+        }
+        /**/
+                    
+        layer.open({
+            title:'确认要打印吗？',
+            type: 1,
+            area: [ '250px', '160px'], // 宽高
+            content: '<form class="layui-form layui-row " lay-filter="sj_all_baogao_view" style="padding: 11px 0 0;">\
+                        <div class="layui-form-item" style="margin-bottom:0">\
+                            <label class="layui-form-label">可选项</label>\
+                            <div class="layui-input-block">\
+                                <input type="checkbox" name="no_chapter" value="1" title="无章">\
+                                <input type="checkbox" name="cover" value="1" title="封面">\
+                            </div>\
+                        </div>\
+                    </form>',
+             btn: ['打印', '下载'],
+            success: function(layero, index, that){
+                layui.form.render(null, 'sj_all_baogao_view');
+            },
+            btn1: function(index, layero, that){
+                // console.log(layui.form.val( 'sj_all_baogao_view'));
+
+                var sj_all_baogao_view_data = layui.form.val( 'sj_all_baogao_view');
+
+
+                if(socket_online)
+                {
+                    var show = layer.open({
+                        type: 1, // page 层类型
+                        title: false,
+                        shadeClose: true,
+                        area: ['320px', '90px'],
+                        shade: 0.6, // 遮罩透明度
+                        anim: 0, // 0-6 的动画形式，-1 不开启
+                        icon: -1,
+                        closeBtn:0,
+                        content: '<div class="layui-card">\
+                            <div class="layui-card-header">文件下载进度</div>\
+                            <div class="layui-card-body">\
+                                <div class="layui-progress layui-progress-big" lay-showpercent="true" lay-filter="demo-filter-progress">\
+                                    <div class="layui-progress-bar" lay-percent="5 / 10"></div>\
+                                </div>\
+                            </div>\
+                        </div>',
+                        success: function (layero, index) {
+                            element.render('progress', 'demo-filter-progress');
+                            var success_count = 0;
+                            element.progress('demo-filter-progress', success_count + '/' + checkStatus.data.length);
+                            for (var i = 0; i < checkStatus.data.length; i++)
+                            {
+                                $.ajax({
+                                    url: '/examination/workorder/workorder_baogao_piliang',
+                                    type: 'post',
+                                    data: {
+                                        "id": checkStatus.data[i].id,
+                                        'socket_online' : socket_online,
+                                        'print' : true,
+                                        'is_chapter' : sj_all_baogao_view_data.no_chapter ? false : true,
+                                        'cover' : sj_all_baogao_view_data.cover ? true : false
+                                    },
+                                    dataType: 'json',
+                                    success: function(data) {
+                                        success_count++;
+                                        if (data.code == 0) {
+                                            element.progress('demo-filter-progress', success_count + '/' + checkStatus.data.length);
+                                            socket.send(JSON.stringify(data.data));
+                                            if(success_count == checkStatus.data.length)
+                                            {
+
+                                                 layer.msg('成功', {
+                                                    icon: 1,
+                                                    anim: 6
+                                                });
+                                                layer.close(show);
+                                            }
+
+                                        } else {
+                                            return layer.msg(data.message, {
+                                                icon: 5,
+                                                anim: 6
+                                            });
+                                        }
+                                    },
+                                    error: function(data) {
+                                        layer.msg(data.responseJSON.message, {
+                                            icon: 5,
+                                            anim: 6
+                                        });
+                                    }
+                                });
+                            }
+
+
+                        }
+                    });
+                }
+                else
+                {
+                    var loading = layer.load(2,{shade :0.8});
+                    //发异步删除数据
+                    $.ajax({
+                        url: '/examination/workorder/workorder_baogao_piliang',
+                        type: 'post',
+                        data: {
+                            "id": ids,
+                            'socket_online' : socket_online,
+                            'print' : true,
+                            'is_chapter' : sj_all_baogao_view_data.no_chapter ? false : true,
+                            'cover' : sj_all_baogao_view_data.cover ? true : false
+                        },
+                        dataType: 'json',
+                        success: function(data) {
+                            layer.close(loading);
+                            console.log(data)
+                            if (data.code == 0) {
+                                if(socket_online)
+                                {
+                                    socket.send(JSON.stringify(data.data));
+                                    layer.msg('成功', {
+                                        icon: 1,
+                                        anim: 6
+                                    });
+                                    return false;
+                                }
+                                
+
+
+                                window.open(data.data.pdf);
+                                layer.close(index);
+                                return layer.msg('成功', {
+                                    icon: 1,
+                                    anim: 6
+                                });
+                            } else {
+                                return layer.msg(data.message, {
+                                    icon: 5,
+                                    anim: 6
+                                });
+                            }
+                        },
+                        error: function(data) {
+                            layer.msg(data.responseJSON.message, {
+                                icon: 5,
+                                anim: 6
+                            });
+                        }
+                    });
+                }
+            },
+            btn2: function(index, layero, that){
+                var sj_all_baogao_view_data = layui.form.val( 'sj_all_baogao_view');
+                if(socket_online)
+                {
+                    var show = layer.open({
+                        type: 1, // page 层类型
+                        title: false,
+                        shadeClose: true,
+                        area: ['320px', '90px'],
+                        shade: 0.6, // 遮罩透明度
+                        anim: 0, // 0-6 的动画形式，-1 不开启
+                        icon: -1,
+                        closeBtn:0,
+                        content: '<div class="layui-card">\
+                            <div class="layui-card-header">文件下载进度</div>\
+                            <div class="layui-card-body">\
+                                <div class="layui-progress layui-progress-big" lay-showpercent="true" lay-filter="demo-filter-progress">\
+                                    <div class="layui-progress-bar" lay-percent="5 / 10"></div>\
+                                </div>\
+                            </div>\
+                        </div>',
+                        success: function (layero, index) {
+                            element.render('progress', 'demo-filter-progress');
+                            var success_count = 0;
+                            element.progress('demo-filter-progress', success_count + '/' + checkStatus.data.length);
+                            for (var i = 0; i < checkStatus.data.length; i++)
+                            {
+                                $.ajax({
+                                    url: '/examination/workorder/workorder_baogao_piliang',
+                                    type: 'post',
+                                    data: {
+                                        "id": checkStatus.data[i].id,
+                                        'socket_online' : socket_online,
+                                        'print' : false,
+                                        'is_chapter' : sj_all_baogao_view_data.no_chapter ? false : true,
+                                        'cover' : sj_all_baogao_view_data.cover ? true : false
+                                    },
+                                    dataType: 'json',
+                                    success: function(data) {
+                                        success_count++;
+                                        if (data.code == 0) {
+                                            element.progress('demo-filter-progress', success_count + '/' + checkStatus.data.length);
+                                            socket.send(JSON.stringify(data.data));
+                                            if(success_count == checkStatus.data.length)
+                                            {
+
+                                                layer.msg('查看本机对应文件夹', {
+                                                    icon: 1,
+                                                    anim: 6
+                                                });
+                                                layer.close(show);
+                                            }
+
+                                        } else {
+                                            return layer.msg(data.message, {
+                                                icon: 5,
+                                                anim: 6
+                                            });
+                                        }
+                                    },
+                                    error: function(data) {
+                                        layer.msg(data.responseJSON.message, {
+                                            icon: 5,
+                                            anim: 6
+                                        });
+                                    }
+                                });
+                            }
+
+
+                        }
+                    });
+                }
+                else
+                {
+                    var loading = layer.load(2,{shade :0.8});
+                    //发异步删除数据
+                    $.ajax({
+                        url: '/examination/workorder/workorder_baogao_piliang',
+                        type: 'post',
+                        data: {
+                            "id": ids,
+                            'socket_online' : socket_online,
+                            'print' : false,
+                            'is_chapter' : sj_all_baogao_view_data.no_chapter ? false : true,
+                            'cover' : sj_all_baogao_view_data.cover ? true : false
+                        },
+                        dataType: 'json',
+                        success: function(data) {
+                            layer.close(loading);
+                            console.log(data)
+                            if (data.code == 0) {
+
+                                if(socket_online)
+                                {
+                                    socket.send(JSON.stringify(data.data));
+                                    layer.msg('查看本机对应文件夹', {
+                                        icon: 1,
+                                        anim: 6
+                                    });
+                                    return false;
+                                }
+
+                                $('#xiazai').attr('href', data.data.url);
+                                $('#xiazai').attr('download', data.data.name);
+                                $('#xiazai')[0].click();
+                                layer.close(index);
+                                return layer.msg('成功', {
+                                    icon: 1,
+                                    anim: 6
+                                });
+                            } else {
+                                return layer.msg(data.message, {
+                                    icon: 5,
+                                    anim: 6
+                                });
+                            }
+                        },
+                        error: function(data) {
+                            layer.msg(data.responseJSON.message, {
+                                icon: 5,
+                                anim: 6
+                            });
+                        }
+                    });
+                }
+            }
+        });
+    }
+
+    function event_sj_all_jilu(obj)
+    {
+        var table = layui.table;
+        var checkStatus = table.checkStatus(obj.config.id),
+            data = checkStatus.data;
+        var ids = "";
+        let fu = 1;
+        for (var i = 0; i < data.length; i++) {
+            if (checkStatus.data[i].fufei == 2) {
+                fu = 2;
+            }
+            ids += checkStatus.data[i].id + ',';
+        }
+        if (data.length === 0) {
+            layer.msg('请最少选择一行', {
+                icon: 5,
+                anim: 6
+            });
+            return
+        }
+        /**/
+        if (fu == 2) {
+            layer.open({
+                title: '提示',
+                content: '选中的报告有未付费的'
+            });
+            return
+        }
+        /**/
+        layer.confirm('确认要打印吗？', {
+            btn: ['打印', '下载']
+        }, function(index) {
+
+            if(socket_online)
+            {
+                var show = layer.open({
+                    type: 1, // page 层类型
+                    title: false,
+                    shadeClose: true,
+                    area: ['320px', '90px'],
+                    shade: 0.6, // 遮罩透明度
+                    anim: 0, // 0-6 的动画形式，-1 不开启
+                    icon: -1,
+                    closeBtn:0,
+                    content: '<div class="layui-card">\
+                        <div class="layui-card-header">文件下载进度</div>\
+                        <div class="layui-card-body">\
+                            <div class="layui-progress layui-progress-big" lay-showpercent="true" lay-filter="demo-filter-progress">\
+                                <div class="layui-progress-bar" lay-percent="5 / 10"></div>\
+                            </div>\
+                        </div>\
+                    </div>',
+                    success: function (layero, index) {
+                        element.render('progress', 'demo-filter-progress');
+                        var success_count = 0;
+                        element.progress('demo-filter-progress', success_count + '/' + checkStatus.data.length);
+                        for (var i = 0; i < checkStatus.data.length; i++)
+                        {
+                            $.ajax({
+                                url: '/examination/workorder/workorder_jilu_piliang',
+                                type: 'post',
+                                data: {
+                                    "id": checkStatus.data[i].id,
+                                    'socket_online' : socket_online,
+                                    'print' : true
+                                },
+                                dataType: 'json',
+                                success: function(data) {
+                                    success_count++;
+                                    if (data.code == 0) {
+                                        element.progress('demo-filter-progress', success_count + '/' + checkStatus.data.length);
+                                        socket.send(JSON.stringify(data.data));
+                                        if(success_count == checkStatus.data.length)
+                                        {
+
+                                             layer.msg('成功', {
+                                                icon: 1,
+                                                anim: 6
+                                            });
+                                            layer.close(show);
+                                        }
+
+                                    } else {
+                                        return layer.msg(data.message, {
+                                            icon: 5,
+                                            anim: 6
+                                        });
+                                    }
+                                },
+                                error: function(data) {
+                                    layer.msg(data.responseJSON.message, {
+                                        icon: 5,
+                                        anim: 6
+                                    });
+                                }
+                            });
+                        }
+
+
+                    }
+                });
+            }
+            else
+            {
+                var loading = layer.load(2,{shade :0.8});
+                //发异步删除数据
+                $.ajax({
+                    url: '/examination/workorder/workorder_jilu_piliang',
+                    type: 'post',
+                    data: {
+                        "id": ids,
+                        'socket_online' : socket_online,
+                        'print' : true
+                    },
+                    dataType: 'json',
+                    success: function(data) {
+                        layer.close(loading);
+                        console.log(data)
+                        if (data.code == 0) {
+                            if(socket_online)
+                            {
+                                socket.send(JSON.stringify(data.data));
+                                layer.msg('成功', {
+                                    icon: 1,
+                                    anim: 6
+                                });
+                                return false;
+                            }
+                            
+
+
+                            window.open(data.data.pdf);
+                            layer.close(index);
+                            return layer.msg('成功', {
+                                icon: 1,
+                                anim: 6
+                            });
+                        } else {
+                            return layer.msg(data.message, {
+                                icon: 5,
+                                anim: 6
+                            });
+                        }
+                    },
+                    error: function(data) {
+                        layer.msg(data.responseJSON.message, {
+                            icon: 5,
+                            anim: 6
+                        });
+                    }
+                });
+            }
+
+            
+
+
+            
+        },function(index) {
+
+            if(socket_online)
+            {
+                var show = layer.open({
+                    type: 1, // page 层类型
+                    title: false,
+                    shadeClose: true,
+                    area: ['320px', '90px'],
+                    shade: 0.6, // 遮罩透明度
+                    anim: 0, // 0-6 的动画形式，-1 不开启
+                    icon: -1,
+                    closeBtn:0,
+                    content: '<div class="layui-card">\
+                        <div class="layui-card-header">文件下载进度</div>\
+                        <div class="layui-card-body">\
+                            <div class="layui-progress layui-progress-big" lay-showpercent="true" lay-filter="demo-filter-progress">\
+                                <div class="layui-progress-bar" lay-percent="5 / 10"></div>\
+                            </div>\
+                        </div>\
+                    </div>',
+                    success: function (layero, index) {
+                        element.render('progress', 'demo-filter-progress');
+                        var success_count = 0;
+                        element.progress('demo-filter-progress', success_count + '/' + checkStatus.data.length);
+                        for (var i = 0; i < checkStatus.data.length; i++)
+                        {
+                            $.ajax({
+                                url: '/examination/workorder/workorder_jilu_piliang',
+                                type: 'post',
+                                data: {
+                                    "id": checkStatus.data[i].id,
+                                    'socket_online' : socket_online,
+                                    'print' : false
+                                },
+                                dataType: 'json',
+                                success: function(data) {
+                                    success_count++;
+                                    if (data.code == 0) {
+                                        element.progress('demo-filter-progress', success_count + '/' + checkStatus.data.length);
+                                        socket.send(JSON.stringify(data.data));
+                                        if(success_count == checkStatus.data.length)
+                                        {
+
+                                            layer.msg('查看本机对应文件夹', {
+                                                icon: 1,
+                                                anim: 6
+                                            });
+                                            layer.close(show);
+                                        }
+
+                                    } else {
+                                        return layer.msg(data.message, {
+                                            icon: 5,
+                                            anim: 6
+                                        });
+                                    }
+                                },
+                                error: function(data) {
+                                    layer.msg(data.responseJSON.message, {
+                                        icon: 5,
+                                        anim: 6
+                                    });
+                                }
+                            });
+                        }
+
+
+                    }
+                });
+            }
+            else
+            {
+                var loading = layer.load(2,{shade :0.8});
+                //发异步删除数据
+                $.ajax({
+                    url: '/examination/workorder/workorder_jilu_piliang',
+                    type: 'post',
+                    data: {
+                        "id": ids,
+                        'socket_online' : socket_online,
+                        'print' : false
+                    },
+                    dataType: 'json',
+                    success: function(data) {
+                        layer.close(loading);
+                        console.log(data)
+                        if (data.code == 0) {
+
+                            if(socket_online)
+                            {
+                                socket.send(JSON.stringify(data.data));
+                                layer.msg('查看本机对应文件夹', {
+                                    icon: 1,
+                                    anim: 6
+                                });
+                                return false;
+                            }
+
+                            $('#xiazai').attr('href', data.data.url);
+                            $('#xiazai').attr('download', data.data.name);
+                            $('#xiazai')[0].click();
+                            layer.close(index);
+                            return layer.msg('成功', {
+                                icon: 1,
+                                anim: 6
+                            });
+                        } else {
+                            return layer.msg(data.message, {
+                                icon: 5,
+                                anim: 6
+                            });
+                        }
+                    },
+                    error: function(data) {
+                        layer.msg(data.responseJSON.message, {
+                            icon: 5,
+                            anim: 6
+                        });
+                    }
+                });
+            }
+        });
+    }
+
+    function event_sj_all_dabiao(obj)
+    {
+        var table = layui.table;
+        var checkStatus = table.checkStatus(obj.config.id),
+            data = checkStatus.data;
+        var ids = "";
+        let fu = 1;
+        for (var i = 0; i < data.length; i++) {
+            if (checkStatus.data[i].fufei == 2) {
+                fu = 2;
+            }
+            ids += checkStatus.data[i].id + ',';
+        }
+        if (data.length === 0) {
+            layer.msg('请最少选择一行', {
+                icon: 5,
+                anim: 6
+            });
+            return
+        }
+        /**/
+        if (fu == 2) {
+            layer.open({
+                title: '提示',
+                content: '选中的报告有未付费的'
+            });
+            return
+        }
+        /**/
+        layer.confirm('确认要下载吗？', function(index) {
+            //发异步删除数据
+            $.ajax({
+                url: '/examination/workorder/workorder_dabiao',
+                type: 'post',
+                data: {
+                    "id": ids
+                },
+                dataType: 'json',
+                success: function(data) {
+                    console.log(data)
+                    if (data.code == 0) {
+
+                        if(socket_online)
+                        {
+                            socket.send(JSON.stringify(data.data));
+                            layer.msg('查看本机对应文件夹', {
+                                icon: 1,
+                                anim: 6
+                            });
+                            return false;
+                        }
+                        
+                        console.log(data);
+                        var fileUrl = data.data.url.replace(/^https?:\/\/[^\/]+/, ''); //转为相对路径，避免 http/https 协议不一致
+                        var fileName = data.data.name;
+                        // 通过 Blob 方式强制下载
+                        $.ajax({
+                            url: fileUrl,
+                            type: 'GET',
+                            xhrFields: {
+                                responseType: 'blob'
+                            },
+                            success: function(blob) {
+                                var blobUrl = window.URL.createObjectURL(blob);
+                                $('#xiazai').attr('href', blobUrl);
+                                $('#xiazai').attr('download', fileName);
+                                $('#xiazai')[0].click();
+                                window.URL.revokeObjectURL(blobUrl);
+                            },
+                            error: function() {
+                                layer.msg('文件下载失败', { icon: 5, anim: 6 });
+                            }
+                        });
+                        layer.close(index);
+                        return layer.msg('成功', {
+                            icon: 1,
+                            anim: 6
+                        });
+                    } else {
+                        return layer.msg(data.message, {
+                            icon: 5,
+                            anim: 6
+                        });
+                    }
+                },
+                error: function(data) {
+                    layer.msg(data.responseJSON.message, {
+                        icon: 5,
+                        anim: 6
+                    });
+                }
+            });
+        });
+    }
+
+    function event_sj_all_dabiao_tcp(obj)
+    {
+        var table = layui.table;
+        var checkStatus = table.checkStatus(obj.config.id),
+            data = checkStatus.data;
+        var ids = "";
+        let fu = 1;
+        for (var i = 0; i < data.length; i++) {
+            if (checkStatus.data[i].fufei == 2) {
+                fu = 2;
+            }
+            ids += checkStatus.data[i].id + ',';
+        }
+        if (data.length === 0) {
+            layer.msg('请最少选择一行', {
+                icon: 5,
+                anim: 6
+            });
+            return
+        }
+        $.ajax({
+            url: '/examination/workorder/workorder_dabiao',
+            type: 'post',
+            data: {
+                "id": ids,
+                "protocol" : 'tcp'
+            },
+            dataType: 'json',
+            success: function(data) {
+                console.log(data)
+                if (data.code == 0) {
+                    
+                    LaserMarkingMachineSocket.send(data.data);
+
+                    return layer.msg('发送成功', {
+                        icon: 1,
+                        anim: 6
+                    });
+                } else {
+                    return layer.msg(data.message, {
+                        icon: 5,
+                        anim: 6
+                    });
+                }
+            },
+            error: function(data) {
+                layer.msg(data.responseJSON.message, {
+                    icon: 5,
+                    anim: 6
+                });
+            }
+        });
+    }
+
+    function event_sj_all_taizhang(obj)
+    {
+        var table = layui.table;
+        var checkStatus = table.checkStatus(obj.config.id),
+            data = checkStatus.data;
+        var ids = "";
+        let fu = 1;
+        for (var i = 0; i < data.length; i++) {
+            if (checkStatus.data[i].fufei == 2) {
+                fu = 2;
+            }
+            ids += checkStatus.data[i].id + ',';
+        }
+        if (data.length === 0) {
+            layer.msg('请最少选择一行', {
+                icon: 5,
+                anim: 6
+            });
+            return
+        }
+        /**/
+        if (fu == 2) {
+            layer.open({
+                title: '提示',
+                content: '选中的报告有未付费的'
+            });
+            return
+        }
+        /**/
+        layer.confirm('确认要打印吗？', function(index) {
+            //发异步删除数据
+            $.ajax({
+                url: '/examination/workorder/workorder_taizhang',
+                type: 'post',
+                data: {
+                    "id": ids
+                },
+                dataType: 'json',
+                success: function(data) {
+                    if (data.code == 0) {
+                        $('#xiazai').attr('href', data.data.url);
+                        $('#xiazai').attr('download', data.data.name);
+                        $('#xiazai')[0].click();
+                        layer.close(index);
+                        return layer.msg('成功', {
+                            icon: 1,
+                            anim: 6
+                        });
+                    } else {
+                        return layer.msg(data.message, {
+                            icon: 5,
+                            anim: 6
+                        });
+                    }
+                },
+                error: function(data) {
+                    layer.msg(data.responseJSON.message, {
+                        icon: 5,
+                        anim: 6
+                    });
+                }
+            });
+        })
+    }
+
+    function event_sj_all_tuozhi_baogao(obj)
+    {
+        var table = layui.table;
+        var checkStatus = table.checkStatus(obj.config.id),
+            data = checkStatus.data;
+        var ids = "";
+        let fu = 1;
+        for (var i = 0; i < data.length; i++) {
+            if (checkStatus.data[i].fufei == 2) {
+                fu = 2;
+            }
+            ids += checkStatus.data[i].id + ',';
+        }
+        if (data.length === 0) {
+            layer.msg('请最少选择一行', {
+                icon: 5,
+                anim: 6
+            });
+            return
+        }
+        /**/
+        if (fu == 2) {
+            layer.open({
+                title: '提示',
+                content: '选中的报告有未付费的'
+            });
+            return
+        }
+        /**/
+        layer.confirm('确认要打印吗？', {
+            btn: ['打印', '下载']
+        }, function(index) {
+
+            if(socket_online)
+            {
+                var show = layer.open({
+                    type: 1, // page 层类型
+                    title: false,
+                    shadeClose: true,
+                    area: ['320px', '90px'],
+                    shade: 0.6, // 遮罩透明度
+                    anim: 0, // 0-6 的动画形式，-1 不开启
+                    icon: -1,
+                    closeBtn:0,
+                    content: '<div class="layui-card">\
+                        <div class="layui-card-header">文件下载进度</div>\
+                        <div class="layui-card-body">\
+                            <div class="layui-progress layui-progress-big" lay-showpercent="true" lay-filter="demo-filter-progress">\
+                                <div class="layui-progress-bar" lay-percent="5 / 10"></div>\
+                            </div>\
+                        </div>\
+                    </div>',
+                    success: function (layero, index) {
+                        element.render('progress', 'demo-filter-progress');
+                        var success_count = 0;
+                        element.progress('demo-filter-progress', success_count + '/' + checkStatus.data.length);
+                        for (var i = 0; i < checkStatus.data.length; i++)
+                        {
+                            $.ajax({
+                                url: '/examination/workorder/workorder_tuozhi_baogao_piliang',
+                                type: 'post',
+                                data: {
+                                    "id": checkStatus.data[i].id,
+                                    'socket_online' : socket_online,
+                                    'print' : true
+                                },
+                                dataType: 'json',
+                                success: function(data) {
+                                    success_count++;
+                                    if (data.code == 0) {
+                                        element.progress('demo-filter-progress', success_count + '/' + checkStatus.data.length);
+                                        socket.send(JSON.stringify(data.data));
+                                        if(success_count == checkStatus.data.length)
+                                        {
+
+                                             layer.msg('成功', {
+                                                icon: 1,
+                                                anim: 6
+                                            });
+                                            layer.close(show);
+                                        }
+
+                                    } else {
+                                        return layer.msg(data.message, {
+                                            icon: 5,
+                                            anim: 6
+                                        });
+                                    }
+                                },
+                                error: function(data) {
+                                    layer.msg(data.responseJSON.message, {
+                                        icon: 5,
+                                        anim: 6
+                                    });
+                                }
+                            });
+                        }
+
+
+                    }
+                });
+            }
+            else
+            {
+                var loading = layer.load(2,{shade :0.8});
+                //发异步删除数据
+                $.ajax({
+                    url: '/examination/workorder/workorder_tuozhi_baogao_piliang',
+                    type: 'post',
+                    data: {
+                        "id": ids,
+                        'socket_online' : socket_online,
+                        'print' : true
+                    },
+                    dataType: 'json',
+                    success: function(data) {
+                        layer.close(loading);
+                        console.log(data)
+                        if (data.code == 0) {
+                            if(socket_online)
+                            {
+                                socket.send(JSON.stringify(data.data));
+                                layer.msg('成功', {
+                                    icon: 1,
+                                    anim: 6
+                                });
+                                return false;
+                            }
+                            
+
+
+                            window.open(data.data.pdf);
+                            layer.close(index);
+                            return layer.msg('成功', {
+                                icon: 1,
+                                anim: 6
+                            });
+                        } else {
+                            return layer.msg(data.message, {
+                                icon: 5,
+                                anim: 6
+                            });
+                        }
+                    },
+                    error: function(data) {
+                        layer.msg(data.responseJSON.message, {
+                            icon: 5,
+                            anim: 6
+                        });
+                    }
+                });
+            }
+
+            
+
+
+            
+        },function(index) {
+
+            if(socket_online)
+            {
+                var show = layer.open({
+                    type: 1, // page 层类型
+                    title: false,
+                    shadeClose: true,
+                    area: ['320px', '90px'],
+                    shade: 0.6, // 遮罩透明度
+                    anim: 0, // 0-6 的动画形式，-1 不开启
+                    icon: -1,
+                    closeBtn:0,
+                    content: '<div class="layui-card">\
+                        <div class="layui-card-header">文件下载进度</div>\
+                        <div class="layui-card-body">\
+                            <div class="layui-progress layui-progress-big" lay-showpercent="true" lay-filter="demo-filter-progress">\
+                                <div class="layui-progress-bar" lay-percent="5 / 10"></div>\
+                            </div>\
+                        </div>\
+                    </div>',
+                    success: function (layero, index) {
+                        element.render('progress', 'demo-filter-progress');
+                        var success_count = 0;
+                        element.progress('demo-filter-progress', success_count + '/' + checkStatus.data.length);
+                        for (var i = 0; i < checkStatus.data.length; i++)
+                        {
+                            $.ajax({
+                                url: '/examination/workorder/workorder_tuozhi_baogao_piliang',
+                                type: 'post',
+                                data: {
+                                    "id": checkStatus.data[i].id,
+                                    'socket_online' : socket_online,
+                                    'print' : false
+                                },
+                                dataType: 'json',
+                                success: function(data) {
+                                    success_count++;
+                                    if (data.code == 0) {
+                                        element.progress('demo-filter-progress', success_count + '/' + checkStatus.data.length);
+                                        socket.send(JSON.stringify(data.data));
+                                        if(success_count == checkStatus.data.length)
+                                        {
+
+                                            layer.msg('查看本机对应文件夹', {
+                                                icon: 1,
+                                                anim: 6
+                                            });
+                                            layer.close(show);
+                                        }
+
+                                    } else {
+                                        return layer.msg(data.message, {
+                                            icon: 5,
+                                            anim: 6
+                                        });
+                                    }
+                                },
+                                error: function(data) {
+                                    layer.msg(data.responseJSON.message, {
+                                        icon: 5,
+                                        anim: 6
+                                    });
+                                }
+                            });
+                        }
+
+
+                    }
+                });
+            }
+            else
+            {
+                var loading = layer.load(2,{shade :0.8});
+                //发异步删除数据
+                $.ajax({
+                    url: '/examination/workorder/workorder_tuozhi_baogao_piliang',
+                    type: 'post',
+                    data: {
+                        "id": ids,
+                        'socket_online' : socket_online,
+                        'print' : false
+                    },
+                    dataType: 'json',
+                    success: function(data) {
+                        layer.close(loading);
+                        console.log(data)
+                        if (data.code == 0) {
+
+                            if(socket_online)
+                            {
+                                socket.send(JSON.stringify(data.data));
+                                layer.msg('查看本机对应文件夹', {
+                                    icon: 1,
+                                    anim: 6
+                                });
+                                return false;
+                            }
+
+                            $('#xiazai').attr('href', data.data.url);
+                            $('#xiazai').attr('download', data.data.name);
+                            $('#xiazai')[0].click();
+                            layer.close(index);
+                            return layer.msg('成功', {
+                                icon: 1,
+                                anim: 6
+                            });
+                        } else {
+                            return layer.msg(data.message, {
+                                icon: 5,
+                                anim: 6
+                            });
+                        }
+                    },
+                    error: function(data) {
+                        layer.msg(data.responseJSON.message, {
+                            icon: 5,
+                            anim: 6
+                        });
+                    }
+                });
+            }
+        });
+    }
+
+    function event_sj_all_tuozhi_jilu(obj)
+    {
+        var table = layui.table;
+        var checkStatus = table.checkStatus(obj.config.id),
+            data = checkStatus.data;
+        var ids = "";
+        let fu = 1;
+        for (var i = 0; i < data.length; i++) {
+            if (checkStatus.data[i].fufei == 2) {
+                fu = 2;
+            }
+            ids += checkStatus.data[i].id + ',';
+        }
+        if (data.length === 0) {
+            layer.msg('请最少选择一行', {
+                icon: 5,
+                anim: 6
+            });
+            return
+        }
+        /**/
+        if (fu == 2) {
+            layer.open({
+                title: '提示',
+                content: '选中的报告有未付费的'
+            });
+            return
+        }
+        /**/
+        layer.confirm('确认要打印吗？', {
+            btn: ['打印', '下载']
+        }, function(index) {
+
+            if(socket_online)
+            {
+                var show = layer.open({
+                    type: 1, // page 层类型
+                    title: false,
+                    shadeClose: true,
+                    area: ['320px', '90px'],
+                    shade: 0.6, // 遮罩透明度
+                    anim: 0, // 0-6 的动画形式，-1 不开启
+                    icon: -1,
+                    closeBtn:0,
+                    content: '<div class="layui-card">\
+                        <div class="layui-card-header">文件下载进度</div>\
+                        <div class="layui-card-body">\
+                            <div class="layui-progress layui-progress-big" lay-showpercent="true" lay-filter="demo-filter-progress">\
+                                <div class="layui-progress-bar" lay-percent="5 / 10"></div>\
+                            </div>\
+                        </div>\
+                    </div>',
+                    success: function (layero, index) {
+                        element.render('progress', 'demo-filter-progress');
+                        var success_count = 0;
+                        element.progress('demo-filter-progress', success_count + '/' + checkStatus.data.length);
+                        for (var i = 0; i < checkStatus.data.length; i++)
+                        {
+                            $.ajax({
+                                url: '/examination/workorder/workorder_tuozhi_jilu_piliang',
+                                type: 'post',
+                                data: {
+                                    "id": checkStatus.data[i].id,
+                                    'socket_online' : socket_online,
+                                    'print' : true
+                                },
+                                dataType: 'json',
+                                success: function(data) {
+                                    success_count++;
+                                    if (data.code == 0) {
+                                        element.progress('demo-filter-progress', success_count + '/' + checkStatus.data.length);
+                                        socket.send(JSON.stringify(data.data));
+                                        if(success_count == checkStatus.data.length)
+                                        {
+
+                                             layer.msg('成功', {
+                                                icon: 1,
+                                                anim: 6
+                                            });
+                                            layer.close(show);
+                                        }
+
+                                    } else {
+                                        return layer.msg(data.message, {
+                                            icon: 5,
+                                            anim: 6
+                                        });
+                                    }
+                                },
+                                error: function(data) {
+                                    layer.msg(data.responseJSON.message, {
+                                        icon: 5,
+                                        anim: 6
+                                    });
+                                }
+                            });
+                        }
+
+
+                    }
+                });
+            }
+            else
+            {
+                var loading = layer.load(2,{shade :0.8});
+                //发异步删除数据
+                $.ajax({
+                    url: '/examination/workorder/workorder_tuozhi_jilu_piliang',
+                    type: 'post',
+                    data: {
+                        "id": ids,
+                        'socket_online' : socket_online,
+                        'print' : true
+                    },
+                    dataType: 'json',
+                    success: function(data) {
+                        layer.close(loading);
+                        console.log(data)
+                        if (data.code == 0) {
+                            if(socket_online)
+                            {
+                                socket.send(JSON.stringify(data.data));
+                                layer.msg('成功', {
+                                    icon: 1,
+                                    anim: 6
+                                });
+                                return false;
+                            }
+                            
+
+
+                            window.open(data.data.pdf);
+                            layer.close(index);
+                            return layer.msg('成功', {
+                                icon: 1,
+                                anim: 6
+                            });
+                        } else {
+                            return layer.msg(data.message, {
+                                icon: 5,
+                                anim: 6
+                            });
+                        }
+                    },
+                    error: function(data) {
+                        layer.msg(data.responseJSON.message, {
+                            icon: 5,
+                            anim: 6
+                        });
+                    }
+                });
+            }
+
+            
+
+
+            
+        },function(index) {
+
+            if(socket_online)
+            {
+                var show = layer.open({
+                    type: 1, // page 层类型
+                    title: false,
+                    shadeClose: true,
+                    area: ['320px', '90px'],
+                    shade: 0.6, // 遮罩透明度
+                    anim: 0, // 0-6 的动画形式，-1 不开启
+                    icon: -1,
+                    closeBtn:0,
+                    content: '<div class="layui-card">\
+                        <div class="layui-card-header">文件下载进度</div>\
+                        <div class="layui-card-body">\
+                            <div class="layui-progress layui-progress-big" lay-showpercent="true" lay-filter="demo-filter-progress">\
+                                <div class="layui-progress-bar" lay-percent="5 / 10"></div>\
+                            </div>\
+                        </div>\
+                    </div>',
+                    success: function (layero, index) {
+                        element.render('progress', 'demo-filter-progress');
+                        var success_count = 0;
+                        element.progress('demo-filter-progress', success_count + '/' + checkStatus.data.length);
+                        for (var i = 0; i < checkStatus.data.length; i++)
+                        {
+                            $.ajax({
+                                url: '/examination/workorder/workorder_tuozhi_jilu_piliang',
+                                type: 'post',
+                                data: {
+                                    "id": checkStatus.data[i].id,
+                                    'socket_online' : socket_online,
+                                    'print' : false
+                                },
+                                dataType: 'json',
+                                success: function(data) {
+                                    success_count++;
+                                    if (data.code == 0) {
+                                        element.progress('demo-filter-progress', success_count + '/' + checkStatus.data.length);
+                                        socket.send(JSON.stringify(data.data));
+                                        if(success_count == checkStatus.data.length)
+                                        {
+
+                                            layer.msg('查看本机对应文件夹', {
+                                                icon: 1,
+                                                anim: 6
+                                            });
+                                            layer.close(show);
+                                        }
+
+                                    } else {
+                                        return layer.msg(data.message, {
+                                            icon: 5,
+                                            anim: 6
+                                        });
+                                    }
+                                },
+                                error: function(data) {
+                                    layer.msg(data.responseJSON.message, {
+                                        icon: 5,
+                                        anim: 6
+                                    });
+                                }
+                            });
+                        }
+
+
+                    }
+                });
+            }
+            else
+            {
+                var loading = layer.load(2,{shade :0.8});
+                //发异步删除数据
+                $.ajax({
+                    url: '/examination/workorder/workorder_tuozhi_jilu_piliang',
+                    type: 'post',
+                    data: {
+                        "id": ids,
+                        'socket_online' : socket_online,
+                        'print' : false
+                    },
+                    dataType: 'json',
+                    success: function(data) {
+                        layer.close(loading);
+                        console.log(data)
+                        if (data.code == 0) {
+
+                            if(socket_online)
+                            {
+                                socket.send(JSON.stringify(data.data));
+                                layer.msg('查看本机对应文件夹', {
+                                    icon: 1,
+                                    anim: 6
+                                });
+                                return false;
+                            }
+
+                            $('#xiazai').attr('href', data.data.url);
+                            $('#xiazai').attr('download', data.data.name);
+                            $('#xiazai')[0].click();
+                            layer.close(index);
+                            return layer.msg('成功', {
+                                icon: 1,
+                                anim: 6
+                            });
+                        } else {
+                            return layer.msg(data.message, {
+                                icon: 5,
+                                anim: 6
+                            });
+                        }
+                    },
+                    error: function(data) {
+                        layer.msg(data.responseJSON.message, {
+                            icon: 5,
+                            anim: 6
+                        });
+                    }
+                });
+            }
+        });
+    }
+
+    table.on('checkbox(test)', function(){
+        updateSelectedCount();
+    });
+    table.on('checkbox(all)', function(){
+        updateSelectedCount();
+    });
+
+    function updateSelectedCount() {
+        var checkStatus = table.checkStatus('dataTable'); // 获取选中行数据
+        var selectedCount = checkStatus.data.length; // 计算选中条数
+        $('#selectedCount').text(selectedCount); // 更新显示
+    }
+
+    //头工具栏事件
+    table.on('toolbar(test)', function(obj) {
+        console.log(obj.event);
+        if (obj.event == 'sj_all_baogao') event_sj_all_baogao(obj);
+        if (obj.event == 'sj_all_jilu') event_sj_all_jilu(obj);
+        if (obj.event == 'sj_all_dabiao') event_sj_all_dabiao(obj);
+        if (obj.event == 'sj_all_dabiao_tcp') event_sj_all_dabiao_tcp(obj);
+        if (obj.event == 'sj_all_taizhang') event_sj_all_taizhang(obj);
+        if (obj.event == 'sj_all_tuozhi_baogao') event_sj_all_tuozhi_baogao(obj);
+        if (obj.event == 'sj_all_tuozhi_jilu') event_sj_all_tuozhi_jilu(obj);
+        
+    })
+    table.on('tool(test)', function(obj) {
+        console.log(obj)
+        var data = obj.data;
+
+
+        if (obj.event === 'getShanxisheng') {
+            $.post('/examination/workorder/getShanxisheng',{
+                id:data.id
+            },function(result){
+                console.log(result);
+                if(result.code == 0)
+                {
+                    table.reload('dataTable');
+                }
+                else
+                {
+                    layer.msg(result.message,{
+                        icon: 5,
+                        anim: 6
+                    });
+                    table.reload('dataTable');
+                }
+            });
+        }
+        else if (obj.event === 'more') {
+            // 更多 - 下拉菜单
+            dropdown.render({
+                elem: this, // 触发事件的 DOM 对象
+                show: true, // 外部事件触发即显示
+                data: [
+                    {
+                        title: '曲线',
+                        id: 'curve'
+                    },
+                    /**/
+                    {
+                        title: '校验报告无章',
+                        id: 'jiaoyanbaogao'
+                    },
+                    /**/
+                    /**/
+                    /**/
+                    /**/
+                ],
+                click: function(menudata) {
+                    if (menudata.id === 'curve') 
+                    {
+                        xadmin.open('曲线','./curve.html?id='+data.id,850);
+                    } 
+                    else if (menudata.id === 'jiaoyanbaogao') 
+                    {
+                        print_baogao(data,false);
+                    } 
+                    else if (menudata.id === 'tuozhibaogao') 
+                    {
+                        print_file('workorder_tuozhi_baogao',data);
+                    } 
+                    else if (menudata.id === 'tuozhijilu') 
+                    {
+                        print_file('workorder_tuozhi_jilu',data);
+                    } 
+                    else if (menudata.id === 'tuihui')
+                    {
+                        layer.confirm('确认要退回吗？', function(index){
+                        //发异步删除数据
+                        $.ajax({
+                            url: '/examination/workorder/workorder_status',
+                            type: 'post',
+                            data:{
+                                "id": data.id,
+                                'status': 0
+                            },
+                            dataType: 'json',
+                            success: function(data){
+                                if (data.code == 0){
+                                    //关闭当前frame
+                                    xadmin.close();
+
+                                    // 可以对父窗口进行刷新 
+                                    xadmin.father_reload();
+                                }
+                                else{
+                                    return layer.msg(data.message,{
+                                        icon: 5,
+                                        anim: 6
+                                    });
+                                }
+                            },
+                            error: function(data){
+                                layer.msg(data.responseJSON.message,{
+                                    icon: 5,
+                                    anim: 6
+                                });
+                            }
+                        });
+
+                    });
+                    }
+                },
+                id: 'dropdown-table-tool',
+                align: 'right', // 右对齐弹出
+                style: 'box-shadow: 1px 1px 10px rgb(0 0 0 / 12%);' // 设置额外样式
+            });
+        }
+        if (obj.event == 'dayinbaogao') {
+            print_baogao(data);
+        }
+        if (obj.event == 'dayinjilu') {
+            print_file('workorder_jilu',data);
+        }
+        if (obj.event == 'tuozhibaogao') {
+            print_file('workorder_tuozhi_baogao',data);
+        }
+        if (obj.event == 'tuozhijilu') {
+            print_file('workorder_tuozhi_jilu',data);
+        }
+    })
+});
+
+function print_file(name,data)
+{
+    /**/
+    if (data.fufei == 2) {
+        layer.open({
+            title: '提示',
+            content: '该委托单未付费！'
+        });
+        return
+    }
+    /**/
+    layer.confirm('确认要打印吗？', {
+        btn: ['打印', '下载']
+    }, function(index) {
+        //发异步删除数据
+        $.ajax({
+            url: '/examination/workorder/'+name,
+            type: 'post',
+            data: {
+                "id": data.id
+            },
+            dataType: 'json',
+            success: function(data) {
+                if (data.code == 0) {
+                    window.open(data.data.pdf);
+                    layer.close(index);
+                    return layer.msg('成功', {
+                        icon: 1,
+                        anim: 6
+                    });
+                } else {
+                    return layer.msg(data.message, {
+                        icon: 5,
+                        anim: 6
+                    });
+                }
+            },
+            error: function(data) {
+                layer.msg(data.responseJSON.message, {
+                    icon: 5,
+                    anim: 6
+                });
+            }
+        });
+    },function(index) {
+        //发异步删除数据
+        $.ajax({
+            url: '/examination/workorder/'+name,
+            type: 'post',
+            data: {
+                "id": data.id
+            },
+            dataType: 'json',
+            success: function(data) {
+                if (data.code == 0) {
+                    $('#xiazai').attr('href', data.data.url);
+                    $('#xiazai').attr('download', data.data.name);
+                    $('#xiazai')[0].click();
+                    layer.close(index);
+                    return layer.msg('成功', {
+                        icon: 1,
+                        anim: 6
+                    });
+                } else {
+                    return layer.msg(data.message, {
+                        icon: 5,
+                        anim: 6
+                    });
+                }
+            },
+            error: function(data) {
+                layer.msg(data.responseJSON.message, {
+                    icon: 5,
+                    anim: 6
+                });
+            }
+        });
+    });
+}
+
+function print_baogao(data,is_chapter = true)
+{
+    /**/
+    if (data.fufei == 2) {
+        layer.open({
+            title: '提示',
+            content: '该委托单未付费！'
+        });
+        return
+    }
+    /**/
+    layer.confirm('确认要打印吗？', {
+        btn: ['打印', '下载']
+    }, function(index) {
+        //发异步删除数据
+        $.ajax({
+            url: '/examination/workorder/workorder_baogao',
+            type: 'post',
+            data: {
+                "id": data.id,
+                "is_chapter" : is_chapter
+            },
+            dataType: 'json',
+            success: function(data) {
+                if (data.code == 0) {
+                    window.open(data.data.pdf);
+                    layer.close(index);
+                    return layer.msg('成功', {
+                        icon: 1,
+                        anim: 6
+                    });
+                } else {
+                    return layer.msg(data.message, {
+                        icon: 5,
+                        anim: 6
+                    });
+                }
+            },
+            error: function(data) {
+                layer.msg(data.responseJSON.message, {
+                    icon: 5,
+                    anim: 6
+                });
+            }
+        });
+    }, function(index) {
+        //发异步删除数据
+        $.ajax({
+            url: '/examination/workorder/workorder_baogao',
+            type: 'post',
+            data: {
+                "id": data.id,
+                "is_chapter" : is_chapter
+            },
+            dataType: 'json',
+            success: function(data) {
+                if (data.code == 0) {
+                    $('#xiazai').attr('href', data.data.url);
+                    $('#xiazai').attr('download', data.data.name);
+                    $('#xiazai')[0].click();
+                    layer.close(index);
+                    return layer.msg('成功', {
+                        icon: 1,
+                        anim: 6
+                    });
+                } else {
+                    return layer.msg(data.message, {
+                        icon: 5,
+                        anim: 6
+                    });
+                }
+            },
+            error: function(data) {
+                layer.msg(data.responseJSON.message, {
+                    icon: 5,
+                    anim: 6
+                });
+            }
+        });
+    });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,93 @@
+<!doctype html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<link rel="icon" href="favicon.ico">
+    <title>安全阀检验数字管理平台</title>
+	<meta name="renderer" content="webkit|ie-comp|ie-stand">
+    <meta http-equiv="X-UA-CoMPatible" content="IE=edge,chrome=1">
+    <!-- <meta name="viewport" content="width=device-width,user-scalable=yes, minimum-scale=0.4, initial-scale=0.8,target-densitydpi=low-dpi" /> -->
+    <meta http-equiv="Cache-Control" content="no-siteapp" />
+
+    <meta name='HandheldFriendly'  content='True'/>
+    <meta name='viewport' content='width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;' />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="format-detection" content="telephone=no"/>
+
+    <link rel="manifest" href="/static/examination/js/manifest.json">
+
+
+    <link rel="stylesheet" href="/static/examination/css/font.css">
+    <link rel="stylesheet" href="/static/examination/css/login.css">
+	  <link rel="stylesheet" href="/static/examination/css/xadmin.css">
+    <script type="text/javascript" src="/static/examination/js/jquery.min.js"></script>
+    <script src="/static/examination/lib/layui/layui.js" charset="utf-8"></script>
+    <!--[if lt IE 9]>
+      <script src="https://cdn.staticfile.org/html5shiv/r29/html5.min.js"></script>
+      <script src="https://cdn.staticfile.org/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    <style type="text/css">
+    	.david_logo{ width: auto; height: 64px; position: absolute; left: 50%; top:10%; transform: translateX(-50%); margin-left:0; }
+
+	.david_logo img{  }
+	.david_logo span{ font-size: 24px; color: #fff; font-weight:bold; margin-left:10px;  }
+    </style>
+</head>
+<body class="body">
+	<div class="david_logo">
+		<img src="/static/examination/images/logo.png">
+		<span>检验后台</span>
+	</div>
+    <div class="login">
+		<div class="davidlog">
+			<form method="post" class="layui-form" >
+				<input name="account" placeholder="账号"  type="text" lay-verify="required" class="layui-input">
+				<hr class="hr20"/>
+				<input name="password" lay-verify="required" placeholder="密码"  type="password" class="layui-input">
+				<hr class="hr20"/>
+				<input value="登录" lay-submit lay-filter="login" style="width:100%;" type="submit">
+				<hr class="hr20"/>
+			</form>
+		</div>
+    </div>
+	
+	<div class="david_left"><img src="/static/examination/images/loginleft.png"></div>
+	<div class="david_right"><img src="/static/examination/images/loginright.png"></div>
+
+    <script>
+        $(function  () {
+            layui.use('form', function(){
+              var form = layui.form;
+              // layer.msg('玩命卖萌中', function(){
+              //   //关闭后的操作
+              //   });
+              //监听提交
+            form.on('submit(login)', function(data) {
+                console.log(data.field);
+                $.ajax({
+                    url: '/examination/login/dologin',
+                    type: 'post',
+                    data: data.field,
+                    dataType: 'json',
+                    success: function(data) {
+                        console.log(data);
+                        if (data.code == 0) {
+                            localStorage.clear();
+                            location.href = '/examination/index/index.html'
+                        } else {
+                            layer.msg(data.message,{icon: 5,anim: 6});
+                        }
+                    },
+                    error: function(data) {
+                        layer.msg(data.responseJSON.message,{icon: 5,anim: 6});
+                    }
+                });
+                return false;
+            });
+            });
+        })
+    </script>
+    <!-- 底部结束 -->
+</body>
+</html>

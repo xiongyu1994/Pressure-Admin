@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html class="x-admin-sm">
+
+<head>
+    <meta charset="UTF-8">
+<title>安全阀检验数字管理平台</title>
+<meta name="renderer" content="webkit">
+<meta http-equiv="X-UA-CoMPatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width,user-scalable=yes, minimum-scale=0.4, initial-scale=0.8,target-densitydpi=low-dpi" />
+<link rel="stylesheet" href="/static/examination/css/font.css">
+<link rel="stylesheet" href="/static/examination/css/xadmin.css?v=2.1">
+<!-- <link rel="stylesheet" href="./css/theme5.css"> -->
+<script src="/static/examination/lib/layui/layui.js?v=2.13.2" charset="utf-8"></script>
+<script type="text/javascript" src="/static/examination/js/xadmin.js?v=1"></script>
+<script type="text/javascript" src="/static/js/decimal.js"></script>
+<link crossorigin="" rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=1"/>
+
+<!-- 让IE8/9支持媒体查询，从而兼容栅格 -->
+        <!--[if lt IE 9]>
+          <script src="https://cdn.staticfile.org/html5shiv/r29/html5.min.js"></script>
+          <script src="https://cdn.staticfile.org/respond.js/1.4.2/respond.min.js"></script>
+        <![endif]-->
+<script>
+    // 是否开启刷新记忆tab功能
+    // var is_remember = false;
+</script>
+<style>
+    .print_weituodan .layui-layer-btn .layui-layer-btn2 {
+        border-color: #002f6e;
+        background-color: #002f6e;
+        color: #fff;
+    }
+    .layui-input-group {
+        width: 100%;
+    }
+    .layui-form-pane .layui-input-inline{
+        width: calc(100% - 220px);
+
+    }
+    .layui-form-pane .layui-inline {
+        width: 100%;
+        margin-bottom: 0;
+        margin-right: 0;
+        height: 28px;
+    }
+    .layui-form-pane .layui-form-item[pane] .layui-input-inline{
+        width: calc(50% - 16px);
+        margin-left: 0;
+    }
+    .layui-form-pane .layui-form-item[pane] .layui-input-inline:last-child{
+        margin-right: 0;
+    }
+    .layui-form-pane .layui-input-block{
+        min-height: 26px;
+    }
+    .layui-form-pane .layui-form-item[pane]{
+        margin-right: 0;
+        margin-bottom: 0;
+    }
+    .layui-form-pane .layui-form-item[pane] .layui-form-label{
+        height: 28px;
+    }
+    .layui-form-pane .layui-form-item[pane] .layui-input-inline .layui-input-group .layui-input{
+        border-top-width: 0px;
+        border-bottom-width: 0px;
+        height: 28px;
+    }
+    .layui-form-pane .layui-form-item[pane] .layui-input-inline .layui-input-group .layui-input-split{
+        border-top-width: 0px;
+        border-bottom-width: 0px;
+    }
+    .layui-form-pane .layui-form-item[pane] .layui-input-inline:last-child .layui-input-group .layui-input-split{
+        border-right-width: 0px;
+    }
+    .layui-form-mid {
+        line-height: 28px;
+        padding: 0 !important;
+    }
+</style>
+        <link rel="stylesheet" href="/static/examination/css/examination.css">
+    <script src="/static/echart/echarts.js" type="text/javascript"></script>
+    <script src="/static/echart/macarons.js"></script>
+    <script src="/static/echart/china.js"></script>
+     <style>
+        .lytop_shixuan{
+            float: none;}
+        .lytop_shixuan li{ margin-top: 15px; }
+        .layui-laydate-content > .layui-laydate-list {
+            padding-bottom: 0px;
+            overflow: hidden;
+        }
+
+        .merge-box .scrollbox .merge-list {
+            padding-bottom: 5px;
+        }
+        .laydate-time-list {
+            padding-bottom: 0;
+            overflow: hidden
+        }
+
+        .laydate-time-list > li {
+            width: 100% !important;
+        }
+
+        .laydate-time-list > li {
+            display: none;
+        }
+        .laydate-time-list > li:first-child {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+ <div class="exaleft">
+            <div class="exaleft_box">
+                <div class="exaleft_box_tab">
+                    <a href="/examination/workbenches/index?site_id=0&songjian_end_time=&songjian_start_time=&start_time=2026-01&end_time=2026-12&type=1" class="hover">总计</a>
+                                        <a href="/examination/workbenches/index?site_id=30&songjian_end_time=&songjian_start_time=&start_time=2026-01&end_time=2026-12&type=1" class="">武汉翼华技术设备有限公司</a>
+                                    </div>
+                <div class="exaleft_box_con">
+                    <div class="exaleft_box_con_li">
+                        <div class="exaleft_box_con_li_tu"><img src="/static/examination/images/exa1.png"></div>
+                        <div class="exaleft_box_con_li_txt">已校检总数（个）<span>1388</span></div>
+                    </div>
+                    <div class="exaleft_box_con_li">
+                        <div class="exaleft_box_con_li_tu"><img src="/static/examination/images/exa1.png"></div>
+                        <div class="exaleft_box_con_li_txt">已校验未审（个）<span>4</span></div>
+                    </div>
+                    <div class="exaleft_box_con_li">
+                        <div class="exaleft_box_con_li_tu"><img src="/static/examination/images/exa2.png"></div>
+                        <div class="exaleft_box_con_li_txt">待校检总数（个）<span>9</span></div>
+                    </div>
+                    <div class="exaleft_box_con_li">
+                        <div class="exaleft_box_con_li_tu"><img src="/static/examination/images/exa3.png"></div>
+                        <div class="exaleft_box_con_li_txt">委托单数<span>308</span></div>
+                    </div>
+                    <div class="exaleft_box_con_li">
+                        <div class="exaleft_box_con_li_tu"><img src="/static/examination/images/exa4.png"></div>
+                        <div class="exaleft_box_con_li_txt">总客户数<span>219</span></div>
+                    </div>
+                </div>      
+            </div>
+            <div class="exaleft_box">
+                <div class="exaleft_box_top">
+                    <div class="exaleft_box_top_tit">安全阀校验数统计</div>
+                    <div class="exaleft_box_top_right">
+                        <form class="layui-form">
+                            <div class="layui-input-inline dw100">
+                                <select name="contrller" name="type" id="type" lay-filter="type" lay-verify="type">
+                                  <option value="1" selected>按年</option>
+                                  <option value="2" >按月</option>
+                                </select>
+                            </div>
+                            <div id="times" style="display:inline-block;"></div>
+                            <div class="david_sosuo">搜索</div>
+                        </form>
+                    </div>
+                </div>
+                <div class="exaleft_box_tu" style="height: 500px;"><div id="charts1" style=" width: 100%;height: 100%;"></div>
+                </div>
+        </div>
+
+            <div class="exaleft_david">
+                <div class="exaleft_david_box">
+                    <div class="exaleft_david_box_tit">安全阀检验统计</div>
+                    <div class="exaleft_david_box_tu" style="height: 390px;"><div id="charts" style=" width: 100%;height: 100%;"></div></div>
+                </div>
+            </div>
+            <div class="exaleft_david">
+                <div class="exaleft_david_box">
+                    <div class="exaleft_david_box_tit">检验人员排名</div>
+                    <div class="exaleft_david_box_table">
+                        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                            <tr class="tabtop">
+                                <td width="10%">排名</td>
+                                <td width="10%">姓名</td>
+                                <td width="66%">检验机构</td>
+                                <td width="14%">检验数量</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="exaleft_david_box_table" style="height: 360px; overflow-y: scroll; margin-bottom: 16px;">
+                        <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                                        <tr>
+                                <td width="10%">
+                                                                        <img class="bmtu" src="/static/examination/images/paimin1.png">
+                                                                    </td>
+                                <td width="10%">周宽</td>
+                                <td width="66%">武汉翼华技术设备有限公司</td>
+                                <td width="14%">1376</td>
+                            </tr>
+                                                        <tr>
+                                <td width="10%">
+                                                                        <img class="bmtu" src="/static/examination/images/paimin2.png">
+                                                                    </td>
+                                <td width="10%">周红超</td>
+                                <td width="66%">武汉翼华技术设备有限公司</td>
+                                <td width="14%">20</td>
+                            </tr>
+                                                    </table>
+                    </div>
+                </div>
+            </div>
+           </div> 
+        
+        <div class="exaright">
+            <div class="exaright_tu"><img class="bmtu" src="/static/examination/images/exa.jpg"></div>
+            <div class="exaright_box">
+                <div class="exaright_box_top">
+                    <div class="exaright_box_top_tit">送检单位排名</div>
+                    <div class="exaright_box_top_right">
+                        <form class="layui-form">
+                            <div class="layui-inline layui-show-xs-block dw90">
+                                <input class="layui-input" autocomplete="off" placeholder="开始日" name="songjian_start_time" value="" id="songjian_start_time">
+                            </div>
+                            <div class="layui-inline layui-show-xs-block dw90">
+                                <input class="layui-input" autocomplete="off" placeholder="截止日" name="songjian_end_time" value="" id="songjian_end_time">
+                            </div>
+                            <div class="david_sosuo" id="sousuo">搜索</div>
+                        </form>
+                    </div>
+                </div>
+                <div class="exaright_box_table" style="clear: both;">
+                    <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                        <tr class="tabtop">
+                            <td width="14%">排名</td>
+                            <td width="66%">单位</td>
+                            <td width="20%">送检数量</td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="exaright_box_table" style="margin-bottom:16px">
+                    <table width="100%" border="0" cellspacing="0" cellpadding="0">
+                                                <tr>
+                            <td width="14%">
+                                                                <img class="bmtu" src="/static/examination/images/paimin1.png">
+                                                            </td>
+                            <td width="66%">武汉经发粮食物流产业投资有限公司</td>
+                            <td width="20%">270</td>
+                        </tr>
+                                                <tr>
+                            <td width="14%">
+                                                                <img class="bmtu" src="/static/examination/images/paimin2.png">
+                                                            </td>
+                            <td width="66%">武汉齐达康能源装备有限公司</td>
+                            <td width="20%">90</td>
+                        </tr>
+                                                <tr>
+                            <td width="14%">
+                                                                <img class="bmtu" src="/static/examination/images/paimin3.png">
+                                                            </td>
+                            <td width="66%">河北首衡商业管理有限公司孝感分公司</td>
+                            <td width="20%">88</td>
+                        </tr>
+                                                <tr>
+                            <td width="14%">
+                                                                4                                                            </td>
+                            <td width="66%">湖北东霖新材料有限公司</td>
+                            <td width="20%">49</td>
+                        </tr>
+                                                <tr>
+                            <td width="14%">
+                                                                5                                                            </td>
+                            <td width="66%">武汉环投千子山环境产业有限公司</td>
+                            <td width="20%">48</td>
+                        </tr>
+                                                <tr>
+                            <td width="14%">
+                                                                6                                                            </td>
+                            <td width="66%">华润武钢总医院</td>
+                            <td width="20%">40</td>
+                        </tr>
+                                                <tr>
+                            <td width="14%">
+                                                                7                                                            </td>
+                            <td width="66%">公安县兴成燃气有限公司</td>
+                            <td width="20%">37</td>
+                        </tr>
+                                                <tr>
+                            <td width="14%">
+                                                                8                                                            </td>
+                            <td width="66%">中国石油天然气股份有限公司湖北武汉销售分公司汉英高速南加油站</td>
+                            <td width="20%">37</td>
+                        </tr>
+                                                <tr>
+                            <td width="14%">
+                                                                9                                                            </td>
+                            <td width="66%">武汉联德化学品有限公司</td>
+                            <td width="20%">36</td>
+                        </tr>
+                                                <tr>
+                            <td width="14%">
+                                                                10                                                            </td>
+                            <td width="66%">湖北泓肽生物科技有限公司</td>
+                            <td width="20%">20</td>
+                        </tr>
+                                            </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- <div class="exabottom">本文由XXX发布在XXX平台，未经本人许可，禁止转载</div> -->
+   
+
+</body>
+
+    <script>
+      layui.use(['laydate','form'], function(){
+         $ = layui.jquery;
+        var laydate = layui.laydate;
+        var  form = layui.form;
+
+        var type =  "1";
+        var start_times =  "2026-01";
+        var end_times =  "2026-12";
+        get_time_list(type,1)
+
+
+        form.on('select(type)', function(data) {
+            get_time_list(data.value,2)
+        });
+
+
+        // 监听全选
+        form.on('checkbox(checkall)', function(data){
+
+          if(data.elem.checked){
+            $('tbody input').prop('checked',true);
+          }else{
+            $('tbody input').prop('checked',false);
+          }
+          form.render('checkbox');
+        }); 
+        
+
+        $('.david_sosuo').on('click',function(){
+            let songjian_start_time = $('#songjian_start_time').val();
+            let songjian_end_time = $('#songjian_end_time').val();
+            let type = $('#type').val();
+            let start_time = $('input[name="start"]').val();
+            let end_time = $('input[name="end"]').val();
+            location.href = "/examination/workbenches/index?site_id=0&songjian_start_time="+songjian_start_time+'&songjian_end_time='+songjian_end_time+'&start_time='+start_time+'&end_time='+end_time+'&type='+type;
+        })
+
+
+        //执行一个laydate实例
+        laydate.render({
+          elem: '#start' //指定元素
+        });
+
+        //执行一个laydate实例
+        laydate.render({
+          elem: '#end' //指定元素
+        });
+
+         //执行一个laydate实例
+        laydate.render({
+          elem: '#songjian_start_time' //指定元素
+        });
+
+        //执行一个laydate实例
+        laydate.render({
+          elem: '#songjian_end_time' //指定元素
+        });
+
+      });
+var type =  "1";
+        var start_times =  "2026-01";
+        var end_times =  "2026-12";
+    function get_time_list(type,lis){
+        if (lis == 2) {
+            start_times = '';
+            end_times = '';
+        }
+        if (type ==1) {
+                var start_time = 'year_start_time';
+                var end_time = 'year_end_time';
+                var time_type = 'month';
+            }else if(type ==2){
+                var start_time = 'month_start_time';
+                var end_time = 'month_end_time';
+                var time_type = 'date';
+            }else{
+                var start_time = 'day_start_time';
+                var end_time = 'day_end_time';
+                var time_type = 'datetime';
+            }
+            $('#times').html();
+
+            let str = '<div class="layui-inline layui-show-xs-block dw100"><input class="layui-input" autocomplete="off" placeholder="开始日" name="start" id="'+start_time+'" value="'+start_times+'"></div><div class="layui-inline layui-show-xs-block dw100"><input class="layui-input" autocomplete="off" placeholder="截止日" name="end" id="'+end_time+'" value="'+end_times+'"></div>';
+
+            var laydate = layui.laydate;
+           
+            $('#times').html(str);
+            $('#'+end_time).attr('autocomplete','off')
+              var startDate = laydate.render({
+                elem: '#'+start_time
+                ,type: time_type
+                ,ready:formatminutes
+              ,done: function (value, date) {
+                    if (value !== '') {
+                        endDate.config.min.year = date.year;
+                        endDate.config.min.month = date.month - 1;
+                        endDate.config.min.date = date.date;
+                        endDate.config.min.minutes = date.minutes;
+                        endDate.config.min.hours = date.hours;
+                        endDate.config.min.seconds = date.seconds;
+
+                    } else {
+                        endDate.config.min.year = '';
+                        endDate.config.min.month = '';
+                        endDate.config.min.date = '';
+                        endDate.config.min.minutes = '';
+                        endDate.config.min.hours = '';
+                        endDate.config.min.seconds = '';
+                    }
+                }
+              });
+
+              //年月选择器
+              var endDate =laydate.render({
+                elem: '#'+end_time
+                ,type: time_type
+                ,ready:formatminutes
+              ,done: function (value, date) {
+                    if (value !== '') {
+                        startDate.config.max.year = date.year;
+                        startDate.config.max.month = date.month - 1;
+                        startDate.config.max.date = date.date;
+                        startDate.config.max.minutes = date.minutes;
+                        startDate.config.max.hours = date.hours;
+                        startDate.config.max.seconds = date.seconds;
+                    } else {
+                        startDate.config.max.year = '';
+                        startDate.config.max.month = '';
+                        startDate.config.max.date = '';
+                        startDate.config.max.minutes = '';
+                        startDate.config.max.hours = '';
+                        startDate.config.max.seconds = '';
+                    }
+                }
+              });
+
+    }
+
+        //清除秒
+    function formatminutes(date) {
+        $($(".laydate-time-list li ol")[1]).find("li").remove();
+        $($(".laydate-time-list li ol")[2]).find("li").remove();
+    }
+    var myChart = echarts.init(document.getElementById('charts'), 'macarons');
+    var myChart1 = echarts.init(document.getElementById('charts1'), 'macarons');
+
+    var option = {
+          title: {
+            left: 'center'
+          },
+          tooltip: {
+            trigger: 'item',
+            backgroundColor: '#fff', // 鼠标移入提示框背景颜色
+          },
+          legend: {
+            orient: 'vertical',
+            left: 'left'
+          },
+          series: [
+            {
+              type: 'pie',
+              radius: '50%',
+              data: [
+                { value: '9', name: '待校验' },
+                { value: '1388', name: '已校验' },
+              ],
+              emphasis: {
+                itemStyle: {
+                  shadowBlur: 10,
+                  shadowOffsetX: 0,
+                  shadowColor: 'rgba(0, 0, 0, 0.5)'
+                }
+              }
+            }
+          ]
+        };
+
+
+    var option1 = {
+        animation:false,
+        title: {
+            text: ''
+        },
+        tooltip: {
+            trigger: 'axis',
+            backgroundColor: '#fff', // 鼠标移入提示框背景颜色
+        },
+        legend: {
+        show:true,
+        bottom: '90%', // 居中
+        left: 'center',
+        type:'plain',
+        width:430,
+         data: [
+                       '武汉翼华技术设备有限公司-已审',
+                         '武汉翼华技术设备有限公司-未审',
+            
+         ]
+        },
+        xAxis: {
+            data: [
+                                '2026-01',
+                                 '2026-02',
+                                 '2026-03',
+                                 '2026-04',
+                                 '2026-05',
+                                 '2026-06',
+                                 '2026-07',
+                                 '2026-08',
+                                 '2026-09',
+                                 '2026-10',
+                                 '2026-11',
+                                 '2026-12',
+                            ]
+        },
+        yAxis: [{
+            type: 'value',
+            name: "",
+            axisLabel: {
+                formatter: '{value}'
+            }
+        }],
+        toolbox: {
+            feature: {
+                dataView: {show: false, readOnly: false},
+                magicType: {show: false, type: ['line', 'bar']},
+                restore: {show: false},
+                saveAsImage: {show: false}
+            }
+        },
+
+       
+
+        series: [
+                    {
+                name: '武汉翼华技术设备有限公司-已审',
+                type: 'bar',
+                data: [
+                                      '0',
+                                      '0',
+                                      '0',
+                                      '370',
+                                      '82',
+                                      '97',
+                                      '108',
+                                      '241',
+                                      '213',
+                                      '148',
+                                      '129',
+                                      '0',
+                                  ]
+
+            },
+                    {
+                name: '武汉翼华技术设备有限公司-未审',
+                type: 'bar',
+                data: [
+                                      '0',
+                                      '0',
+                                      '0',
+                                      '0',
+                                      '0',
+                                      '0',
+                                      '0',
+                                      '0',
+                                      '0',
+                                      '1',
+                                      '3',
+                                      '0',
+                                  ]
+
+            },
+        
+            ],
+        }
+
+myChart.setOption(option);
+myChart1.setOption(option1);
+
+    </script>
+</html>

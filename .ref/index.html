@@ -1,0 +1,240 @@
+<!doctype html>
+<html class="x-admin-sm">
+
+<head>
+    <meta charset="UTF-8">
+<title>安全阀检验数字管理平台</title>
+<meta name="renderer" content="webkit">
+<meta http-equiv="X-UA-CoMPatible" content="IE=edge,chrome=1">
+<meta name="viewport" content="width=device-width,user-scalable=yes, minimum-scale=0.4, initial-scale=0.8,target-densitydpi=low-dpi" />
+<link rel="stylesheet" href="/static/examination/css/font.css">
+<link rel="stylesheet" href="/static/examination/css/xadmin.css?v=2.1">
+<!-- <link rel="stylesheet" href="./css/theme5.css"> -->
+<script src="/static/examination/lib/layui/layui.js?v=2.13.2" charset="utf-8"></script>
+<script type="text/javascript" src="/static/examination/js/xadmin.js?v=1"></script>
+<script type="text/javascript" src="/static/js/decimal.js"></script>
+<link crossorigin="" rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=1"/>
+
+<!-- 让IE8/9支持媒体查询，从而兼容栅格 -->
+        <!--[if lt IE 9]>
+          <script src="https://cdn.staticfile.org/html5shiv/r29/html5.min.js"></script>
+          <script src="https://cdn.staticfile.org/respond.js/1.4.2/respond.min.js"></script>
+        <![endif]-->
+<script>
+    // 是否开启刷新记忆tab功能
+    // var is_remember = false;
+</script>
+<style>
+    .print_weituodan .layui-layer-btn .layui-layer-btn2 {
+        border-color: #002f6e;
+        background-color: #002f6e;
+        color: #fff;
+    }
+    .layui-input-group {
+        width: 100%;
+    }
+    .layui-form-pane .layui-input-inline{
+        width: calc(100% - 220px);
+
+    }
+    .layui-form-pane .layui-inline {
+        width: 100%;
+        margin-bottom: 0;
+        margin-right: 0;
+        height: 28px;
+    }
+    .layui-form-pane .layui-form-item[pane] .layui-input-inline{
+        width: calc(50% - 16px);
+        margin-left: 0;
+    }
+    .layui-form-pane .layui-form-item[pane] .layui-input-inline:last-child{
+        margin-right: 0;
+    }
+    .layui-form-pane .layui-input-block{
+        min-height: 26px;
+    }
+    .layui-form-pane .layui-form-item[pane]{
+        margin-right: 0;
+        margin-bottom: 0;
+    }
+    .layui-form-pane .layui-form-item[pane] .layui-form-label{
+        height: 28px;
+    }
+    .layui-form-pane .layui-form-item[pane] .layui-input-inline .layui-input-group .layui-input{
+        border-top-width: 0px;
+        border-bottom-width: 0px;
+        height: 28px;
+    }
+    .layui-form-pane .layui-form-item[pane] .layui-input-inline .layui-input-group .layui-input-split{
+        border-top-width: 0px;
+        border-bottom-width: 0px;
+    }
+    .layui-form-pane .layui-form-item[pane] .layui-input-inline:last-child .layui-input-group .layui-input-split{
+        border-right-width: 0px;
+    }
+    .layui-form-mid {
+        line-height: 28px;
+        padding: 0 !important;
+    }
+</style>
+    <script>
+    // 是否开启刷新记忆tab功能
+    //var is_remember = false;
+    </script>
+</head>
+
+<body class="index">
+    <!-- 顶部开始 -->
+    <div class="container">
+        <div class="logo">
+            <a href="./index.html">检验后台</a></div>
+        <div class="left_open">
+            <a><i title="展开左侧栏" class="iconfont">&#xe699;</i></a>
+        </div>
+        <ul class="layui-nav right" lay-filter="">
+            <li class="layui-nav-item">
+                <a href="javascript:;">周宽</a>
+                <dl class="layui-nav-child">
+                    <!-- 二级菜单 -->
+                    <dd>
+                        <a onclick="xadmin.open('个人信息','/examination/customer/info',500,460)">个人信息</a></dd>
+                    <dd>
+                        <a href="/examination/login/logout.html">退出</a></dd>
+                </dl>
+            </li>
+            <!-- <li class="layui-nav-item to-index">
+                <a href="/">前台首页</a></li> -->
+        </ul>
+    </div>
+    <!-- 顶部结束 -->
+    <!-- 中部开始 -->
+    <!-- 左侧菜单开始 -->
+    <div class="left-nav">
+        <div id="side-nav">
+            <ul id="nav">
+              <li><a class="knav-button" onclick="xadmin.add_tab('工作台','/examination/workbenches/index')" data-title='工作台' data-url='/examination/workbenches/index'><i class="layui-icon left-nav-li" lay-tips="工作台">&#xe665;</i><cite>工作台</cite></a></li></li><li><a href="javascript:;"><i class="layui-icon left-nav-li" lay-tips="委托单管理">&#xe770;</i><cite>委托单管理</cite><i class="layui-icon nav_right">&#xe603;</i></a><ul class="sub-menu"><li><a class="knav-button" onclick="xadmin.add_tab('现场送检','/examination/commission/commission_add')" data-title='现场送检' data-url='/examination/commission/commission_add'><cite>现场送检</cite></a></li><li><a class="knav-button" onclick="xadmin.add_tab('送检列表','/examination/commission/commission_list')" data-title='送检列表' data-url='/examination/commission/commission_list'><cite>送检列表</cite></a></li></ul></li><li><a href="javascript:;"><i class="layui-icon left-nav-li" lay-tips="检验管理">&#xe631;</i><cite>检验管理</cite><i class="layui-icon nav_right">&#xe603;</i></a><ul class="sub-menu"><li><a class="knav-button" onclick="xadmin.add_tab('校验退回','/examination/workorder/wait_reject')" data-title='校验退回' data-url='/examination/workorder/wait_reject'><cite>校验退回</cite></a></li><li><a class="knav-button" onclick="xadmin.add_tab('待检验','/examination/workorder/wait_test')" data-title='待检验' data-url='/examination/workorder/wait_test'><cite>待检验</cite></a></li><li><a class="knav-button" onclick="xadmin.add_tab('检验中','/examination/workorder/under_inspection')" data-title='检验中' data-url='/examination/workorder/under_inspection'><cite>检验中</cite></a></li><li><a class="knav-button" onclick="xadmin.add_tab('待打印','/examination/workorder/wait_print')" data-title='待打印' data-url='/examination/workorder/wait_print'><cite>待打印</cite></a></li><li><a class="knav-button" onclick="xadmin.add_tab('已完成','/examination/workorder/all_workorder')" data-title='已完成' data-url='/examination/workorder/all_workorder'><cite>已完成</cite></a></li></ul></li><li><a href="javascript:;"><i class="layui-icon left-nav-li" lay-tips="系统管理">&#xe716;</i><cite>系统管理</cite><i class="layui-icon nav_right">&#xe603;</i></a><ul class="sub-menu"><li><a class="knav-button" onclick="xadmin.add_tab('系统账号','/examination/system/system_list')" data-title='系统账号' data-url='/examination/system/system_list'><cite>系统账号</cite></a></li></ul></li>            </ul>
+        </div>
+    </div>
+    <!-- <div class="x-slide_left"></div> -->
+    <!-- 左侧菜单结束 -->
+    <!-- 右侧主体开始 -->
+    <div class="page-content">
+        <div class="layui-tab tab" lay-filter="xbs_tab" lay-allowclose="true">
+            <ul class="layui-tab-title">
+               
+            </ul>
+            <div class="layui-unselect layui-form-select layui-form-selected" id="tab_right">
+                <dl>
+                    <dd data-type="this">关闭当前</dd>
+                    <dd data-type="other">关闭其它</dd>
+                    <dd data-type="all">关闭全部</dd>
+                </dl>
+            </div>
+            <div class="layui-tab-content">
+                
+            </div>
+            <div id="tab_show"></div>
+        </div>
+    </div>
+    <div class="page-content-bg"></div>
+    <style id="theme_style"></style>
+    <!-- 右侧主体结束 -->
+    <!-- 中部结束 -->
+
+
+
+
+</body>
+<script type="text/javascript">
+    var left_nav_status = false;
+    // 页面加载时获取窗口大小并打印
+
+
+    function set_left_nav_status()
+    {
+        console.log('left_nav_status:',left_nav_status);
+        if(left_nav_status)
+        {
+            $('.left-nav .open').click();
+            $('.left-nav i').css('font-size','18px');
+            $('.left-nav').animate({width: '60px'}, 100);
+            $('.left-nav cite,.left-nav .nav_right').hide();
+            $('.page-content').animate({left: '60px'}, 100);
+            $('.page-content-bg').hide();
+        }
+        else
+        {
+            $('.left-nav').animate({width: '220px'}, 100);
+            $('.page-content').animate({left: '220px'}, 100);
+            $('.left-nav i').css('font-size','14px');
+            $('.left-nav cite,.left-nav .nav_right').show();
+            if($(window).width()<768){
+                $('.page-content-bg').show();
+            }
+        }
+    }
+
+    
+
+    layui.use(['element'], function(){
+       var element = layui.element;
+
+        var width = window.innerWidth;
+        var height = window.innerHeight;
+        console.log(width + 'x' + height);
+        console.log(width <= 1281);
+        // $('.logo').html( width + 'x' + height)
+
+        // alert(width + 'x' + height);
+
+        if(width <= 1281)
+        {
+            left_nav_status = true;
+            
+        }
+       set_left_nav_status();
+
+       $('.container .left_open i').click(function(event) {
+            if($('.left-nav').css('width')=='220px'){
+                left_nav_status = true;
+            }else{
+                left_nav_status = false;
+            }
+            set_left_nav_status();
+
+        });
+
+       /**/
+       xadmin.add_tab('工作台', '/examination/workbenches/index');
+       /**/
+
+       // 绑定导航切换事件
+       element.on('tab(xbs_tab)', function(data){
+           // window.location.href = url; // 刷新当前页面
+           var src = $(".layui-tab-item.layui-show").find("iframe").attr("src");
+           $(".layui-tab-item.layui-show").find("iframe").attr("src", src);
+
+            set_left_nav_status();
+
+
+           console.log(src)
+           var type = data.index; // 获取当前导航项的索引
+           console.log(type)
+           switch (type)
+           {
+               case 0:
+                   // 如果需要刷新内容1，调用对应的刷新方法
+                   break;
+               case 1:
+                   // 如果需要刷新内容2，调用对应的刷新方法
+                   // 例如刷新一个图表
+                   break;
+               case 2:
+                   // 如果需要刷新内容3，调用对应的刷新方法
+                   // 例如刷新一个列表
+                   break;
+           }
+       });
+   });
+</script>
+</html>
