@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue'
-import { NIcon, NDropdown, NAvatar, NModal, NDescriptions, NDescriptionsItem } from 'naive-ui'
+import { NIcon, NDropdown, NAvatar, NModal, NDescriptions, NDescriptionsItem, NSpin } from 'naive-ui'
 import { useAppStore } from '@/store/app'
 import { useUserStore } from '@/store/user'
 import { MenuOutline, LogOutOutline, ChevronDownOutline } from '@/utils/icons'
@@ -9,10 +9,20 @@ const appStore = useAppStore()
 const userStore = useUserStore()
 
 const infoShow = ref(false)
+const infoLoading = ref(false)
+const info = ref(null)
 
-function onUserAction(key) {
+async function onUserAction(key) {
   if (key === 'info') {
     infoShow.value = true
+    infoLoading.value = true
+    try {
+      info.value = await userStore.fetchUserInfo()
+    } catch {
+      info.value = null
+    } finally {
+      infoLoading.value = false
+    }
   } else if (key === 'logout') {
     userStore.logout()
   }
@@ -42,14 +52,17 @@ function onUserAction(key) {
     </div>
 
     <n-modal v-model:show="infoShow" preset="card" title="个人信息" style="width: 480px">
-      <n-descriptions bordered :column="1" size="small" label-placement="left">
-        <n-descriptions-item label="姓名">{{ userStore.name }}</n-descriptions-item>
-        <n-descriptions-item label="账号">{{ userStore.name === '周宽' ? 'whyh_006' : 'admin' }}</n-descriptions-item>
-        <n-descriptions-item label="身份">{{ userStore.roles.includes('admin') ? '管理员' : '检验员' }}</n-descriptions-item>
-        <n-descriptions-item label="单位名称">武汉翼华技术设备有限公司</n-descriptions-item>
-        <n-descriptions-item label="最后登录时间">2026-11-13 15:13:23</n-descriptions-item>
-        <n-descriptions-item label="最后登录IP">27.19.197.232</n-descriptions-item>
-      </n-descriptions>
+      <n-spin :show="infoLoading">
+        <n-descriptions bordered :column="1" size="small" label-placement="left">
+          <n-descriptions-item label="姓名">{{ info?.name || userStore.name }}</n-descriptions-item>
+          <n-descriptions-item label="账号">{{ info?.account || '-' }}</n-descriptions-item>
+          <n-descriptions-item label="手机号">{{ info?.phone || '-' }}</n-descriptions-item>
+          <n-descriptions-item label="身份">{{ info?.identity || userStore.roles[0] || '-' }}</n-descriptions-item>
+          <n-descriptions-item label="单位名称">{{ info?.unitName || '-' }}</n-descriptions-item>
+          <n-descriptions-item label="最后登录时间">{{ info?.lastTime || '-' }}</n-descriptions-item>
+          <n-descriptions-item label="最后登录IP">{{ info?.lastIp || '-' }}</n-descriptions-item>
+        </n-descriptions>
+      </n-spin>
     </n-modal>
   </div>
 </template>

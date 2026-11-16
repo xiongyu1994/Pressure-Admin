@@ -148,10 +148,13 @@ const columns = [
     key: 'completedNum',
     width: 110,
     render(row) {
-      const codes = store.workorders
-        .filter((w) => w.commissionId === row.id)
-        .map((w) => w.orderCode)
-      return codes.length ? codes.join('、') : '-'
+      console.log("row...",row)
+      if (row.completedNum.split('、').length > 0) {
+         return row.completedNum  + '-' +  row.completedNum
+      }else{
+         return row.completedNum || '-'
+      }
+     
     }
   },
   {
@@ -159,11 +162,7 @@ const columns = [
     key: 'reportDone',
     width: 110,
     render(row) {
-      const total = row.valves.length
-      const done = store.workorders.filter(
-        (w) => w.commissionId === row.id && w.status === 'done'
-      ).length
-      return `${done} / ${total}`
+      return `${row.reportDone || 0} / ${row.valveCount || 0}`
     }
   },
   { title: '委托日期', key: 'createTime', width: 150, sorter: 'default' }
@@ -206,56 +205,81 @@ function editRow(row) {
   editShow.value = true
 }
 
-function saveEdit() {
-  store.updateCommission(editingId.value, { ...editForm })
-  editShow.value = false
-  message.success('修改成功')
+async function saveEdit() {
+  try {
+    await store.updateCommission(editingId.value, { ...editForm })
+    editShow.value = false
+    message.success('修改成功')
+  } catch (e) {
+    message.error(e.message || '修改失败')
+  }
 }
 
-function passRow(row) {
-  store.approveCommission(row.id)
-  message.success(`委托单「${row.code}」审核通过，已生成检验工单`)
+async function passRow(row) {
+  try {
+    await store.approveCommission(row.id)
+    message.success(`委托单「${row.code}」审核通过，已生成检验工单`)
+  } catch (e) {
+    message.error(e.message || '审核失败')
+  }
 }
 
-function deleteRow(row) {
-  store.removeCommission(row.id)
-  message.success('删除成功')
+async function deleteRow(row) {
+  try {
+    await store.removeCommission(row.id)
+    message.success('删除成功')
+  } catch (e) {
+    message.error(e.message || '删除失败')
+  }
 }
 
-function precheckRow(row) {
-  store.setPrecheck(row.id, true)
-  message.success(`委托单「${row.code}」已通过预检`)
+async function precheckRow(row) {
+  try {
+    await store.setPrecheck(row.id)
+    message.success(`委托单「${row.code}」已通过预检`)
+  } catch (e) {
+    message.error(e.message || '操作失败')
+  }
 }
 
-function payRow(row) {
-  store.setPaid(row.id)
-  message.success(`委托单「${row.code}」已登记付费`)
+async function payRow(row) {
+  try {
+    await store.setPaid(row.id)
+    message.success(`委托单「${row.code}」已登记付费`)
+  } catch (e) {
+    message.error(e.message || '操作失败')
+  }
 }
 
-function printCommission(row) {
-  const valveRows = row.valves
-    .map(
-      (v, i) =>
-        `<tr><td>${i + 1}</td><td>${v.vavleModel}</td><td>${v.diameterNominal}</td><td>${v.manuNo}</td><td>${v.workingPress}</td><td>${v.setPress}</td><td>${v.tagNo || '-'}</td><td>${v.workingMedia}</td></tr>`
+async function printCommission(row) {
+  try {
+    const detail = await store.fetchCommissionDetail(row.id)
+    const valveRows = (detail.valves || [])
+      .map(
+        (v, i) =>
+          `<tr><td>${i + 1}</td><td>${v.vavleModel}</td><td>${v.diameterNominal}</td><td>${v.manuNo}</td><td>${v.workingPress}</td><td>${v.setPress}</td><td>${v.tagNo || '-'}</td><td>${v.workingMedia}</td></tr>`
+      )
+      .join('')
+    printHtml(
+      '委托单',
+      `<h1>安全阀校验委托单</h1>
+       <div class="meta">委托单号：${row.code}</div>
+       <table>
+         <tr><th>使用单位</th><td>${row.custName}</td><th>使用单位地址</th><td>${row.address}</td></tr>
+         <tr><th>联系人</th><td>${row.client} / ${row.clientTel}</td><th>委托人</th><td>${row.contact} / ${row.contactTel}</td></tr>
+         <tr><th>检验单位</th><td>${row.examName}</td><th>预约取阀时间</th><td>${row.planReceiverTime || '-'}</td></tr>
+         <tr><th>送阀人</th><td>${row.deliverer || '-'}</td><th>送阀时间</th><td>${row.deliveryTime || '-'}</td></tr>
+       </table>
+       <h2>安全阀清单</h2>
+       <table>
+         <tr><th>#</th><th>安全阀型号</th><th>公称通径mm</th><th>出厂编号</th><th>工作压力MPa</th><th>要求整定压力MPa</th><th>安装位置</th><th>工作介质</th></tr>
+         ${valveRows}
+       </table>
+       <div class="stamp"><span>委托单位（章）：</span><span>日期：${(row.createTime || '').slice(0, 10)}</span></div>`
     )
-    .join('')
-  printHtml(
-    '委托单',
-    `<h1>安全阀校验委托单</h1>
-     <div class="meta">委托单号：${row.code}</div>
-     <table>
-       <tr><th>使用单位</th><td>${row.custName}</td><th>使用单位地址</th><td>${row.address}</td></tr>
-       <tr><th>联系人</th><td>${row.client} / ${row.clientTel}</td><th>委托人</th><td>${row.contact} / ${row.contactTel}</td></tr>
-       <tr><th>检验单位</th><td>${row.examName}</td><th>预约取阀时间</th><td>${row.planReceiverTime || '-'}</td></tr>
-       <tr><th>送阀人</th><td>${row.deliverer || '-'}</td><th>送阀时间</th><td>${row.deliveryTime || '-'}</td></tr>
-     </table>
-     <h2>安全阀清单</h2>
-     <table>
-       <tr><th>#</th><th>安全阀型号</th><th>公称通径mm</th><th>出厂编号</th><th>工作压力MPa</th><th>要求整定压力MPa</th><th>安装位置</th><th>工作介质</th></tr>
-       ${valveRows}
-     </table>
-     <div class="stamp"><span>委托单位（章）：</span><span>日期：${row.createTime.slice(0, 10)}</span></div>`
-  )
+  } catch (e) {
+    message.error(e.message || '获取委托单详情失败')
+  }
 }
 
 /* ---------------- 退回弹窗 ---------------- */
@@ -269,14 +293,18 @@ function openReject(row) {
   rejectShow.value = true
 }
 
-function confirmReject() {
+async function confirmReject() {
   if (!rejectReason.value.trim()) {
     message.warning('请填写退回原因')
     return
   }
-  store.rejectCommission(rejectRow.value.id, rejectReason.value.trim())
-  rejectShow.value = false
-  message.success('已退回')
+  try {
+    await store.rejectCommission(rejectRow.value.id, rejectReason.value.trim())
+    rejectShow.value = false
+    message.success('已退回')
+  } catch (e) {
+    message.error(e.message || '退回失败')
+  }
 }
 
 /* ---------------- 批量导出 ---------------- */
@@ -309,7 +337,7 @@ function exportCommissions() {
   message.success(`已导出 ${rows.length} 条委托单`)
 }
 
-const unitOptions = store.units.map((u) => ({ label: u.name, value: u.id }))
+const unitOptions = computed(() => store.units.map((u) => ({ label: u.name, value: u.id })))
 </script>
 
 <template>

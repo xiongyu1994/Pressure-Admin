@@ -1,13 +1,42 @@
 <script setup>
-import { computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { NDescriptions, NDescriptionsItem, NTag } from 'naive-ui'
-import { COMMISSION_STATUS } from '@/store/business'
+import { COMMISSION_STATUS, useBusinessStore } from '@/store/business'
 
 const props = defineProps({
   show: { type: Boolean, default: false },
   row: { type: Object, default: null }
 })
 const emit = defineEmits(['update:show'])
+
+const store = useBusinessStore()
+
+/* 打开时从后端拉取完整详情（含安全阀清单） */
+const detail = ref(null)
+const detailLoading = ref(false)
+
+watch(
+  () => [props.show, props.row?.id],
+  async ([show, id]) => {
+    if (show && id) {
+      detailLoading.value = true
+      detail.value = null
+      try {
+        detail.value = await store.fetchCommissionDetail(id)
+      } catch {
+        detail.value = null
+      } finally {
+        detailLoading.value = false
+      }
+    } else if (!show) {
+      detail.value = null
+    }
+  },
+  { immediate: true }
+)
+
+const view = computed(() => detail.value || props.row)
+const valves = computed(() => view.value?.valves || [])
 
 const valveColumns = [
   { title: '#', key: 'idx', width: 50, render: (r, i) => i + 1 },
@@ -33,33 +62,35 @@ const statusInfo = computed(() => (props.row ? COMMISSION_STATUS[props.row.statu
     style="width: 900px"
     @update:show="(v) => emit('update:show', v)"
   >
-    <template v-if="row">
-      <n-descriptions bordered :column="3" size="small" label-placement="left">
-        <n-descriptions-item label="委托单号">{{ row.code }}</n-descriptions-item>
-        <n-descriptions-item label="状态">
-          <n-tag :type="statusInfo.type" size="small" :bordered="false">{{ statusInfo.label }}</n-tag>
-        </n-descriptions-item>
-        <n-descriptions-item label="委托日期">{{ row.createTime }}</n-descriptions-item>
-        <n-descriptions-item label="使用单位" :span="2">{{ row.custName }}</n-descriptions-item>
-        <n-descriptions-item label="使用单位地址">{{ row.address }}</n-descriptions-item>
-        <n-descriptions-item label="使用单位联系人">{{ row.client }}</n-descriptions-item>
-        <n-descriptions-item label="使用单位联系电话">{{ row.clientTel }}</n-descriptions-item>
-        <n-descriptions-item label="检验单位">{{ row.examName }}</n-descriptions-item>
-        <n-descriptions-item label="委托单位">{{ row.applicant }}</n-descriptions-item>
-        <n-descriptions-item label="委托单位地址">{{ row.custAddress }}</n-descriptions-item>
-        <n-descriptions-item label="委托人">{{ row.contact }}</n-descriptions-item>
-        <n-descriptions-item label="委托人联系电话">{{ row.contactTel }}</n-descriptions-item>
-        <n-descriptions-item label="预约取阀时间">{{ row.planReceiverTime }}</n-descriptions-item>
-        <n-descriptions-item label="送阀人">{{ row.deliverer }}</n-descriptions-item>
-        <n-descriptions-item label="送阀时间">{{ row.deliveryTime }}</n-descriptions-item>
-      </n-descriptions>
+    <template v-if="view">
+      <n-spin :show="detailLoading">
+        <n-descriptions bordered :column="3" size="small" label-placement="left">
+          <n-descriptions-item label="委托单号">{{ view.code }}</n-descriptions-item>
+          <n-descriptions-item label="状态">
+            <n-tag :type="statusInfo?.type || 'default'" size="small" :bordered="false">{{ statusInfo?.label || view.status }}</n-tag>
+          </n-descriptions-item>
+          <n-descriptions-item label="委托日期">{{ view.createTime }}</n-descriptions-item>
+          <n-descriptions-item label="使用单位" :span="2">{{ view.custName }}</n-descriptions-item>
+          <n-descriptions-item label="使用单位地址">{{ view.address }}</n-descriptions-item>
+          <n-descriptions-item label="使用单位联系人">{{ view.client }}</n-descriptions-item>
+          <n-descriptions-item label="使用单位联系电话">{{ view.clientTel }}</n-descriptions-item>
+          <n-descriptions-item label="检验单位">{{ view.examName }}</n-descriptions-item>
+          <n-descriptions-item label="委托单位">{{ view.applicant }}</n-descriptions-item>
+          <n-descriptions-item label="委托单位地址">{{ view.custAddress }}</n-descriptions-item>
+          <n-descriptions-item label="委托人">{{ view.contact }}</n-descriptions-item>
+          <n-descriptions-item label="委托人联系电话">{{ view.contactTel }}</n-descriptions-item>
+          <n-descriptions-item label="预约取阀时间">{{ view.planReceiverTime }}</n-descriptions-item>
+          <n-descriptions-item label="送阀人">{{ view.deliverer }}</n-descriptions-item>
+          <n-descriptions-item label="送阀时间">{{ view.deliveryTime }}</n-descriptions-item>
+        </n-descriptions>
 
-      <n-alert v-if="row.rejectReason" type="error" :show-icon="false" style="margin-top: 12px">
-        退回原因：{{ row.rejectReason }}
-      </n-alert>
+        <n-alert v-if="view.rejectReason" type="error" :show-icon="false" style="margin-top: 12px">
+          退回原因：{{ view.rejectReason }}
+        </n-alert>
 
-      <n-divider title-placement="left">安全阀清单（{{ row.valves.length }} 台）</n-divider>
-      <n-data-table size="small" :columns="valveColumns" :data="row.valves" :row-key="(r) => r._seq || r.id" max-height="300" :scroll-x="1000" />
+        <n-divider title-placement="left">安全阀清单（{{ valves.length }} 台）</n-divider>
+        <n-data-table size="small" :columns="valveColumns" :data="valves" :row-key="(r) => r.id" max-height="300" :scroll-x="1000" />
+      </n-spin>
     </template>
   </n-modal>
 </template>

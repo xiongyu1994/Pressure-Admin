@@ -1,13 +1,12 @@
 import { defineStore } from 'pinia'
+import request from '@/utils/request'
 import { asyncRoutes } from '@/router'
 
-let uid = 1
-
-/** 由动态路由树初始化可编辑的菜单配置树 */
-function buildTree(routes, parentId = 0) {
+/** 由前端路由树生成本地菜单树（后端未加载时的兜底） */
+function buildTree(routes, parentId = 0, uidRef = { n: 1 }) {
   return routes.map((r, i) => {
     const node = {
-      id: uid++,
+      id: uidRef.n++,
       parentId,
       title: r.meta.title,
       path: r.path,
@@ -15,11 +14,26 @@ function buildTree(routes, parentId = 0) {
       icon: r.meta.icon || '',
       type: r.children && r.children.length ? 'dir' : 'menu',
       sort: i + 1,
-      visible: true,
-      children: undefined
+      visible: true
     }
     if (r.children && r.children.length) {
-      node.children = buildTree(r.children, node.id)
+      node.children = buildTree(r.children, node.id, uidRef)
+    }
+    return node
+  })
+}
+
+/** 后端平铺列表组树 */
+function listToTree(rows, parentId = 0, uidRef = { n: 1000 }) {
+  const nodes = rows
+    .filter((m) => m.parentId === parentId)
+    .sort((a, b) => a.sort - b.sort)
+  return nodes.map((m) => {
+    const node = { ...m }
+    const children = listToTree(rows, m.id, uidRef)
+    if (children.length) {
+      node.children = children
+      node.type = 'dir'
     }
     return node
   })
@@ -33,10 +47,12 @@ function flatten(nodes, res = []) {
   return res
 }
 
-/** 菜单访问设置：控制菜单的显示/隐藏与基础配置 */
+/** 菜单访问设置：数据来自 system/menu 接口，控制侧边栏显示/隐藏 */
 export const useMenuStore = defineStore('menu', {
   state: () => ({
-    menus: buildTree(asyncRoutes)
+    menus: buildTree(asyncRoutes),
+    loaded: false,
+    loading: false
   }),
   getters: {
     flatMenus(state) {
@@ -48,38 +64,48 @@ export const useMenuStore = defineStore('menu', {
     }
   },
   actions: {
-    toggleVisible(id) {
-      const m = this.flatMenus.find((x) => x.id === id)
-      if (m) m.visible = !m.visible
-    },
-    updateMenu(id, patch) {
-      const m = this.flatMenus.find((x) => x.id === id)
-      if (m) Object.assign(m, patch)
-    },
-    addChild(parentId, node) {
-      const parent = this.flatMenus.find((x) => x.id === parentId)
-      if (!parent) return
-      parent.type = 'dir'
-      if (!parent.children) parent.children = []
-      parent.children.push({
-        id: uid++,
-        parentId: parent.id,
-        visible: true,
-        icon: '',
-        permission: '',
-        ...node
-      })
-    },
-    removeMenu(id) {
-      const walk = (list) => {
-        const idx = list.findIndex((x) => x.id === id)
-        if (idx !== -1) {
-          list.splice(idx, 1)
-          return true
+    async fetchMenus() {
+      if (this.loading) return
+      this.loading = true
+      try {
+        const rows = await request.get('/system/menu/list')
+        if (Array.isArray(rows) && rows.length) {
+          this.menus = listToTree(rows)
+          this.loaded = true
         }
-        return list.some((x) => x.children && walk(x.children))
+      } finally {
+        this.loading = false
       }
-      walk(this.menus)
+    },
+    async toggleVisible(id) {
+      const m = this.flatMenus.find((x) => x.id === id)
+      if (!m) return
+      const next = !m.visible
+      m.visible = next
+      try {
+        await request.post('/system/menu/visible', { id, visible: next ? 1 : 0 })
+      } catch (e) {
+        m.visible = !next
+        throw e
+      }
+    },
+    async updateMenu(id, patch) {
+      await request.post('/system/menu/update', { id, ...patch })
+      await this.fetchMenus()
+    },
+    async addChild(parentId, node) {
+      const parent = this.flatMenus.find((x) => x.id === parentId)
+      if (parent) parent.type = 'dir'
+      await request.post('/system/menu/add', { ...node, parentId })
+      await this.fetchMenus()
+    },
+    async addTopMenu(node) {
+      await request.post('/system/menu/add', { ...node, parentId: 0 })
+      await this.fetchMenus()
+    },
+    async removeMenu(id) {
+      await request.post('/system/menu/delete', { id })
+      await this.fetchMenus()
     }
   }
 })

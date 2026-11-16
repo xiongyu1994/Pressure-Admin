@@ -245,21 +245,37 @@ function openSubmitResult(row) {
   submitShow.value = true
 }
 
-function handleSubmit(row) {
-  store.submitWorkorder(row.id)
-  message.success(`「${row.orderCode}」已提交进入检验中`)
+async function handleSubmit(row) {
+  try {
+    await store.submitWorkorder(row.id)
+    message.success(`「${row.orderCode}」已提交进入检验中`)
+  } catch (e) {
+    message.error(e.message || '提交失败')
+  }
 }
 
-function handleResubmit(row) {
-  store.resubmitWorkorder(row.id)
-  message.success(`「${row.orderCode}」已重新提交到待检验`)
+async function handleResubmit(row) {
+  try {
+    await store.resubmitWorkorder(row.id)
+    message.success(`「${row.orderCode}」已重新提交到待检验`)
+  } catch (e) {
+    message.error(e.message || '重新提交失败')
+  }
+}
+
+async function markPrintedSafe(ids) {
+  try {
+    await store.markPrinted(ids)
+  } catch (e) {
+    message.error(e.message || '打印状态更新失败')
+  }
 }
 
 function printReport(row) {
   try {
     printHtml('安全阀校验报告', buildReportHtml(row))
     if (props.status === 'print') {
-      store.markPrinted(row.id)
+      markPrintedSafe(row.id)
     }
   } catch (e) {
     message.error(e.message)
@@ -270,7 +286,7 @@ function printRecord(row) {
   try {
     printHtml('安全阀校验记录', buildRecordHtml(row))
     if (props.status === 'print') {
-      store.markPrinted(row.id)
+      markPrintedSafe(row.id)
     }
   } catch (e) {
     message.error(e.message)
@@ -287,7 +303,7 @@ function batchPrintReport() {
   const body = rows.map(buildReportHtml).join('<div style="page-break-after:always"></div>')
   try {
     printHtml('批量校验报告', body)
-    if (props.status === 'print') store.markPrinted(rows.map((r) => r.id))
+    if (props.status === 'print') markPrintedSafe(rows.map((r) => r.id))
   } catch (e) {
     message.error(e.message)
   }
@@ -302,7 +318,7 @@ function batchPrintRecord() {
   const body = rows.map(buildRecordHtml).join('<div style="page-break-after:always"></div>')
   try {
     printHtml('批量校验记录', body)
-    if (props.status === 'print') store.markPrinted(rows.map((r) => r.id))
+    if (props.status === 'print') markPrintedSafe(rows.map((r) => r.id))
   } catch (e) {
     message.error(e.message)
   }

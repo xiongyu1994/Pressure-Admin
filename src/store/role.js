@@ -1,50 +1,43 @@
 import { defineStore } from 'pinia'
-import { asyncRoutes } from '@/router'
+import request from '@/utils/request'
 
-/** 角色数据（模拟，可被「权限设置」页面编辑） */
+/** 角色权限（全部来自 system/role 接口） */
 export const useRoleStore = defineStore('role', {
   state: () => ({
-    roles: [
-      {
-        id: 1,
-        name: 'admin',
-        label: '系统管理员',
-        remark: '拥有系统全部权限',
-        permissions: ['*'],
-        builtIn: true
-      },
-      {
-        id: 2,
-        name: 'inspector',
-        label: '检验员',
-        remark: '业务操作权限，含系统账号查看',
-        permissions: ['dashboard', 'entrust', 'examine', 'system', 'system:user'],
-        builtIn: false
-      },
-      {
-        id: 3,
-        name: 'customer',
-        label: '客户代表',
-        remark: '仅可查看工作台与委托单',
-        permissions: ['dashboard', 'entrust'],
-        builtIn: false
-      }
-    ]
+    roles: [],
+    loaded: false,
+    loading: false
   }),
   actions: {
-    updateRolePermissions(id, permissions) {
-      const role = this.roles.find((r) => r.id === id)
-      if (role) role.permissions = [...permissions]
+    async fetchRoles() {
+      if (this.loading) return
+      this.loading = true
+      try {
+        this.roles = await request.get('/system/role/list')
+        this.loaded = true
+      } finally {
+        this.loading = false
+      }
     },
-    updateRole(id, patch) {
-      const role = this.roles.find((r) => r.id === id)
-      if (role) Object.assign(role, patch)
+    async ensureLoaded() {
+      if (!this.loaded) await this.fetchRoles()
     },
-    removeRole(id) {
-      this.roles = this.roles.filter((r) => r.id !== id)
+    /** 保存角色勾选的权限标识 */
+    async updateRolePermissions(id, permissions) {
+      await request.post('/system/role/permissions', { id, permissions })
+      await this.fetchRoles()
     },
-    addRole(role) {
-      this.roles.push({ ...role, id: Date.now(), builtIn: false })
+    async updateRole(id, patch) {
+      await request.post('/system/role/update', { id, ...patch })
+      await this.fetchRoles()
+    },
+    async removeRole(id) {
+      await request.post('/system/role/delete', { id })
+      await this.fetchRoles()
+    },
+    async addRole(role) {
+      await request.post('/system/role/add', role)
+      await this.fetchRoles()
     }
   }
 })

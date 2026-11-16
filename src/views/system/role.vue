@@ -1,5 +1,5 @@
 <script setup>
-import { ref, reactive, computed, h } from 'vue'
+import { ref, reactive, computed, h, onMounted } from 'vue'
 import { useMessage } from 'naive-ui'
 import { NButton, NSpace, NTag, NPopconfirm } from 'naive-ui'
 import { useRoleStore } from '@/store/role'
@@ -7,6 +7,10 @@ import { asyncRoutes } from '@/router'
 
 const message = useMessage()
 const roleStore = useRoleStore()
+
+onMounted(() => {
+  roleStore.fetchRoles().catch((e) => message.error(e.message || '加载角色列表失败'))
+})
 
 /** 由动态路由树生成权限树（key 即权限标识） */
 function toTreeData(routes) {
@@ -94,30 +98,51 @@ function openPermModal(role) {
   showModal.value = true
 }
 
-function savePerms() {
-  roleStore.updateRolePermissions(currentRole.value.id, checkedKeys.value)
-  message.success(`角色「${currentRole.value.label}」权限已更新`)
-  showModal.value = false
+const savingPerms = ref(false)
+
+async function savePerms() {
+  savingPerms.value = true
+  try {
+    await roleStore.updateRolePermissions(currentRole.value.id, checkedKeys.value)
+    message.success(`角色「${currentRole.value.label}」权限已更新，相关账号重新登录后生效`)
+    showModal.value = false
+  } catch (e) {
+    message.error(e.message || '保存失败')
+  } finally {
+    savingPerms.value = false
+  }
 }
 
 /* ---------- 新增角色 ---------- */
 const showAdd = ref(false)
 const addForm = reactive({ label: '', name: '', remark: '' })
+const savingAdd = ref(false)
 
-function addRole() {
+async function addRole() {
   if (!addForm.label || !addForm.name) {
     message.warning('请填写角色名称和标识')
     return
   }
-  roleStore.addRole({ ...addForm, permissions: ['dashboard'] })
-  Object.assign(addForm, { label: '', name: '', remark: '' })
-  showAdd.value = false
-  message.success('新增角色成功')
+  savingAdd.value = true
+  try {
+    await roleStore.addRole({ ...addForm })
+    Object.assign(addForm, { label: '', name: '', remark: '' })
+    showAdd.value = false
+    message.success('新增角色成功')
+  } catch (e) {
+    message.error(e.message || '新增失败')
+  } finally {
+    savingAdd.value = false
+  }
 }
 
-function removeRole(row) {
-  roleStore.removeRole(row.id)
-  message.success('删除成功')
+async function removeRole(row) {
+  try {
+    await roleStore.removeRole(row.id)
+    message.success('删除成功')
+  } catch (e) {
+    message.error(e.message || '删除失败')
+  }
 }
 
 const roleList = computed(() => roleStore.roles)
@@ -132,7 +157,7 @@ const roleList = computed(() => roleStore.roles)
       <n-button type="primary" @click="showAdd = true">新增角色</n-button>
     </div>
 
-    <n-data-table :columns="columns" :data="roleList" />
+    <n-data-table :columns="columns" :data="roleList" :loading="roleStore.loading" />
 
     <n-modal
       v-model:show="showModal"
@@ -152,7 +177,7 @@ const roleList = computed(() => roleStore.roles)
       <template #footer>
         <div style="display: flex; justify-content: flex-end; gap: 10px">
           <n-button @click="showModal = false">取消</n-button>
-          <n-button type="primary" @click="savePerms">保存</n-button>
+          <n-button type="primary" :loading="savingPerms" @click="savePerms">保存</n-button>
         </div>
       </template>
     </n-modal>
@@ -172,7 +197,7 @@ const roleList = computed(() => roleStore.roles)
       <template #footer>
         <div style="display: flex; justify-content: flex-end; gap: 10px">
           <n-button @click="showAdd = false">取消</n-button>
-          <n-button type="primary" @click="addRole">确定</n-button>
+          <n-button type="primary" :loading="savingAdd" @click="addRole">确定</n-button>
         </div>
       </template>
     </n-modal>

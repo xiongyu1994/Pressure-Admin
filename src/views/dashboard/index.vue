@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onBeforeUnmount, h } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, h } from 'vue'
 import * as echarts from 'echarts'
 import { NIcon } from 'naive-ui'
 import {
@@ -13,28 +13,36 @@ import { useBusinessStore } from '@/store/business'
 
 const store = useBusinessStore()
 
-/* ---------- 统计卡片 ---------- */
-const statList = [
+/* ---------- 统计卡片（来自 workbench/stats 接口） ---------- */
+const statList = computed(() => [
   { label: '已校检总数（个）', value: store.stats.checkedTotal, icon: ClipboardOutline, color: '#1fc2b4' },
   { label: '已校验未审（个）', value: store.stats.unchecked, icon: CheckmarkDoneOutline, color: '#9b7ede' },
   { label: '待校检总数（个）', value: store.stats.waitTotal, icon: TimeOutline, color: '#f0a020' },
   { label: '委托单数', value: store.stats.commissionTotal, icon: ReaderOutline, color: '#4098fc' },
   { label: '总客户数', value: store.stats.customerTotal, icon: PeopleOutline, color: '#18a058' }
-]
+])
 
-const companyOptions = store.units.slice(0, 8).map((u) => ({ label: u.name, value: u.id }))
-const company = ref(store.units[0].id)
+const companyOptions = computed(() =>
+  store.units.slice(0, 8).map((u) => ({ label: u.name, value: u.id }))
+)
+const company = ref(null)
 
-/* ---------- 校验统计图表 ---------- */
+/* ---------- 校验统计图表（来自 workbench/chart 接口） ---------- */
 const statType = ref('year')
 const rangeStart = ref(Date.parse('2026-01'))
 const rangeEnd = ref(Date.parse('2026-12'))
 const chartRef = ref(null)
 let chart = null
 
-const months = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月']
+function fmtMonth(ts) {
+  const d = new Date(ts)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+}
+
+const companyName = ref('总计')
 
 function buildOption() {
+  const cd = store.chartData
   return {
     color: ['#1fc2b4', '#9b7ede'],
     tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
@@ -44,34 +52,30 @@ function buildOption() {
       textStyle: { fontSize: 12, color: '#606266' }
     },
     grid: { left: 50, right: 24, top: 44, bottom: 30 },
-    xAxis: { type: 'category', data: months, axisLabel: { color: '#606266' } },
+    xAxis: { type: 'category', data: cd.months.length ? cd.months : ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'], axisLabel: { color: '#606266' } },
     yAxis: {
       type: 'value',
-      max: 400,
       axisLabel: { color: '#606266' },
       splitLine: { lineStyle: { color: '#eef0f4' } }
     },
     series: [
-      {
-        name: companyName.value + '-已审',
-        type: 'bar',
-        barWidth: 22,
-        data: [370, 210, 268, 198, 240, 150, 180, 220, 160, 210, 175, 120]
-      },
-      {
-        name: companyName.value + '-未审',
-        type: 'bar',
-        barWidth: 22,
-        data: [12, 8, 15, 6, 10, 4, 9, 12, 5, 8, 6, 3]
-      }
+      { name: companyName.value + '-已审', type: 'bar', barWidth: 22, data: cd.audited },
+      { name: companyName.value + '-未审', type: 'bar', barWidth: 22, data: cd.unaudited }
     ]
   }
 }
 
-const companyName = ref(companyOptions[0].label)
-
-function refreshChart() {
-  companyName.value = companyOptions.find((o) => o.value === company.value)?.label || companyName.value
+async function refreshChart() {
+  companyName.value = companyOptions.value.find((o) => o.value === company.value)?.label || '总计'
+  try {
+    await store.fetchChart({
+      start: fmtMonth(rangeStart.value),
+      end: fmtMonth(rangeEnd.value),
+      custName: company.value ? companyName.value : ''
+    })
+  } catch {
+    /* 接口异常时保留旧数据 */
+  }
   if (chart) chart.setOption(buildOption())
 }
 
@@ -83,6 +87,7 @@ onMounted(() => {
   chart = echarts.init(chartRef.value)
   chart.setOption(buildOption())
   window.addEventListener('resize', handleResize)
+  refreshChart()
 })
 
 onBeforeUnmount(() => {
@@ -91,10 +96,9 @@ onBeforeUnmount(() => {
   chart = null
 })
 
-/* ---------- 检验人员排名 ---------- */
-const inspectorRanking = store.inspectorRanking
+/* ---------- 检验人员排名 / 送检单位排名（workbench/rank 接口） ---------- */
+const inspectorRanking = computed(() => store.inspectorRanking)
 
-/* ---------- 送检单位排名 ---------- */
 const medals = ['🥇', '🥈', '🥉']
 
 function rankRender(medalsArr) {
@@ -126,7 +130,16 @@ const unitColumns = [
       <!-- 筛选栏 -->
       <div class="page-card dash-header">
         <n-tag type="info" :bordered="false">总计</n-tag>
-        <n-select v-model:value="company" :options="companyOptions" filterable style="width: 280px" size="small" @update:value="refreshChart" />
+        <n-select
+          v-model:value="company"
+          :options="companyOptions"
+          filterable
+          clearable
+          placeholder="全部单位"
+          style="width: 280px"
+          size="small"
+          @update:value="refreshChart"
+        />
       </div>
 
       <!-- 统计卡片 -->

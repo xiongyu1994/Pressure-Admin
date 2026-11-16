@@ -1,5 +1,5 @@
 <script setup>
-import { ref, reactive, computed, h } from 'vue'
+import { ref, reactive, h, onMounted } from 'vue'
 import { useMessage } from 'naive-ui'
 import { NButton, NSwitch, NSpace, NTag, NPopconfirm } from 'naive-ui'
 import { useMenuStore } from '@/store/menu'
@@ -7,6 +7,10 @@ import { iconMap } from '@/utils/icons'
 
 const message = useMessage()
 const menuStore = useMenuStore()
+
+onMounted(() => {
+  menuStore.fetchMenus().catch((e) => message.error(e.message || '加载菜单配置失败'))
+})
 
 const columns = [
   { title: '菜单名称', key: 'title', width: 160 },
@@ -46,10 +50,7 @@ const columns = [
       return h(NSwitch, {
         value: row.visible,
         size: 'small',
-        onUpdateValue: () => {
-          menuStore.toggleVisible(row.id)
-          message.success(`菜单「${row.title}」已${row.visible ? '隐藏' : '显示'}`)
-        }
+        onUpdateValue: () => handleToggle(row)
       })
     }
   },
@@ -108,29 +109,52 @@ function openModal(row, parent) {
   showModal.value = true
 }
 
-function save() {
+async function handleToggle(row) {
+  const next = !row.visible
+  try {
+    await menuStore.toggleVisible(row.id)
+    message.success(`菜单「${row.title}」已${next ? '显示' : '隐藏'}`)
+  } catch (e) {
+    message.error(e.message || '操作失败')
+  }
+}
+
+const saving = ref(false)
+
+async function save() {
   if (!form.title || !form.path) {
     message.warning('请填写菜单名称和路由路径')
     return
   }
-  if (editingId.value) {
-    menuStore.updateMenu(editingId.value, { ...form })
-    message.success('修改成功')
-  } else {
-    const node = { ...form, parentId: parentId.value, type: 'menu', id: Date.now(), children: undefined }
-    if (parentId.value) {
-      menuStore.addChild(parentId.value, node)
+  saving.value = true
+  try {
+    if (editingId.value) {
+      await menuStore.updateMenu(editingId.value, { ...form })
+      message.success('修改成功')
     } else {
-      menuStore.menus.push(node)
+      const node = { ...form, type: 'menu' }
+      if (parentId.value) {
+        await menuStore.addChild(parentId.value, node)
+      } else {
+        await menuStore.addTopMenu(node)
+      }
+      message.success('新增成功')
     }
-    message.success('新增成功')
+    showModal.value = false
+  } catch (e) {
+    message.error(e.message || '保存失败')
+  } finally {
+    saving.value = false
   }
-  showModal.value = false
 }
 
-function removeMenu(row) {
-  menuStore.removeMenu(row.id)
-  message.success('删除成功')
+async function removeMenu(row) {
+  try {
+    await menuStore.removeMenu(row.id)
+    message.success('删除成功')
+  } catch (e) {
+    message.error(e.message || '删除失败')
+  }
 }
 
 const iconOptions = Object.keys(iconMap).map((k) => ({ label: k, value: k }))
@@ -148,6 +172,7 @@ const iconOptions = Object.keys(iconMap).map((k) => ({ label: k, value: k }))
     <n-data-table
       :columns="columns"
       :data="menuStore.menus"
+      :loading="menuStore.loading"
       row-key="id"
       default-expand-all
       children-key="children"
@@ -182,7 +207,7 @@ const iconOptions = Object.keys(iconMap).map((k) => ({ label: k, value: k }))
       <template #footer>
         <div style="display: flex; justify-content: flex-end; gap: 10px">
           <n-button @click="showModal = false">取消</n-button>
-          <n-button type="primary" @click="save">确定</n-button>
+          <n-button type="primary" :loading="saving" @click="save">确定</n-button>
         </div>
       </template>
     </n-modal>

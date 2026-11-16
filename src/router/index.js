@@ -136,6 +136,15 @@ router.beforeEach(async (to) => {
     permissionStore.generateRoutes(userStore.permissions)
     return { ...to, replace: true }
   }
+  // 登录后拉取业务数据（委托单/工单/统计等）与菜单可见性配置，失败不阻塞导航，下次导航自动重试
+  const { useBusinessStore } = await import('@/store/business')
+  useBusinessStore()
+    .ensureLoaded()
+    .catch(() => {})
+  const { useMenuStore } = await import('@/store/menu')
+  useMenuStore()
+    .fetchMenus()
+    .catch(() => {})
   return true
 })
 

@@ -68,6 +68,20 @@ const rules = {
 
 const submitting = ref(false)
 
+function fmtDateTime(ts) {
+  if (!ts) return ''
+  const d = new Date(ts)
+  const p = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`
+}
+
+function fmtDate(ts) {
+  if (!ts) return ''
+  const d = new Date(ts)
+  const p = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
+}
+
 async function handleSubmit() {
   try {
     await formRef.value?.validate()
@@ -75,15 +89,20 @@ async function handleSubmit() {
     return
   }
   submitting.value = true
-  setTimeout(() => {
-    store.submitResult(props.row.id, {
+  try {
+    await store.submitResult(props.row.id, {
       ...form,
-      inspectorTime: new Date(form.inspectorTime).toLocaleString('zh-CN', { hour12: false })
+      pressureGaugeLifespan: fmtDate(form.pressureGaugeLifespan),
+      pressureGaugeLifespan2: fmtDate(form.pressureGaugeLifespan2),
+      inspectorTime: fmtDateTime(form.inspectorTime)
     })
-    submitting.value = false
     emit('update:show', false)
     message.success(`「${form.orderCode}」检验结果已提交，进入待打印`)
-  }, 300)
+  } catch (e) {
+    message.error(e.message || '提交失败')
+  } finally {
+    submitting.value = false
+  }
 }
 </script>
 

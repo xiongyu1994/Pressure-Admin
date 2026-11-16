@@ -1,13 +1,10 @@
 <script setup>
-import { ref, reactive, computed, h } from 'vue'
+import { ref, reactive, computed, h, onMounted } from 'vue'
 import { useMessage } from 'naive-ui'
 import { NButton, NSwitch, NSpace, NTag, NPopconfirm } from 'naive-ui'
-import { useRoleStore } from '@/store/role'
-import { useUserStore } from '@/store/user'
+import request from '@/utils/request'
 
 const message = useMessage()
-const roleStore = useRoleStore()
-const userStore = useUserStore()
 
 /* ---------------- 筛选 ---------------- */
 const filters = reactive({
@@ -24,24 +21,35 @@ function resetSearch() {
   filters.phone = ''
   filters.unitName = ''
   filters.status = null
+  load()
 }
 
-/* ---------------- 账号数据 ---------------- */
-const list = ref([
-  { id: 227, account: 'whyh_006', name: '周宽', phone: '13800000002', unitName: '武汉翼华技术设备有限公司', identity: '检验员', enabled: true, sign: true, lastTime: '2026-11-13 15:13:23', lastIp: '27.19.197.232' },
-  { id: 228, account: 'whyh_007', name: '周红超', phone: '13800000003', unitName: '武汉翼华技术设备有限公司', identity: '检验员', enabled: true, sign: true, lastTime: '2026-11-12 09:02:11', lastIp: '27.19.197.235' },
-  { id: 1, account: 'admin', name: '系统管理员', phone: '13800000001', unitName: '平台运营中心', identity: '管理员', enabled: true, sign: false, lastTime: '2026-11-13 08:30:00', lastIp: '192.168.1.10' },
-  { id: 229, account: 'hxxx_001', name: '李明', phone: '13800000004', unitName: '湖北欣瑞祥油品管理有限公司孝感分公司', identity: '客户代表', enabled: false, sign: false, lastTime: '2026-10-28 16:44:05', lastIp: '58.49.130.77' }
-])
+/* ---------------- 账号数据（来自 system/user/list 接口） ---------------- */
+const list = ref([])
+const listLoading = ref(false)
+
+async function load() {
+  listLoading.value = true
+  try {
+    const data = await request.get('/system/user/list', { page: 1, limit: 500 })
+    list.value = data.list || []
+  } catch (e) {
+    message.error(e.message || '加载账号列表失败')
+  } finally {
+    listLoading.value = false
+  }
+}
+
+onMounted(load)
 
 const filtered = computed(() =>
   list.value.filter(
     (u) =>
-      (!filters.name || u.name.includes(filters.name)) &&
-      (!filters.account || u.account.includes(filters.account)) &&
-      (!filters.phone || u.phone.includes(filters.phone)) &&
-      (!filters.unitName || u.unitName.includes(filters.unitName)) &&
-      (filters.status === null || u.enabled === filters.status)
+      (!filters.name || (u.name || '').includes(filters.name)) &&
+      (!filters.account || (u.account || '').includes(filters.account)) &&
+      (!filters.phone || (u.phone || '').includes(filters.phone)) &&
+      (!filters.unitName || (u.unitName || '').includes(filters.unitName)) &&
+      (filters.status === null || u.status === filters.status)
   )
 )
 
@@ -79,16 +87,14 @@ const columns = [
   { title: 'ID', key: 'id', width: 70, sorter: 'default' },
   {
     title: '状态',
-    key: 'enabled',
+    key: 'status',
     width: 80,
     render(row) {
       return h(NSwitch, {
-        value: row.enabled,
+        value: row.status,
         size: 'small',
-        onUpdateValue: (v) => {
-          row.enabled = v
-          message.success(`账号「${row.name}」已${v ? '启用' : '停用'}`)
-        }
+        loading: row._statusLoading,
+        onUpdateValue: (v) => toggleStatus(row, v)
       })
     }
   },
@@ -123,8 +129,23 @@ const columns = [
   { title: '最后登录IP', key: 'lastIp', width: 140 }
 ]
 
+/* ---------------- 状态启停（system/user/status 接口） ---------------- */
+async function toggleStatus(row, v) {
+  row._statusLoading = true
+  try {
+    await request.post('/system/user/status', { id: row.id, status: v ? 1 : 0 })
+    row.status = v
+    message.success(`账号「${row.name}」已${v ? '启用' : '停用'}`)
+  } catch (e) {
+    message.error(e.message || '操作失败')
+  } finally {
+    row._statusLoading = false
+  }
+}
+
 /* ---------------- 新增 / 编辑弹窗 ---------------- */
 const showModal = ref(false)
+const saving = ref(false)
 const editingId = ref(null)
 const form = reactive({
   account: '',
@@ -142,49 +163,65 @@ function openModal(row) {
     Object.assign(form, { account: row.account, password: '', password2: '', name: row.name, phone: row.phone, unitName: row.unitName, identity: row.identity })
   } else {
     editingId.value = null
-    Object.assign(form, { account: '', password: '', password2: '', name: '', phone: '', unitName: userStore.name ? '武汉翼华技术设备有限公司' : '', identity: '检验员' })
+    Object.assign(form, { account: '', password: '', password2: '', name: '', phone: '', unitName: '', identity: '检验员' })
   }
   showModal.value = true
 }
 
-function save() {
+async function save() {
   if (!form.account || !form.name) {
     message.warning('请填写账号和姓名')
     return
   }
-  if (!editingId.value) {
-    if (!form.password) {
-      message.warning('请填写密码')
-      return
+  saving.value = true
+  try {
+    if (!editingId.value) {
+      if (!form.password) {
+        message.warning('请填写密码')
+        return
+      }
+      if (form.password !== form.password2) {
+        message.warning('两次输入的密码不一致')
+        return
+      }
+      await request.post('/system/user/add', {
+        account: form.account,
+        password: form.password,
+        name: form.name,
+        phone: form.phone,
+        unitName: form.unitName,
+        identity: form.identity
+      })
+      message.success('新增账号成功')
+    } else {
+      const payload = {
+        id: editingId.value,
+        name: form.name,
+        phone: form.phone,
+        unitName: form.unitName,
+        identity: form.identity
+      }
+      if (form.password) payload.password = form.password
+      await request.post('/system/user/update', payload)
+      message.success('修改成功')
     }
-    if (form.password !== form.password2) {
-      message.warning('两次输入的密码不一致')
-      return
-    }
-    list.value.push({
-      id: Date.now() % 100000,
-      account: form.account,
-      name: form.name,
-      phone: form.phone,
-      unitName: form.unitName,
-      identity: form.identity,
-      enabled: true,
-      sign: false,
-      lastTime: '-',
-      lastIp: '-'
-    })
-    message.success('新增账号成功')
-  } else {
-    const row = list.value.find((u) => u.id === editingId.value)
-    Object.assign(row, { account: form.account, name: form.name, phone: form.phone, unitName: form.unitName, identity: form.identity })
-    message.success('修改成功')
+    showModal.value = false
+    await load()
+  } catch (e) {
+    message.error(e.message || '保存失败')
+  } finally {
+    saving.value = false
   }
-  showModal.value = false
 }
 
-function removeRow(row) {
-  list.value = list.value.filter((u) => u.id !== row.id)
-  message.success('删除成功')
+async function removeRow(row) {
+  try {
+    await request.post('/system/user/delete', { id: row.id })
+    message.success('删除成功')
+    await load()
+  } catch (e) {
+    message.error(e.message || '删除失败')
+  }
 }
 </script>
 
@@ -216,14 +253,22 @@ function removeRow(row) {
       </n-form-item>
       <n-form-item>
         <n-space>
-          <n-button type="primary" size="small" @click="message.success('查询完成')">查询</n-button>
+          <n-button type="primary" size="small" @click="load">查询</n-button>
           <n-button size="small" @click="resetSearch">重置</n-button>
           <n-button size="small" type="primary" @click="openModal(null)">新增</n-button>
         </n-space>
       </n-form-item>
     </n-form>
 
-    <n-data-table :columns="columns" :data="filtered" :scroll-x="1400" size="small" :pagination="{ pageSize: 15 }" />
+    <n-data-table
+      :columns="columns"
+      :data="filtered"
+      :loading="listLoading"
+      :scroll-x="1400"
+      :row-key="(r) => r.id"
+      size="small"
+      :pagination="{ pageSize: 15 }"
+    />
 
     <n-modal
       v-model:show="showModal"
@@ -265,7 +310,7 @@ function removeRow(row) {
       <template #footer>
         <div style="display: flex; justify-content: flex-end; gap: 10px">
           <n-button @click="showModal = false">取消</n-button>
-          <n-button type="primary" @click="save">确认提交</n-button>
+          <n-button type="primary" :loading="saving" @click="save">确认提交</n-button>
         </div>
       </template>
     </n-modal>

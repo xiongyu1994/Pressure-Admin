@@ -1,5 +1,5 @@
 <script setup>
-import { ref, reactive, h } from 'vue'
+import { ref, reactive, computed, h } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
 import { NButton, NSpace, NPopconfirm } from 'naive-ui'
@@ -30,7 +30,7 @@ const form = reactive({
 })
 
 const rules = {
-  custId: { required: true, message: '请选择使用单位', trigger: 'change' },
+  custId: { required: true, message: '请选择使用单位', trigger: ['change','blur'],type:'number'},
   address: { required: true, message: '请输入使用单位地址', trigger: 'blur' },
   client: { required: true, message: '请输入使用单位联系人', trigger: 'blur' },
   clientTel: { required: true, message: '请输入使用单位联系电话', trigger: 'blur' },
@@ -40,11 +40,15 @@ const rules = {
 /* 选择使用单位后自动带出委托单位信息 */
 function onCustChange(v) {
   const u = store.units.find((x) => x.id === v)
+  console.log("u",u)
   if (u) {
     if (!form.applicant) form.applicant = u.name
-    if (!form.custAddress) form.custAddress = u.name.slice(0, 5) + '（默认地址）'
-    if (!form.contact) form.contact = u.name.slice(0, 2) + '负责人'
-    if (!form.contactTel) form.contactTel = '1380000' + String(1000 + u.id).slice(-4)
+    if (!form.address) form.address = u.address || ''
+    if (!form.client) form.client = u.client || ''
+    if (!form.clientTel) form.clientTel = u.clientTel || ''
+    if (!form.custAddress) form.custAddress = u.address || ''
+    if (!form.contact) form.contact = u.client || ''
+    if (!form.contactTel) form.contactTel = u.clientTel || ''
   }
 }
 
@@ -116,7 +120,8 @@ const valveFormShow = ref(false)
 async function handleSubmit() {
   try {
     await formRef.value?.validate()
-  } catch {
+  } catch(err) {
+    console.log("errrr",err)
     return
   }
   if (!valves.value.length) {
@@ -124,20 +129,23 @@ async function handleSubmit() {
     return
   }
   submitting.value = true
-  setTimeout(() => {
-    store.createCommission({
+  try {
+    await store.createCommission({
       ...form,
       planReceiverTime: form.planReceiverTime ? new Date(form.planReceiverTime).toLocaleString('zh-CN', { hour12: false }) : '',
       deliveryTime: form.deliveryTime ? new Date(form.deliveryTime).toLocaleString('zh-CN', { hour12: false }) : '',
       valves: valves.value
     })
-    submitting.value = false
     message.success('委托单提交成功，等待审核')
     router.push('/commission/list')
-  }, 300)
+  } catch (e) {
+    message.error(e.message || '提交失败')
+  } finally {
+    submitting.value = false
+  }
 }
 
-const unitOptions = store.units.map((u) => ({ label: u.name, value: u.id }))
+const unitOptions = computed(() => store.units.map((u) => ({ label: u.name, value: u.id })))
 </script>
 
 <template>
@@ -197,8 +205,8 @@ const unitOptions = store.units.map((u) => ({ label: u.name, value: u.id }))
     <div class="valve-head">
       <span class="valve-title">安全阀清单（{{ valves.length }} 台）</span>
       <n-space>
-        <n-button size="small" type="primary" @click="pickerShow = true">添加阀门</n-button>
-        <n-button size="small" @click="valveFormShow = true">新增安全阀</n-button>
+        <n-button size="small" type="info" @click="valveFormShow = true">新增安全阀</n-button>
+        <n-button size="small" type="primary" @click="pickerShow = true">选择已有阀门</n-button>
       </n-space>
     </div>
     <n-data-table
@@ -223,7 +231,6 @@ const unitOptions = store.units.map((u) => ({ label: u.name, value: u.id }))
 .valve-head {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   margin-bottom: 10px;
 
   .valve-title {
