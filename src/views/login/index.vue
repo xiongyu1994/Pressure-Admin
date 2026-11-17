@@ -56,7 +56,7 @@ async function handleLogin() {
       </n-form>
       <div class="lc-tips">
         演示账号：<b>admin / admin123</b>（全部权限）<br />
-        演示账号：<b>zhoukuan / 123456</b>（周宽·业务权限）
+        演示账号：<b>whyh_006 / 123456</b>（周宽·业务权限）
       </div>
     </div>
   </div>

@@ -1,12 +1,5 @@
 <?php
-/** 角色权限设置（需 system:role 权限） */
-
-function require_role_admin()
-{
-    $user = current_user();
-    require_permission($user, 'system:role');
-    return $user;
-}
+/** 角色权限设置（权限由 index.php 路由表统一校验：system:role / system:role:*） */
 
 function role_row($r)
 {
@@ -26,7 +19,6 @@ function role_row($r)
 /** GET /system/role/list */
 function api_sysrole_list()
 {
-    require_role_admin();
     $rows = q_all('SELECT * FROM sys_role WHERE is_del = 0 ORDER BY built_in DESC, id');
     ok(array_map('role_row', $rows));
 }
@@ -34,7 +26,6 @@ function api_sysrole_list()
 /** POST /system/role/add {label, name, remark} */
 function api_sysrole_add()
 {
-    require_role_admin();
     $label = trim((string) param('label', ''));
     $name = trim((string) param('name', ''));
     if ($label === '' || $name === '') err('角色名称和角色标识为必填');
@@ -54,7 +45,6 @@ function api_sysrole_add()
 /** POST /system/role/update {id, label?, name?, remark?} */
 function api_sysrole_update()
 {
-    require_role_admin();
     $id = (int) param('id', 0);
     if (!$id) err('缺少参数 id');
     $row = q_one('SELECT * FROM sys_role WHERE id = ? AND is_del = 0', [$id]);
@@ -77,7 +67,6 @@ function api_sysrole_update()
 /** POST /system/role/permissions {id, permissions: [..] } 保存勾选的权限标识 */
 function api_sysrole_permissions()
 {
-    require_role_admin();
     $id = (int) param('id', 0);
     if (!$id) err('缺少参数 id');
     $row = q_one('SELECT * FROM sys_role WHERE id = ? AND is_del = 0', [$id]);
@@ -103,7 +92,6 @@ function api_sysrole_permissions()
 /** POST /system/role/delete {id} */
 function api_sysrole_delete()
 {
-    require_role_admin();
     $id = (int) param('id', 0);
     if (!$id) err('缺少参数 id');
     $row = q_one('SELECT * FROM sys_role WHERE id = ? AND is_del = 0', [$id]);

@@ -20,19 +20,34 @@ export function getToken() {
   return TOKEN
 }
 
-/** 后端地址：phpstudy 站点目录 WWW/inspection-api（部署后无需修改） */
-const BASE_URL = 'http://localhost/inspection-api/index.php?s='
+/**
+ * 后端地址：phpstudy 站点目录 WWW/inspection-api（部署后无需修改）
+ * 路由采用伪静态形式（.htaccess 已配置），如 http://localhost/inspection-api/system/menu/list
+ * 如需换服务器/端口，可在 .env.local 中配置 VITE_API_BASE
+ */
+const API_BASE = (import.meta.env.VITE_API_BASE || 'http://localhost/inspection-api').replace(/\/+$/, '')
+
+/** 供图片等静态资源拼接完整地址（如委托单签名图片） */
+export { API_BASE }
+
+/** 伪静态不可用（Apache 未开 mod_rewrite / AllowOverride 未生效）时的兜底地址 */
+const LEGACY_BASE = API_BASE + '/index.php?s='
+
+function buildUrl(base, path, queryString) {
+  const url = base + path.replace(/^\//, '')
+  if (!queryString) return url
+  return url + (url.includes('?') ? '&' : '?') + queryString
+}
 
 async function request(method, path, params = {}) {
-  let url = BASE_URL + path.replace(/^\//, '')
+  let queryString = ''
   let body
 
   if (method === 'GET') {
-    const qs = Object.entries(params)
+    queryString = Object.entries(params)
       .filter(([, v]) => v !== undefined && v !== null && v !== '')
       .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
       .join('&')
-    if (qs) url += '&' + qs
   } else {
     body = JSON.stringify(params)
   }
@@ -45,7 +60,15 @@ async function request(method, path, params = {}) {
     headers.Token = TOKEN
   }
 
-  const res = await fetch(url, { method, headers, body })
+  let res = await fetch(buildUrl(API_BASE + '/', path, queryString), { method, headers, body })
+  // 404 且返回的不是 JSON，说明伪静态未生效，退回 index.php?s= 形式重试一次
+  if (res.status === 404) {
+    const contentType = res.headers.get('content-type') || ''
+    if (!contentType.includes('application/json')) {
+      res = await fetch(buildUrl(LEGACY_BASE, path, queryString), { method, headers, body })
+    }
+  }
+
   const json = await res.json().catch(() => ({ code: -1, message: '响应解析失败' }))
 
   if (json.code === 401) {

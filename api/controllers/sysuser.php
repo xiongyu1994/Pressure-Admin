@@ -1,16 +1,8 @@
 <?php
-/** 系统账号管理（仅管理员可操作） */
-
-function require_admin()
-{
-    $user = current_user();
-    require_permission($user, 'system:user');
-    return $user;
-}
+/** 系统账号管理（权限由 index.php 路由表统一校验：system:user / system:user:*） */
 
 function api_sysuser_list()
 {
-    require_admin();
     [$page, $limit, $offset] = page_params();
 
     $where = 'is_del = 0';
@@ -56,7 +48,6 @@ function api_sysuser_list()
 
 function api_sysuser_add()
 {
-    require_admin();
     $account = trim((string) param('account', ''));
     $password = (string) param('password', '');
     $name = trim((string) param('name', ''));
@@ -82,7 +73,6 @@ function api_sysuser_add()
 
 function api_sysuser_update()
 {
-    require_admin();
     $id = (int) param('id', 0);
     if (!$id) err('缺少参数 id');
     if (!q_scalar('SELECT id FROM sys_user WHERE id = ? AND is_del = 0', [$id])) err('账号不存在');
@@ -105,7 +95,6 @@ function api_sysuser_update()
 
 function api_sysuser_delete()
 {
-    require_admin();
     $id = (int) param('id', 0);
     if (!$id) err('缺少参数 id');
     if ((int) $id === 1) err('内置管理员不可删除');
@@ -116,7 +105,6 @@ function api_sysuser_delete()
 /** 启用 / 停用 */
 function api_sysuser_status()
 {
-    require_admin();
     $id = (int) param('id', 0);
     $status = (int) param('status', 1);
     if (!$id) err('缺少参数 id');

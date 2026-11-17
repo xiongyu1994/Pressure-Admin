@@ -1,15 +1,24 @@
 <script setup>
-import { ref, reactive, computed, h } from 'vue'
+import { ref, reactive, computed, h, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { useMessage } from 'naive-ui'
+import { NProgress, useMessage } from 'naive-ui'
 import { NButton, NSpace, NTag, NPopconfirm } from 'naive-ui'
+import QRCode from 'qrcode'
 import { useBusinessStore, COMMISSION_STATUS } from '@/store/business'
+import request from '@/utils/request'
+import { hasPerm } from '@/utils/permission'
 import { printHtml } from '@/utils/print'
 import CommissionDetail from '@/components/commission/CommissionDetail.vue'
 
 const router = useRouter()
 const message = useMessage()
 const store = useBusinessStore()
+
+/* 进入本页只查本页需要的接口：委托单列表 + 使用单位下拉 */
+onMounted(() => {
+  store.fetchCommissions().catch(() => {})
+  store.fetchUnits().catch(() => {})
+})
 
 /* ---------------- 筛选 ---------------- */
 const filters = reactive({
@@ -57,62 +66,99 @@ const columns = [
     fixed: 'left',
     width: 250,
     render(row) {
-      const ops = [
-        h(
-          NButton,
-          { size: 'tiny', type: 'primary', quaternary: true, onClick: () => editRow(row) },
-          { default: () => '编辑' }
-        ),
-        h(
-          NButton,
-          { size: 'tiny', type: 'info', quaternary: true, onClick: () => viewRow(row) },
-          { default: () => '查看' }
-        )
-      ]
-      if (row.status === 'pending') {
+      const ops = []
+      if (hasPerm('commission:list:edit')) {
         ops.push(
           h(
-            NPopconfirm,
-            { onPositiveClick: () => passRow(row) },
-            {
-              trigger: () =>
-                h(NButton, { size: 'tiny', type: 'success', quaternary: true }, { default: () => '通过' }),
-              default: () => `通过后将为委托单「${row.code}」生成检验工单，确定吗？`
-            }
-          ),
-          h(
             NButton,
-            { size: 'tiny', type: 'warning', quaternary: true, onClick: () => openReject(row) },
-            { default: () => '退回' }
-          ),
-          h(
-            NButton,
-            { size: 'tiny', quaternary: true, onClick: () => precheckRow(row) },
-            { default: () => (row.precheck ? '通过预检' : '通过预检') }
-          ),
-          h(
-            NButton,
-            { size: 'tiny', quaternary: true, onClick: () => payRow(row) },
-            { default: () => (row.paid ? '已付费' : '付费') }
+            { size: 'tiny', type: 'primary', quaternary: true, onClick: () => editRow(row) },
+            { default: () => '编辑' }
           )
         )
       }
-      ops.push(
-        h(
-          NPopconfirm,
-          { onPositiveClick: () => deleteRow(row) },
-          {
-            trigger: () =>
-              h(NButton, { size: 'tiny', type: 'error', quaternary: true }, { default: () => '删除' }),
-            default: () => `确定删除委托单「${row.code}」吗？`
-          }
-        ),
-        h(
-          NButton,
-          { size: 'tiny', type: 'primary', quaternary: true, onClick: () => printCommission(row) },
-          { default: () => '打印委托单' }
+      if (hasPerm('commission:list:view')) {
+        ops.push(
+          h(
+            NButton,
+            { size: 'tiny', type: 'info', quaternary: true, onClick: () => viewRow(row) },
+            { default: () => '查看' }
+          )
         )
-      )
+      }
+      if (row.status === 'pending') {
+        // if (hasPerm('commission:list:approve')) {
+        //   ops.push(
+        //     h(
+        //       NPopconfirm,
+        //       { onPositiveClick: () => passRow(row) },
+        //       {
+        //         trigger: () =>
+        //           h(NButton, { size: 'tiny', type: 'success', quaternary: true }, { default: () => '通过' }),
+        //         default: () => `通过后将为委托单「${row.code}」生成检验工单，确定吗？`
+        //       }
+        //     )
+        //   )
+        // }
+        // if (hasPerm('commission:list:reject')) {
+        //   ops.push(
+        //     h(
+        //       NButton,
+        //       { size: 'tiny', type: 'warning', quaternary: true, onClick: () => openReject(row) },
+        //       { default: () => '退回' }
+        //     )
+        //   )
+        // }
+        // 手机签名：等待预检且未签名时显示；签名完成后隐藏，出现「预检」按钮
+        if (!row.signed && hasPerm('commission:list:sign')) {
+          ops.push(
+            h(
+              NButton,
+              { size: 'tiny', type: 'primary', quaternary: true, onClick: () => openSign(row) },
+              { default: () => '签名' }
+            )
+          )
+        }
+        if (row.signed && hasPerm('commission:list:precheck')) {
+          ops.push(
+            h(
+              NButton,
+              { size: 'tiny', type: 'success', quaternary: true, onClick: () => openPrecheck(row) },
+              { default: () => '预检' }
+            )
+          )
+        }
+        // if (hasPerm('commission:list:pay')) {
+        //   ops.push(
+        //     h(
+        //       NButton,
+        //       { size: 'tiny', quaternary: true, onClick: () => payRow(row) },
+        //       { default: () => (row.paid ? '已付费' : '付费') }
+        //     )
+        //   )
+        // }
+      }
+      if (hasPerm('commission:list:delete')) {
+        ops.push(
+          h(
+            NPopconfirm,
+            { onPositiveClick: () => deleteRow(row) },
+            {
+              trigger: () =>
+                h(NButton, { size: 'tiny', type: 'error', quaternary: true }, { default: () => '删除' }),
+              default: () => `确定删除委托单「${row.code}」吗？`
+            }
+          )
+        )
+      }
+      if (hasPerm('commission:list:print')) {
+        ops.push(
+          h(
+            NButton,
+            { size: 'tiny', type: 'primary', quaternary: true, onClick: () => printCommission(row) },
+            { default: () => '打印委托单' }
+          )
+        )
+      }
       return h(NSpace, { size: 4 }, { default: () => ops })
     }
   },
@@ -135,7 +181,7 @@ const columns = [
         : h(NTag, { size: 'small', bordered: false }, { default: () => '未预检' })
     }
   },
-  { title: '委托单号', key: 'code', width: 110, sorter: 'default' },
+  { title: '委托单号', key: 'code', width: 132, sorter: 'default' },
   { title: '使用单位', key: 'custName', minWidth: 180, ellipsis: { tooltip: true } },
   { title: '使用单位地址', key: 'address', minWidth: 150, ellipsis: { tooltip: true } },
   { title: '单位联系人', key: 'client', width: 100 },
@@ -146,15 +192,9 @@ const columns = [
   {
     title: '校验编号',
     key: 'completedNum',
-    width: 110,
+    width: 210,
     render(row) {
-      console.log("row...",row)
-      if (row.completedNum.split('、').length > 0) {
-         return row.completedNum  + '-' +  row.completedNum
-      }else{
-         return row.completedNum || '-'
-      }
-     
+      return row.completedNum || '-'
     }
   },
   {
@@ -162,7 +202,30 @@ const columns = [
     key: 'reportDone',
     width: 110,
     render(row) {
-      return `${row.reportDone || 0} / ${row.valveCount || 0}`
+      
+      return h(
+        NProgress,
+        { 
+          type: 'line',
+          percentage: row.pendingValveCount / row.valveCount * 100
+        },
+       
+      )
+      //return `${row.reportDone || 0} / ${row.valveCount || 0}`
+    }
+  },
+  {
+    title: '待检阀门',
+    key: 'pendingValveCount',
+    width: 100,
+    align: 'center',
+    render(row) {
+      const n = row.pendingValveCount || 0
+      return h(
+        NTag,
+        { size: 'small', bordered: false, type: n > 0 ? 'warning' : 'success' },
+        { default: () => (n > 0 ? `${n} 台` : '无') }
+      )
     }
   },
   { title: '委托日期', key: 'createTime', width: 150, sorter: 'default' }
@@ -171,48 +234,18 @@ const columns = [
 /* ---------------- 行操作 ---------------- */
 const detailShow = ref(false)
 const detailRow = ref(null)
-
-const editShow = ref(false)
-const editingId = ref(null)
-const editForm = reactive({
-  address: '',
-  client: '',
-  clientTel: '',
-  applicant: '',
-  custAddress: '',
-  contact: '',
-  contactTel: '',
-  planReceiverTime: ''
-})
+const detailMode = ref('view')
 
 function viewRow(row) {
   detailRow.value = row
+  detailMode.value = 'view'
   detailShow.value = true
 }
 
 function editRow(row) {
-  editingId.value = row.id
-  Object.assign(editForm, {
-    address: row.address,
-    client: row.client,
-    clientTel: row.clientTel,
-    applicant: row.applicant,
-    custAddress: row.custAddress,
-    contact: row.contact,
-    contactTel: row.contactTel,
-    planReceiverTime: row.planReceiverTime
-  })
-  editShow.value = true
-}
-
-async function saveEdit() {
-  try {
-    await store.updateCommission(editingId.value, { ...editForm })
-    editShow.value = false
-    message.success('修改成功')
-  } catch (e) {
-    message.error(e.message || '修改失败')
-  }
+  detailRow.value = row
+  detailMode.value = 'edit'
+  detailShow.value = true
 }
 
 async function passRow(row) {
@@ -233,12 +266,105 @@ async function deleteRow(row) {
   }
 }
 
-async function precheckRow(row) {
+/* ---------------- 手机扫码签名 ---------------- */
+const signShow = ref(false)
+const signRow = ref(null)
+const signUrl = ref('')
+const qrData = ref('')
+const signLoading = ref(false)
+let signTimer = null
+
+async function openSign(row) {
+  signRow.value = row
+  signUrl.value = ''
+  qrData.value = ''
+  signShow.value = true
+  signLoading.value = true
   try {
-    await store.setPrecheck(row.id)
-    message.success(`委托单「${row.code}」已通过预检`)
+    const data = await store.signQrcode(row.id)
+    signUrl.value = data.url
+    await refreshQr()
+    // 手机完成签名后自动检测并关闭弹窗
+    stopSignPoll()
+    signTimer = setInterval(() => checkSign(false), 3000)
   } catch (e) {
-    message.error(e.message || '操作失败')
+    message.error(e.message || '获取签名二维码失败')
+    signShow.value = false
+  } finally {
+    signLoading.value = false
+  }
+}
+
+/** 二维码内容可手改（如把 localhost 换成电脑局域网 IP），改完重新生成 */
+async function refreshQr() {
+  if (!signUrl.value) return
+  try {
+    qrData.value = await QRCode.toDataURL(signUrl.value, { width: 260, margin: 1 })
+  } catch (e) {
+    qrData.value = ''
+  }
+}
+
+async function checkSign(manual) {
+  if (!signRow.value) return
+  try {
+    const data = await store.signStatus(signRow.value.id)
+    if (data.signed) {
+      stopSignPoll()
+      message.success(`委托单「${signRow.value.code}」已完成手机签名，可进行预检`)
+      signShow.value = false
+      store.fetchCommissions().catch(() => {})
+    } else if (manual) {
+      message.info('尚未收到手机签名，请在手机上完成签名提交')
+    }
+  } catch (e) {
+    if (manual) message.error(e.message || '查询签名状态失败')
+  }
+}
+
+function stopSignPoll() {
+  if (signTimer) {
+    clearInterval(signTimer)
+    signTimer = null
+  }
+}
+watch(signShow, (v) => {
+  if (!v) stopSignPoll()
+})
+onBeforeUnmount(stopSignPoll)
+
+/* ---------------- 预检（录入开抽流水号） ---------------- */
+const precheckShow = ref(false)
+const precheckRowData = ref(null)
+const serialNo = ref('')
+const precheckLoading = ref(false)
+
+function openPrecheck(row) {
+  precheckRowData.value = row
+  serialNo.value = ''
+  precheckShow.value = true
+}
+
+async function confirmPrecheck() {
+  const row = precheckRowData.value
+  const serial = serialNo.value.trim()
+  if (!serial) {
+    message.warning('请输入开抽流水号')
+    return
+  }
+  precheckLoading.value = true
+  try {
+    const res = await store.precheckCommission(row.id, serial)
+    precheckShow.value = false
+    const start = res?.checkCodeStart || ''
+    const end = res?.checkCodeEnd || ''
+    const codeText = start && start !== end ? `${start} - ${end}` : start || ''
+    message.success(`委托单「${row.code}」预检通过，已进入待检验${codeText ? `，校验编号 ${codeText}` : ''}`)
+  } catch (e) {
+    // 流水号重复 / 未完成签名等后端校验失败在此提示
+    message.error(e.message || '提交失败')
+  } finally {
+    precheckLoading.value = false
   }
 }
 
@@ -338,6 +464,102 @@ function exportCommissions() {
 }
 
 const unitOptions = computed(() => store.units.map((u) => ({ label: u.name, value: u.id })))
+
+/* ---------------- 待检阀门（所有委托单位下未完成检测的阀门） ---------------- */
+const pendingShow = ref(false)
+const pendingLoading = ref(false)
+const pendingList = ref([])
+const pendingSummary = ref([])
+const pendingTotal = ref(0)
+const pendingFilter = reactive({ custId: null, scope: 'undone', keyword: '' })
+
+const pendingScopeOptions = [
+  { label: '未完成检测（默认）', value: 'undone' },
+  { label: '待审核 + 待检验', value: 'waiting' },
+  { label: '全部阀门', value: 'all' }
+]
+
+async function openPending() {
+  pendingShow.value = true
+  await loadPending()
+}
+
+async function loadPending() {
+  pendingLoading.value = true
+  try {
+    // 数据量小，一次取全量后在前端做单位/关键字过滤
+    const data = await request.get('/commission/pending_valves', {
+      limit: 2000,
+      scope: pendingFilter.scope
+    })
+    pendingList.value = data.list || []
+    pendingSummary.value = data.summary || []
+    pendingTotal.value = data.totalPending || 0
+  } catch (e) {
+    message.error(e.message || '加载待检阀门失败')
+  } finally {
+    pendingLoading.value = false
+  }
+}
+
+const pendingFiltered = computed(() => {
+  const kw = (pendingFilter.keyword || '').trim()
+  return pendingList.value.filter((v) => {
+    if (pendingFilter.custId && v.custId !== pendingFilter.custId) return false
+    if (kw) {
+      const text = `${v.custName || ''}${v.commissionCode || ''}${v.vavleModel || ''}${v.manuNo || ''}${v.orderCode || ''}`
+      if (!text.includes(kw)) return false
+    }
+    return true
+  })
+})
+
+function valveStatusType(s) {
+  const map = {
+    pending: 'warning',
+    wait: 'warning',
+    inspection: 'info',
+    rejected: 'error',
+    print: 'default',
+    done: 'success'
+  }
+  return map[s] || 'default'
+}
+
+const pendingColumns = [
+  {
+    title: '使用单位',
+    key: 'custName',
+    minWidth: 200,
+    ellipsis: { tooltip: true }
+  },
+  { title: '委托单号', key: 'commissionCode', width: 110 },
+  { title: '安全阀型号', key: 'vavleModel', width: 150, ellipsis: { tooltip: true } },
+  { title: '公称通径mm', key: 'diameterNominal', width: 100, align: 'center' },
+  { title: '出厂编号', key: 'manuNo', width: 110 },
+  { title: '工作介质', key: 'workingMedia', width: 100 },
+  { title: '要求整定压力MPa', key: 'setPress', width: 130, align: 'center' },
+  {
+    title: '检验编号',
+    key: 'orderCode',
+    width: 110,
+    render: (row) => row.orderCode || '-'
+  },
+  {
+    title: '阀门状态',
+    key: 'valveStatusText',
+    width: 100,
+    align: 'center',
+    render(row) {
+      return h(
+        NTag,
+        { size: 'small', bordered: false, type: valveStatusType(row.valveStatus) },
+        { default: () => row.valveStatusText }
+      )
+    }
+  },
+  { title: '委托日期', key: 'commissionTime', width: 150 }
+]
 </script>
 
 <template>
@@ -362,8 +584,9 @@ const unitOptions = computed(() => store.units.map((u) => ({ label: u.name, valu
         <n-space>
           <n-button type="primary" size="small" @click="message.success('查询完成')">查询</n-button>
           <n-button size="small" @click="resetSearch">重置</n-button>
-          <n-button size="small" type="primary" @click="router.push('/commission/add')">新增</n-button>
-          <n-button size="small" @click="exportCommissions">批量导出委托单</n-button>
+          <n-button size="small" type="primary" v-perm="'commission:list:add'" @click="router.push('/commission/add')">新增</n-button>
+          <n-button size="small" type="warning" v-perm="'commission:list:pending'" @click="openPending">待检阀门</n-button>
+          <n-button size="small" v-perm="'commission:list:export'" @click="exportCommissions">批量导出委托单</n-button>
         </n-space>
       </n-form-item>
     </n-form>
@@ -371,47 +594,80 @@ const unitOptions = computed(() => store.units.map((u) => ({ label: u.name, valu
     <n-data-table
       :columns="columns"
       :data="list"
+      :loading="store.loading.commissions"
       :scroll-x="1900"
       size="small"
       :pagination="{ pageSize: 15, showSizePicker: true, pageSizes: [15, 30, 60, 100] }"
     />
 
-    <CommissionDetail v-model:show="detailShow" :row="detailRow" />
+    <CommissionDetail v-model:show="detailShow" :row="detailRow" :mode="detailMode" />
 
-    <!-- 编辑 -->
-    <n-modal v-model:show="editShow" preset="card" title="编辑委托单" style="width: 560px">
-      <n-form label-placement="left" label-width="120" size="small">
-        <n-form-item label="使用单位地址">
-          <n-input v-model:value="editForm.address" />
+    <!-- 待检阀门（所有委托单位） -->
+    <n-modal
+      v-model:show="pendingShow"
+      preset="card"
+      title="待检阀门汇总"
+      style="width: 1180px"
+      :bordered="false"
+    >
+      <div class="pending-bar">
+        <div class="pending-total">
+          所有委托单位待检阀门共 <b>{{ pendingTotal }}</b> 台
+        </div>
+        <n-space size="small" style="row-gap: 6px">
+          <n-tag
+            v-for="s in pendingSummary"
+            :key="s.custId || s.unitName"
+            size="small"
+            :bordered="false"
+            :type="s.pendingCount > 0 ? 'warning' : 'default'"
+          >
+            {{ s.unitName }}　{{ s.pendingCount }} / {{ s.totalCount }}
+          </n-tag>
+        </n-space>
+      </div>
+
+      <n-form inline :show-feedback="false" label-placement="left" class="filter-bar" style="margin-top: 12px">
+        <n-form-item label="使用单位">
+          <n-select
+            v-model:value="pendingFilter.custId"
+            :options="unitOptions"
+            clearable
+            filterable
+            placeholder="全部"
+            style="width: 210px"
+          />
         </n-form-item>
-        <n-form-item label="使用单位联系人">
-          <n-input v-model:value="editForm.client" />
+        <n-form-item label="范围">
+          <n-select
+            v-model:value="pendingFilter.scope"
+            :options="pendingScopeOptions"
+            style="width: 180px"
+            @update:value="loadPending"
+          />
         </n-form-item>
-        <n-form-item label="使用单位电话">
-          <n-input v-model:value="editForm.clientTel" />
+        <n-form-item label="关键字">
+          <n-input
+            v-model:value="pendingFilter.keyword"
+            placeholder="单位 / 单号 / 型号 / 出厂编号"
+            clearable
+            style="width: 230px"
+          />
         </n-form-item>
-        <n-form-item label="委托单位">
-          <n-input v-model:value="editForm.applicant" />
-        </n-form-item>
-        <n-form-item label="委托单位地址">
-          <n-input v-model:value="editForm.custAddress" />
-        </n-form-item>
-        <n-form-item label="委托人">
-          <n-input v-model:value="editForm.contact" />
-        </n-form-item>
-        <n-form-item label="委托人电话">
-          <n-input v-model:value="editForm.contactTel" />
-        </n-form-item>
-        <n-form-item label="预约取阀时间">
-          <n-input v-model:value="editForm.planReceiverTime" placeholder="如 2026-01-20 09:30" />
+        <n-form-item>
+          <n-button size="small" @click="loadPending">刷新</n-button>
         </n-form-item>
       </n-form>
-      <template #footer>
-        <div style="display: flex; justify-content: flex-end; gap: 10px">
-          <n-button @click="editShow = false">取消</n-button>
-          <n-button type="primary" @click="saveEdit">保存</n-button>
-        </div>
-      </template>
+
+      <n-data-table
+        :columns="pendingColumns"
+        :data="pendingFiltered"
+        :loading="pendingLoading"
+        size="small"
+        :scroll-x="1250"
+        :row-key="(r) => r.valveId"
+        :pagination="{ pageSize: 15, showSizePicker: true, pageSizes: [15, 30, 60, 100] }"
+      />
     </n-modal>
 
     <!-- 退回 -->
@@ -424,6 +680,46 @@ const unitOptions = computed(() => store.units.map((u) => ({ label: u.name, valu
         </div>
       </template>
     </n-modal>
+
+    <!-- 手机扫码签名 -->
+    <n-modal v-model:show="signShow" preset="card" title="手机扫码签名" style="width: 420px">
+      <n-spin :show="signLoading">
+        <div class="sign-body">
+          <div class="sign-tip">
+            委托单：<b>{{ signRow?.code }}</b>
+            <span v-if="signRow?.custName">（{{ signRow.custName }}）</span>
+          </div>
+          <div class="qr-wrap">
+            <img v-if="qrData" :src="qrData" alt="签名二维码" class="qr-img" />
+            <n-empty v-else description="二维码生成中…" style="padding: 40px 0" />
+          </div>
+          <div class="sign-tip">二维码地址（手机无法访问时可把 localhost 改成电脑局域网 IP，改完自动重新生成）</div>
+          <n-input v-model:value="signUrl" size="small" @update:value="refreshQr" />
+          <div class="sign-tip sign-hint">
+            请使用手机微信「扫一扫」扫描二维码，在手机上完成手写签名并提交；签名完成后本弹窗自动关闭，
+            操作栏的「签名」按钮将变为「预检」。
+          </div>
+        </div>
+      </n-spin>
+      <template #footer>
+        <div style="display: flex; justify-content: flex-end; gap: 10px">
+          <n-button @click="signShow = false">关闭</n-button>
+          <n-button type="primary" @click="checkSign(true)">刷新签名状态</n-button>
+        </div>
+      </template>
+    </n-modal>
+
+    <!-- 预检：录入开抽流水号 -->
+    <n-modal v-model:show="precheckShow" preset="dialog" type="info" :show-icon="false"
+      title="确认通过预检吗？请输入开抽流水号" style="width: 380px">
+      <n-input v-model:value="serialNo" placeholder="请输入开抽流水号" @keyup.enter="confirmPrecheck" />
+      <template #action>
+        <n-space>
+          <n-button @click="precheckShow = false">取消</n-button>
+          <n-button type="primary" :loading="precheckLoading" @click="confirmPrecheck">确定</n-button>
+        </n-space>
+      </template>
+    </n-modal>
   </div>
 </template>
 
@@ -431,5 +727,58 @@ const unitOptions = computed(() => store.units.map((u) => ({ label: u.name, valu
 .filter-bar {
   row-gap: 8px;
   margin-bottom: 10px;
+}
+
+.pending-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: #f7f9fc;
+  border-radius: 6px;
+
+  .pending-total {
+    font-size: 14px;
+    color: #333;
+
+    b {
+      margin: 0 3px;
+      font-size: 18px;
+      color: #e8890c;
+    }
+  }
+}
+
+.sign-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  .qr-wrap {
+    display: flex;
+    justify-content: center;
+    padding: 6px 0;
+
+    .qr-img {
+      width: 240px;
+      height: 240px;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+    }
+  }
+
+  .sign-tip {
+    font-size: 12px;
+    color: #888;
+    line-height: 1.6;
+
+    b {
+      color: #333;
+    }
+  }
+
+  .sign-hint {
+    color: #b0b3ba;
+  }
 }
 </style>

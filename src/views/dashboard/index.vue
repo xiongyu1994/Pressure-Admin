@@ -87,6 +87,10 @@ onMounted(() => {
   chart = echarts.init(chartRef.value)
   chart.setOption(buildOption())
   window.addEventListener('resize', handleResize)
+  // 工作台只加载本页需要的接口：统计卡片 + 两个排名 + 使用单位下拉 + 图表数据
+  store.fetchStats().catch(() => {})
+  store.fetchRanks().catch(() => {})
+  store.fetchUnits().catch(() => {})
   refreshChart()
 })
 

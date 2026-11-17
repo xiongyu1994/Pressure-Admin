@@ -143,6 +143,10 @@ function commission_row($row)
         'rejectReason'    => $row['reject_reason'],
         'precheck'        => (bool) $row['precheck'],
         'paid'            => (bool) $row['paid'],
+        'signed'          => !empty($row['sign_img']),
+        'signImg'         => isset($row['sign_img']) ? (string) $row['sign_img'] : '',
+        'signTime'        => isset($row['sign_time']) ? (string) $row['sign_time'] : '',
+        'serialNo'        => isset($row['serial_no']) ? (string) $row['serial_no'] : '',
         'createBy'        => $row['create_by'],
         'createTime'      => $row['create_time'],
     ];
@@ -152,7 +156,19 @@ function commission_row($row)
 function commission_with_valves($row)
 {
     $out = commission_row($row);
-    $valves = q_all('SELECT * FROM commission_valve WHERE commission_id = ?', [$row['id']]);
+    // 关联工单取每台阀门的校验编号与校验状态（workorder.valve_id 关联）
+    $valves = q_all(
+        'SELECT cv.*, w.order_code AS wo_order_code, w.status AS wo_status
+         FROM commission_valve cv
+         LEFT JOIN workorder w ON w.valve_id = cv.id AND w.is_del = 0
+         WHERE cv.commission_id = ?',
+        [$row['id']]
+    );
     $out['valves'] = array_map('valve_row', $valves);
+    foreach ($out['valves'] as $i => $v) {
+        $src = $valves[$i];
+        $out['valves'][$i]['orderCode'] = isset($src['wo_order_code']) ? (string) $src['wo_order_code'] : '';
+        $out['valves'][$i]['checkStatus'] = isset($src['wo_status']) ? (string) $src['wo_status'] : '';
+    }
     return $out;
 }

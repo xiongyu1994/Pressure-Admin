@@ -42,6 +42,15 @@ export const useUserStore = defineStore('user', {
     fetchUserInfo() {
       return request.get('/user/info')
     },
+    /** 刷新页面时同步服务端最新权限（避免本地缓存过期导致菜单/按钮缺失） */
+    async syncPermissions() {
+      const data = await this.fetchUserInfo()
+      if (data && data.permissions) {
+        this.permissions = data.permissions
+        persist('admin_perms', this.permissions)
+      }
+      return data
+    },
     async logout() {
       // 后端销毁 token（失败不阻塞登出流程）
       request.post('/logout').catch(() => {})
@@ -63,6 +72,9 @@ export const useUserStore = defineStore('user', {
       })
       import('@/store/business').then(({ useBusinessStore }) => {
         useBusinessStore().reset()
+      })
+      import('@/store/menu').then(({ useMenuStore }) => {
+        useMenuStore().reset()
       })
       router.push('/login')
     }

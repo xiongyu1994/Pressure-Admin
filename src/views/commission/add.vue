@@ -1,5 +1,5 @@
 <script setup>
-import { ref, reactive, computed, h } from 'vue'
+import { ref, reactive, computed, h, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
 import { NButton, NSpace, NPopconfirm } from 'naive-ui'
@@ -10,6 +10,12 @@ import ValvePickerModal from '@/components/commission/ValvePickerModal.vue'
 const router = useRouter()
 const message = useMessage()
 const store = useBusinessStore()
+
+/* 本页需要：使用单位下拉 + 安全阀库（从库中选择阀门） */
+onMounted(() => {
+  store.fetchUnits().catch(() => {})
+  store.fetchValves().catch(() => {})
+})
 
 const formRef = ref(null)
 const submitting = ref(false)
@@ -130,13 +136,13 @@ async function handleSubmit() {
   }
   submitting.value = true
   try {
-    await store.createCommission({
+    const res = await store.createCommission({
       ...form,
       planReceiverTime: form.planReceiverTime ? new Date(form.planReceiverTime).toLocaleString('zh-CN', { hour12: false }) : '',
       deliveryTime: form.deliveryTime ? new Date(form.deliveryTime).toLocaleString('zh-CN', { hour12: false }) : '',
       valves: valves.value
     })
-    message.success('委托单提交成功，等待审核')
+    message.success(res?.code ? `委托单 ${res.code} 提交成功，等待审核` : '委托单提交成功，等待审核')
     router.push('/commission/list')
   } catch (e) {
     message.error(e.message || '提交失败')
@@ -152,7 +158,12 @@ const unitOptions = computed(() => store.units.map((u) => ({ label: u.name, valu
   <div class="page-card">
     <n-card embedded title="基本信息" size="small" style="margin-bottom: 14px">
       <template #header-extra>
-        <n-tag type="info" size="small" :bordered="false">新增委托单</n-tag>
+        <n-space align="center" :size="10">
+          <n-text depth="3" style="font-size: 12px">
+            委托单号由系统自动生成：WTD + 年月 + 递增序号（如 WTD20261101）
+          </n-text>
+          <n-tag type="info" size="small" :bordered="false">新增委托单</n-tag>
+        </n-space>
       </template>
       <n-form ref="formRef" :model="form" :rules="rules" label-placement="left" label-width="130" size="small">
         <n-grid :cols="3" :x-gap="14">
@@ -205,8 +216,8 @@ const unitOptions = computed(() => store.units.map((u) => ({ label: u.name, valu
     <div class="valve-head">
       <span class="valve-title">安全阀清单（{{ valves.length }} 台）</span>
       <n-space>
-        <n-button size="small" type="info" @click="valveFormShow = true">新增安全阀</n-button>
-        <n-button size="small" type="primary" @click="pickerShow = true">选择已有阀门</n-button>
+        <n-button size="small" type="info" v-perm="'commission:add:valve'" @click="valveFormShow = true">新增安全阀</n-button>
+        <n-button size="small" type="primary" v-perm="'commission:add:valve'" @click="pickerShow = true">选择已有阀门</n-button>
       </n-space>
     </div>
     <n-data-table
@@ -219,7 +230,7 @@ const unitOptions = computed(() => store.units.map((u) => ({ label: u.name, valu
     />
 
     <div class="submit-bar">
-      <n-button type="primary" size="large" :loading="submitting" @click="handleSubmit">确认提交</n-button>
+      <n-button type="primary" size="large" v-perm="'commission:add:submit'" :loading="submitting" @click="handleSubmit">确认提交</n-button>
     </div>
 
     <ValvePickerModal v-model:show="pickerShow" @confirm="addFromLibrary" />

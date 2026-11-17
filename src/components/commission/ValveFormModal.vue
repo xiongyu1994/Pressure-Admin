@@ -1,15 +1,19 @@
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed, watch } from 'vue'
 import { useMessage } from 'naive-ui'
 
 const props = defineProps({
-  show: { type: Boolean, default: false }
+  show: { type: Boolean, default: false },
+  /** 传入含 id 的阀门对象 = 编辑模式（回填数据、隐藏提交数量）；不传/为空 = 新增模式 */
+  valve: { type: Object, default: null }
 })
 const emit = defineEmits(['update:show', 'confirm'])
 
 const message = useMessage()
 const formRef = ref(null)
 const submitting = ref(false)
+
+const isEdit = computed(() => !!(props.valve && props.valve.id))
 
 function emptyForm() {
   return {
@@ -54,6 +58,52 @@ const rules = {
   equipType: { required: true, message: '请选择设备类型', trigger: 'change' }
 }
 
+/** 打开时：编辑模式回填数据（数字字段转数值、日期转时间戳），新增模式重置 */
+watch(
+  () => props.show,
+  (show) => {
+    if (!show) return
+    Object.assign(form, emptyForm())
+    const v = props.valve
+    if (isEdit.value && v) {
+      const num = (s) => {
+        const n = parseFloat(s)
+        return Number.isFinite(n) ? n : null
+      }
+      Object.assign(form, {
+        equipType: v.equipType || '安全阀',
+        workingMedia: v.workingMedia || '蒸汽',
+        setPress: num(v.setPress),
+        workingPress: num(v.workingPress),
+        tagNo: v.tagNo || '',
+        idNo: v.idNo || '',
+        designPress: num(v.designPress),
+        workingTemp: v.workingTemp || '常温',
+        protectedEquipType: v.protectedEquipType || '压力容器',
+        vavleModel: v.vavleModel || '',
+        manufacturer: v.manufacturer || '',
+        vavleType: v.vavleType || '弹簧全启式安全阀',
+        diameterNominal: num(v.diameterNominal),
+        licenseNo: v.licenseNo || '',
+        seatSize: num(v.seatSize),
+        pressNominal: num(v.pressNominal),
+        pressClassRangeMin: num(v.pressClassRangeMin),
+        pressClassRangeMax: num(v.pressClassRangeMax),
+        manuDate: v.manuDate ? new Date(v.manuDate).getTime() : null,
+        manuNo: v.manuNo || '',
+        tightnessPress: num(v.tightnessPress),
+        pressCorrection: v.pressCorrection || '无',
+        isNew: v.isNew || '是',
+        isRemovedCleaning: v.isRemovedCleaning || '是',
+        isComplete: v.isComplete || '是',
+        isNameplate: v.isNameplate || '是',
+        parity: v.parity || '离线校验',
+        count: 1
+      })
+    }
+  }
+)
+
 function buildValve() {
   return {
     ...form,
@@ -69,12 +119,17 @@ async function handleSubmit() {
   }
   submitting.value = true
   setTimeout(() => {
-    const count = Math.max(1, Math.min(form.count || 1, 20))
-    const valves = Array.from({ length: count }, (_, i) => buildValve())
-    emit('confirm', valves)
+    if (isEdit.value) {
+      emit('confirm', buildValve())
+      message.success('保存成功')
+    } else {
+      const count = Math.max(1, Math.min(form.count || 1, 20))
+      const valves = Array.from({ length: count }, (_, i) => buildValve())
+      emit('confirm', valves)
+      message.success(`已添加 ${count} 台安全阀`)
+    }
     submitting.value = false
     emit('update:show', false)
-    message.success(`已添加 ${count} 台安全阀`)
   }, 250)
 }
 
@@ -89,8 +144,8 @@ defineExpose({
   <n-modal
     :show="show"
     preset="card"
-    title="新增安全阀"
-    style="width: 900px"
+    :title="isEdit ? '编辑安全阀' : '新增安全阀'"
+    style="width: 1200px"
     @update:show="(v) => emit('update:show', v)"
   >
     <n-form ref="formRef" :model="form" :rules="rules" label-placement="left" label-width="130" size="small">
@@ -181,7 +236,7 @@ defineExpose({
         <n-form-item-gi label="校验方式">
           <n-select v-model:value="form.parity" :options="['离线校验', '在线校验'].map((v) => ({ label: v, value: v }))" />
         </n-form-item-gi>
-        <n-form-item-gi label="提交数量">
+        <n-form-item-gi v-if="!isEdit" label="提交数量">
           <n-input-number v-model:value="form.count" style="width: 100%" :min="1" :max="20" />
         </n-form-item-gi>
       </n-grid>

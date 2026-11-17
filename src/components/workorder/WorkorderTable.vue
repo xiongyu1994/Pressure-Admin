@@ -1,8 +1,9 @@
 <script setup>
-import { ref, reactive, computed, h } from 'vue'
+import { ref, reactive, computed, h, onMounted } from 'vue'
 import { useMessage } from 'naive-ui'
 import { NButton, NSpace, NTag, NPopconfirm } from 'naive-ui'
 import { useBusinessStore, WORKORDER_STATUS } from '@/store/business'
+import { hasPerm } from '@/utils/permission'
 import { buildReportHtml, buildRecordHtml, printHtml, downloadTxt } from '@/utils/print'
 import SubmitResultModal from './SubmitResultModal.vue'
 import WorkorderDetail from './WorkorderDetail.vue'
@@ -20,6 +21,11 @@ const props = defineProps({
 
 const message = useMessage()
 const store = useBusinessStore()
+
+/* 工单相关页面共用本组件：进入页面时只查工单列表这一个接口 */
+onMounted(() => {
+  store.fetchWorkorders().catch(() => {})
+})
 
 /* ---------------- 筛选 ---------------- */
 const filters = reactive({
@@ -151,7 +157,7 @@ const columns = computed(() => {
   }
   cols.push(
     { title: '状态时间', key: 'updateTime', width: 150, sorter: 'default' },
-    { title: '委托单号', key: 'code', width: 110, sorter: 'default' },
+    { title: '委托单号', key: 'code', width: 132, sorter: 'default' },
     { title: '出厂编号', key: 'manuNo', width: 100 }
   )
   visibleExtra.value.forEach((k) => {
@@ -168,6 +174,14 @@ const columns = computed(() => {
 
 const opWidth = computed(() => (props.status === 'print' || props.status === 'done' ? 200 : 150))
 
+/** 打印 / 导出权限：待打印页与已完成页分别授权 */
+function printPerm() {
+  return props.status === 'done' ? 'workorder:all:print' : 'workorder:print:print'
+}
+function exportPerm() {
+  return props.status === 'done' ? 'workorder:all:export' : 'workorder:print:export'
+}
+
 function renderRowOps(row) {
   const ops = [
     h(
@@ -176,7 +190,7 @@ function renderRowOps(row) {
       { default: () => '查看' }
     )
   ]
-  if (props.status === 'wait') {
+  if (props.status === 'wait' && hasPerm('workorder:wait:submit')) {
     ops.push(
       h(
         NPopconfirm,
@@ -189,7 +203,7 @@ function renderRowOps(row) {
       )
     )
   }
-  if (props.status === 'inspection') {
+  if (props.status === 'inspection' && hasPerm('workorder:inspection:result')) {
     ops.push(
       h(
         NButton,
@@ -198,7 +212,7 @@ function renderRowOps(row) {
       )
     )
   }
-  if (props.status === 'rejected') {
+  if (props.status === 'rejected' && hasPerm('workorder:reject:resubmit')) {
     ops.push(
       h(
         NPopconfirm,
@@ -211,7 +225,7 @@ function renderRowOps(row) {
       )
     )
   }
-  if (props.status === 'print' || props.status === 'done') {
+  if ((props.status === 'print' || props.status === 'done') && hasPerm(printPerm())) {
     ops.push(
       h(
         NButton,
@@ -389,10 +403,10 @@ function rowProps(row) {
     <!-- 批量工具栏 -->
     <div v-if="batchPrint" class="toolbar">
       <n-space>
-        <n-button size="small" type="primary" @click="batchPrintReport">批量打印校验报告</n-button>
-        <n-button size="small" type="primary" @click="batchPrintRecord">批量打印校验记录</n-button>
-        <n-button size="small" @click="printLedger">打印台账</n-button>
-        <n-button size="small" @click="exportMark">导出打标记录-txt</n-button>
+        <n-button size="small" type="primary" v-perm="printPerm()" @click="batchPrintReport">批量打印校验报告</n-button>
+        <n-button size="small" type="primary" v-perm="printPerm()" @click="batchPrintRecord">批量打印校验记录</n-button>
+        <n-button size="small" v-perm="printPerm()" @click="printLedger">打印台账</n-button>
+        <n-button size="small" v-perm="exportPerm()" @click="exportMark">导出打标记录-txt</n-button>
       </n-space>
       <span class="selected-tip">已选 {{ checkedKeys.length }} 条</span>
     </div>
@@ -401,6 +415,7 @@ function rowProps(row) {
       v-model:checked-row-keys="checkedKeys"
       :columns="columns"
       :data="list"
+      :loading="store.loading.workorders"
       :row-key="(r) => r.id"
       :row-props="rowProps"
       :scroll-x="1600"

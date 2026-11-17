@@ -93,10 +93,15 @@ CREATE TABLE IF NOT EXISTS `commission` (
   `reject_reason` VARCHAR(255) DEFAULT '' COMMENT '退回原因',
   `precheck` TINYINT DEFAULT 0 COMMENT '是否通过预检',
   `paid` TINYINT DEFAULT 0 COMMENT '是否付费',
+  `sign_token` VARCHAR(64) DEFAULT '' COMMENT '手机签名令牌',
+  `sign_img` VARCHAR(255) DEFAULT '' COMMENT '手机签名图片路径',
+  `sign_time` DATETIME DEFAULT NULL COMMENT '手机签名时间',
+  `serial_no` VARCHAR(50) DEFAULT NULL COMMENT '开抽流水号（预检时录入，全局唯一）',
   `create_by` VARCHAR(50) DEFAULT '' COMMENT '创建人',
   `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP,
   `is_del` TINYINT DEFAULT 0,
-  KEY `idx_code` (`code`),
+  UNIQUE KEY `uk_code` (`code`),
+  UNIQUE KEY `uk_serial_no` (`serial_no`),
   KEY `idx_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='委托单';
 
@@ -138,6 +143,7 @@ CREATE TABLE IF NOT EXISTS `commission_valve` (
 CREATE TABLE IF NOT EXISTS `workorder` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `commission_id` INT NOT NULL COMMENT '所属委托单',
+  `valve_id` INT NOT NULL DEFAULT 0 COMMENT '对应委托单安全阀清单ID（0=历史数据，按出厂编号回查）',
   `code` VARCHAR(30) DEFAULT '' COMMENT '委托单号',
   `order_code` VARCHAR(30) NOT NULL DEFAULT '' COMMENT '检验编号',
   `cust_name` VARCHAR(150) DEFAULT '' COMMENT '使用单位',
@@ -217,7 +223,7 @@ CREATE TABLE IF NOT EXISTS `workorder_result` (
 INSERT INTO `sys_user` (`account`,`password`,`name`,`phone`,`unit_name`,`identity`,`permissions`,`status`) VALUES
 ('admin',    MD5('admin123'), '系统管理员', '13800000001', '平台运营中心', '管理员', '*', 1),
 ('whyh_006', MD5('123456'),   '周宽',       '13800000002', '武汉翼华技术设备有限公司', '检验员',
- 'dashboard,commission,commission:add,commission:list,workorder,workorder:reject,workorder:wait,workorder:inspection,workorder:print,workorder:all,system,system:user', 1);
+ 'dashboard,commission,commission:add,commission:add:submit,commission:add:valve,commission:list,commission:list:view,commission:list:print,commission:list:pending,workorder,workorder:view,workorder:reject,workorder:reject:resubmit,workorder:wait,workorder:wait:submit,workorder:inspection,workorder:inspection:result,workorder:print,workorder:print:print,workorder:print:export,workorder:all,workorder:all:print,workorder:all:export,system,system:user', 1);
 
 INSERT INTO `unit` (`name`,`address`,`client`,`client_tel`) VALUES
 ('武汉翼华技术设备有限公司','武汉东湖高新区光谷大道1号','刘建国','13970000001'),
@@ -316,11 +322,12 @@ CREATE TABLE IF NOT EXISTS `sys_menu` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='菜单访问配置';
 
 -- 角色种子数据（与 sys_user 的 role_id 对应）
+-- permissions 同时包含「菜单权限」与「按钮权限」（模块:页面:按钮），支持 xxx:* 前缀通配
 INSERT INTO `sys_role` (`name`,`label`,`remark`,`permissions`,`built_in`) VALUES
 ('admin', '系统管理员', '拥有系统全部权限', '*', 1),
-('inspector', '检验员', '业务操作权限，含系统账号查看',
- 'dashboard,commission,commission:add,commission:list,workorder,workorder:reject,workorder:wait,workorder:inspection,workorder:print,workorder:all,system,system:user', 0),
-('customer', '客户代表', '仅可查看工作台与委托单', 'dashboard,commission,commission:list', 0);
+('inspector', '检验员', '业务操作权限（可检验/打印，无审核、删除与系统写权限）',
+ 'dashboard,commission,commission:add,commission:add:submit,commission:add:valve,commission:list,commission:list:view,commission:list:print,commission:list:pending,workorder,workorder:view,workorder:reject,workorder:reject:resubmit,workorder:wait,workorder:wait:submit,workorder:inspection,workorder:inspection:result,workorder:print,workorder:print:print,workorder:print:export,workorder:all,workorder:all:print,workorder:all:export,system,system:user', 0),
+('customer', '客户代表', '仅可查看工作台与委托单', 'dashboard,commission,commission:list,commission:list:view,workorder,workorder:all', 0);
 
 -- 账号关联角色：admin -> 系统管理员(1)，whyh_006 -> 检验员(2)
 UPDATE `sys_user` SET `role_id` = 1 WHERE `account` = 'admin';

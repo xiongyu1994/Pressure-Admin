@@ -1,12 +1,5 @@
 <?php
-/** 菜单访问设置（需 system:menu 权限） */
-
-function require_menu_admin()
-{
-    $user = current_user();
-    require_permission($user, 'system:menu');
-    return $user;
-}
+/** 菜单访问设置（权限由 index.php 路由表统一校验：system:menu / system:menu:*） */
 
 function menu_row($r)
 {
@@ -26,7 +19,6 @@ function menu_row($r)
 /** GET /system/menu/list —— 平铺列表（前端组树） */
 function api_sysmenu_list()
 {
-    require_menu_admin();
     $rows = q_all('SELECT * FROM sys_menu WHERE is_del = 0 ORDER BY parent_id, sort, id');
     ok(array_map('menu_row', $rows));
 }
@@ -34,7 +26,6 @@ function api_sysmenu_list()
 /** POST /system/menu/add {parentId, title, path, permission?, icon?, sort?, visible?} */
 function api_sysmenu_add()
 {
-    require_menu_admin();
     $title = trim((string) param('title', ''));
     $path = trim((string) param('path', ''));
     if ($title === '' || $path === '') err('菜单名称和路由路径为必填');
@@ -61,7 +52,6 @@ function api_sysmenu_add()
 /** POST /system/menu/update {id, title?, path?, permission?, icon?, sort?, visible?, type?} */
 function api_sysmenu_update()
 {
-    require_menu_admin();
     $id = (int) param('id', 0);
     if (!$id) err('缺少参数 id');
     $row = q_one('SELECT * FROM sys_menu WHERE id = ? AND is_del = 0', [$id]);
@@ -85,7 +75,6 @@ function api_sysmenu_update()
 /** POST /system/menu/visible {id, visible} */
 function api_sysmenu_visible()
 {
-    require_menu_admin();
     $id = (int) param('id', 0);
     if (!$id) err('缺少参数 id');
     $row = q_one('SELECT * FROM sys_menu WHERE id = ? AND is_del = 0', [$id]);
@@ -98,7 +87,6 @@ function api_sysmenu_visible()
 /** POST /system/menu/delete {id} —— 连同子菜单一起删除 */
 function api_sysmenu_delete()
 {
-    require_menu_admin();
     $id = (int) param('id', 0);
     if (!$id) err('缺少参数 id');
 

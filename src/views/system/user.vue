@@ -3,6 +3,7 @@ import { ref, reactive, computed, h, onMounted } from 'vue'
 import { useMessage } from 'naive-ui'
 import { NButton, NSwitch, NSpace, NTag, NPopconfirm } from 'naive-ui'
 import request from '@/utils/request'
+import { hasPerm } from '@/utils/permission'
 
 const message = useMessage()
 
@@ -60,28 +61,30 @@ const columns = [
     key: 'actions',
     width: 130,
     render(row) {
-      return h(
-        NSpace,
-        { size: 4 },
-        {
-          default: () => [
-            h(
-              NButton,
-              { size: 'tiny', type: 'primary', quaternary: true, onClick: () => openModal(row) },
-              { default: () => '编辑' }
-            ),
-            h(
-              NPopconfirm,
-              { onPositiveClick: () => removeRow(row) },
-              {
-                trigger: () =>
-                  h(NButton, { size: 'tiny', type: 'error', quaternary: true }, { default: () => '删除' }),
-                default: () => `确定删除账号「${row.name}」吗？`
-              }
-            )
-          ]
-        }
-      )
+      const btns = []
+      if (hasPerm('system:user:edit')) {
+        btns.push(
+          h(
+            NButton,
+            { size: 'tiny', type: 'primary', quaternary: true, onClick: () => openModal(row) },
+            { default: () => '编辑' }
+          )
+        )
+      }
+      if (hasPerm('system:user:delete')) {
+        btns.push(
+          h(
+            NPopconfirm,
+            { onPositiveClick: () => removeRow(row) },
+            {
+              trigger: () =>
+                h(NButton, { size: 'tiny', type: 'error', quaternary: true }, { default: () => '删除' }),
+              default: () => `确定删除账号「${row.name}」吗？`
+            }
+          )
+        )
+      }
+      return h(NSpace, { size: 4 }, { default: () => btns })
     }
   },
   { title: 'ID', key: 'id', width: 70, sorter: 'default' },
@@ -94,6 +97,7 @@ const columns = [
         value: row.status,
         size: 'small',
         loading: row._statusLoading,
+        disabled: !hasPerm('system:user:status'),
         onUpdateValue: (v) => toggleStatus(row, v)
       })
     }
@@ -255,7 +259,7 @@ async function removeRow(row) {
         <n-space>
           <n-button type="primary" size="small" @click="load">查询</n-button>
           <n-button size="small" @click="resetSearch">重置</n-button>
-          <n-button size="small" type="primary" @click="openModal(null)">新增</n-button>
+          <n-button size="small" type="primary" v-perm="'system:user:add'" @click="openModal(null)">新增</n-button>
         </n-space>
       </n-form-item>
     </n-form>

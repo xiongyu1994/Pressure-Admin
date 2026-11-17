@@ -4,6 +4,7 @@ import { useMessage } from 'naive-ui'
 import { NButton, NSpace, NTag, NPopconfirm } from 'naive-ui'
 import { useRoleStore } from '@/store/role'
 import { asyncRoutes } from '@/router'
+import { hasPerm } from '@/utils/permission'
 
 const message = useMessage()
 const roleStore = useRoleStore()
@@ -12,13 +13,22 @@ onMounted(() => {
   roleStore.fetchRoles().catch((e) => message.error(e.message || '加载角色列表失败'))
 })
 
-/** 由动态路由树生成权限树（key 即权限标识） */
+/** 由动态路由树生成权限树（菜单节点 + 其下按钮节点，key 即权限标识） */
 function toTreeData(routes) {
-  return routes.map((r) => ({
-    key: r.meta.permission || r.path,
-    label: r.meta.title,
-    children: r.children ? toTreeData(r.children) : undefined
-  }))
+  return routes.map((r) => {
+    const children = []
+    if (r.children) children.push(...toTreeData(r.children))
+    if (r.meta.buttons) {
+      children.push(
+        ...r.meta.buttons.map((b) => ({ key: b.perm, label: `〔按钮〕${b.label}`, isButton: true }))
+      )
+    }
+    return {
+      key: r.meta.permission || r.path,
+      label: r.meta.title,
+      children: children.length ? children : undefined
+    }
+  })
 }
 const permTree = toTreeData(asyncRoutes)
 
@@ -30,6 +40,15 @@ function collectKeys(nodes, res = []) {
   return res
 }
 const allPermKeys = collectKeys(permTree)
+
+/** 子权限 → 祖先权限映射（保存时自动补齐父级，避免只勾按钮导致菜单不显示） */
+const parentMap = {}
+;(function buildParentMap(nodes, ancestors = []) {
+  for (const n of nodes) {
+    parentMap[n.key] = ancestors
+    if (n.children) buildParentMap(n.children, [...ancestors, n.key])
+  }
+})(permTree)
 
 const columns = [
   { title: '角色名称', key: 'label', width: 140 },
@@ -62,14 +81,17 @@ const columns = [
     key: 'actions',
     width: 170,
     render(row) {
-      const btns = [
-        h(
-          NButton,
-          { size: 'tiny', type: 'primary', quaternary: true, onClick: () => openPermModal(row) },
-          { default: () => '权限设置' }
+      const btns = []
+      if (hasPerm('system:role:perm')) {
+        btns.push(
+          h(
+            NButton,
+            { size: 'tiny', type: 'primary', quaternary: true, onClick: () => openPermModal(row) },
+            { default: () => '权限设置' }
+          )
         )
-      ]
-      if (!row.builtIn) {
+      }
+      if (!row.builtIn && hasPerm('system:role:delete')) {
         btns.push(
           h(
             NPopconfirm,
@@ -101,9 +123,15 @@ function openPermModal(role) {
 const savingPerms = ref(false)
 
 async function savePerms() {
+  // 勾选按钮权限时自动补齐其父级菜单权限，保证菜单可见
+  const keys = new Set(checkedKeys.value)
+  for (const k of [...keys]) {
+    for (const p of parentMap[k] || []) keys.add(p)
+  }
+
   savingPerms.value = true
   try {
-    await roleStore.updateRolePermissions(currentRole.value.id, checkedKeys.value)
+    await roleStore.updateRolePermissions(currentRole.value.id, [...keys])
     message.success(`角色「${currentRole.value.label}」权限已更新，相关账号重新登录后生效`)
     showModal.value = false
   } catch (e) {
@@ -154,7 +182,7 @@ const roleList = computed(() => roleStore.roles)
       <n-alert type="info" :show-icon="false" style="flex: 1">
         在「权限设置」中为角色勾选可访问的菜单与操作权限，保存后重新登录即可生效。
       </n-alert>
-      <n-button type="primary" @click="showAdd = true">新增角色</n-button>
+      <n-button type="primary" v-perm="'system:role:add'" @click="showAdd = true">新增角色</n-button>
     </div>
 
     <n-data-table :columns="columns" :data="roleList" :loading="roleStore.loading" />
@@ -163,15 +191,18 @@ const roleList = computed(() => roleStore.roles)
       v-model:show="showModal"
       preset="card"
       :title="`权限设置 - ${currentRole?.label || ''}`"
-      style="width: 480px"
+      style="width: 520px"
     >
+      <n-alert type="info" :show-icon="false" style="margin-bottom: 10px">
+        勾选菜单控制页面访问，展开后可勾选页面内的按钮操作权限；保存后重新登录生效。
+      </n-alert>
       <n-tree
         block-line
         checkable
         cascade
         :data="permTree"
         :checked-keys="checkedKeys"
-        :default-expanded-keys="['system']"
+        :default-expanded-keys="['commission', 'workorder', 'system']"
         @update:checked-keys="(keys) => (checkedKeys = keys)"
       />
       <template #footer>

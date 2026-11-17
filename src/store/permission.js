@@ -3,7 +3,17 @@ import router, { asyncRoutes } from '@/router'
 
 function checkNode(node, permissions) {
   if (!node.meta || !node.meta.permission) return true
-  return permissions.includes('*') || permissions.includes(node.meta.permission)
+  const perm = node.meta.permission
+  if (permissions.includes('*')) return true
+  // 支持 xxx:* 前缀通配（与后端 check_permission 规则一致）
+  return permissions.some((p) => {
+    if (p === perm) return true
+    if (p.endsWith(':*')) {
+      const prefix = p.slice(0, -1)
+      return perm === p.slice(0, -2) || perm.startsWith(prefix)
+    }
+    return false
+  })
 }
 
 /** 递归过滤路由树：目录节点只有存在可见子节点时才保留 */

@@ -4,12 +4,13 @@ import { useMessage } from 'naive-ui'
 import { NButton, NSwitch, NSpace, NTag, NPopconfirm } from 'naive-ui'
 import { useMenuStore } from '@/store/menu'
 import { iconMap } from '@/utils/icons'
+import { hasPerm } from '@/utils/permission'
 
 const message = useMessage()
 const menuStore = useMenuStore()
 
 onMounted(() => {
-  menuStore.fetchMenus().catch((e) => message.error(e.message || '加载菜单配置失败'))
+  menuStore.fetchMenus(true).catch((e) => message.error(e.message || '加载菜单配置失败'))
 })
 
 const columns = [
@@ -50,6 +51,7 @@ const columns = [
       return h(NSwitch, {
         value: row.visible,
         size: 'small',
+        disabled: !hasPerm('system:menu:visible'),
         onUpdateValue: () => handleToggle(row)
       })
     }
@@ -60,7 +62,7 @@ const columns = [
     width: 180,
     render(row) {
       const btns = []
-      if (row.type === 'dir') {
+      if (row.type === 'dir' && hasPerm('system:menu:add')) {
         btns.push(
           h(
             NButton,
@@ -69,22 +71,28 @@ const columns = [
           )
         )
       }
-      btns.push(
-        h(
-          NButton,
-          { size: 'tiny', type: 'primary', quaternary: true, onClick: () => openModal(row, null) },
-          { default: () => '编辑' }
-        ),
-        h(
-          NPopconfirm,
-          { onPositiveClick: () => removeMenu(row) },
-          {
-            trigger: () =>
-              h(NButton, { size: 'tiny', type: 'error', quaternary: true }, { default: () => '删除' }),
-            default: () => `确定删除菜单「${row.title}」吗？`
-          }
+      if (hasPerm('system:menu:edit')) {
+        btns.push(
+          h(
+            NButton,
+            { size: 'tiny', type: 'primary', quaternary: true, onClick: () => openModal(row, null) },
+            { default: () => '编辑' }
+          )
         )
-      )
+      }
+      if (hasPerm('system:menu:delete')) {
+        btns.push(
+          h(
+            NPopconfirm,
+            { onPositiveClick: () => removeMenu(row) },
+            {
+              trigger: () =>
+                h(NButton, { size: 'tiny', type: 'error', quaternary: true }, { default: () => '删除' }),
+              default: () => `确定删除菜单「${row.title}」吗？`
+            }
+          )
+        )
+      }
       return h(NSpace, { size: 4 }, { default: () => btns })
     }
   }
@@ -166,7 +174,7 @@ const iconOptions = Object.keys(iconMap).map((k) => ({ label: k, value: k }))
       <n-alert type="info" :show-icon="false" style="flex: 1">
         通过「可见」开关控制菜单是否在侧边栏显示，实时生效；删除菜单将同时移除其子菜单。
       </n-alert>
-      <n-button type="primary" @click="openModal(null, null)">新增顶级菜单</n-button>
+      <n-button type="primary" v-perm="'system:menu:add'" @click="openModal(null, null)">新增顶级菜单</n-button>
     </div>
 
     <n-data-table

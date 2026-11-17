@@ -82,9 +82,15 @@ export const useBusinessStore = defineStore('business', {
     unitRanking: [],
     chartData: { months: [], audited: [], unaudited: [] },
 
-    /* 加载状态 */
-    loaded: false,
-    loading: false
+    /* 各数据源独立的加载状态：页面按需调用对应接口，不做全局预加载 */
+    loading: {
+      units: false,
+      commissions: false,
+      workorders: false,
+      valves: false,
+      stats: false,
+      ranks: false
+    }
   }),
   actions: {
     reset() {
@@ -97,57 +103,74 @@ export const useBusinessStore = defineStore('business', {
         inspectorRanking: [],
         unitRanking: [],
         chartData: { months: [], audited: [], unaudited: [] },
-        loaded: false,
-        loading: false
+        loading: {
+          units: false,
+          commissions: false,
+          workorders: false,
+          valves: false,
+          stats: false,
+          ranks: false
+        }
       })
     },
 
-    /* ---------- 数据加载 ---------- */
-    /** 登录后首次进入 / 手动刷新：并行拉取全部基础数据 */
-    async ensureLoaded(force = false) {
-      if (this.loaded && !force) return
-      if (this.loading) return
-      this.loading = true
+    /* ---------- 数据加载（按页面需要调用，不再全局预加载） ---------- */
+    async fetchUnits() {
+      this.loading.units = true
       try {
-        await Promise.all([
-          this.fetchUnits(),
-          this.fetchCommissions(),
-          this.fetchWorkorders(),
-          this.fetchValves(),
-          this.fetchStats(),
-          this.fetchRanks()
-        ])
-        this.loaded = true
+        const data = await request.get('/unit/list', { limit: 500 })
+        this.units = data.list || data || []
       } finally {
-        this.loading = false
+        this.loading.units = false
       }
     },
-    async fetchUnits() {
-      const data = await request.get('/unit/list', { limit: 500 })
-      this.units = data.list || data || []
-    },
     async fetchCommissions() {
-      const data = await request.get('/commission/list', { page: 1, limit: 1000 })
-      this.commissions = data.list || []
+      this.loading.commissions = true
+      try {
+        const data = await request.get('/commission/list', { page: 1, limit: 1000 })
+        this.commissions = data.list || []
+      } finally {
+        this.loading.commissions = false
+      }
     },
     async fetchWorkorders() {
-      const data = await request.get('/workorder/list', { page: 1, limit: 2000 })
-      this.workorders = data.list || []
+      this.loading.workorders = true
+      try {
+        const data = await request.get('/workorder/list', { page: 1, limit: 2000 })
+        this.workorders = data.list || []
+      } finally {
+        this.loading.workorders = false
+      }
     },
     async fetchValves() {
-      const data = await request.get('/valve/list', { page: 1, limit: 500 })
-      this.valveLibrary = data.list || []
+      this.loading.valves = true
+      try {
+        const data = await request.get('/valve/list', { page: 1, limit: 500 })
+        this.valveLibrary = data.list || []
+      } finally {
+        this.loading.valves = false
+      }
     },
     async fetchStats() {
-      this.stats = await request.get('/workbench/stats')
+      this.loading.stats = true
+      try {
+        this.stats = await request.get('/workbench/stats')
+      } finally {
+        this.loading.stats = false
+      }
     },
     async fetchRanks() {
-      const [inspector, unit] = await Promise.all([
-        request.get('/workbench/rank/inspector'),
-        request.get('/workbench/rank/unit')
-      ])
-      this.inspectorRanking = inspector || []
-      this.unitRanking = unit || []
+      this.loading.ranks = true
+      try {
+        const [inspector, unit] = await Promise.all([
+          request.get('/workbench/rank/inspector'),
+          request.get('/workbench/rank/unit')
+        ])
+        this.inspectorRanking = inspector || []
+        this.unitRanking = unit || []
+      } finally {
+        this.loading.ranks = false
+      }
     },
     /** 安全阀校验数统计（按年/按月）
      *  @param {{start?: string, end?: string, custName?: string}} params  start/end 形如 2026-01 */
@@ -158,68 +181,88 @@ export const useBusinessStore = defineStore('business', {
     fetchCommissionDetail(id) {
       return request.get('/commission/detail', { id })
     },
-    /** 变更后刷新核心数据（委托单/工单/统计） */
-    async reloadCore() {
-      await Promise.all([this.fetchCommissions(), this.fetchWorkorders(), this.fetchStats()])
+    /** 编辑委托单阀门信息（查看弹窗） */
+    async updateCommissionValve(payload) {
+      await request.post('/commission/valve_update', payload)
+      await this.fetchCommissions()
     },
-
-    /* ---------- 委托单 ---------- */
-    async createCommission(payload) {
-      const data = await request.post('/commission/add', payload)
-      await this.reloadCore()
+    /** 委托单新增阀门（手动新增/选择已有安全阀/复制） */
+    async addCommissionValves(commissionId, valves) {
+      const data = await request.post('/commission/valve_add', { id: commissionId, valves })
+      await this.fetchCommissions()
       return data
+    },
+    /** 删除委托单阀门 */
+    async removeCommissionValve(valveId) {
+      await request.post('/commission/valve_delete', { id: valveId })
+      await this.fetchCommissions()
+    },
+    /* ---------- 委托单 ---------- */
+    /** 新增委托单：只提交，不连带拉取其它数据（列表页进入时会自行查询） */
+    createCommission(payload) {
+      return request.post('/commission/add', payload)
     },
     async approveCommission(id) {
       await request.post('/commission/action', { id, action: 'approve' })
-      await this.reloadCore()
+      await this.fetchCommissions()
     },
     async rejectCommission(id, reason) {
       await request.post('/commission/action', { id, action: 'reject', rejectReason: reason || '' })
-      await this.reloadCore()
+      await this.fetchCommissions()
     },
     async updateCommission(id, patch) {
       await request.post('/commission/update', { id, ...patch })
-      await this.reloadCore()
+      await this.fetchCommissions()
     },
     async removeCommission(id) {
       await request.post('/commission/action', { id, action: 'delete' })
-      await this.reloadCore()
+      await this.fetchCommissions()
     },
-    async setPrecheck(id) {
-      await request.post('/commission/action', { id, action: 'precheck' })
-      await this.reloadCore()
+    /** 预检通过：录入开抽流水号（后端校验唯一），状态变为「等待检验」 */
+    async precheckCommission(id, serialNo) {
+      const data = await request.post('/commission/action', { id, action: 'precheck', serialNo })
+      await this.fetchCommissions()
+      return data
+    },
+    /** 获取手机签名二维码地址 */
+    signQrcode(id) {
+      return request.get('/commission/sign_qrcode', { id })
+    },
+    /** 轮询手机签名状态 */
+    signStatus(id) {
+      return request.get('/commission/sign_status', { id })
     },
     async setPaid(id) {
       await request.post('/commission/action', { id, action: 'pay' })
-      await this.reloadCore()
+      await this.fetchCommissions()
     },
 
     /* ---------- 检验工单 ---------- */
     /** 校验退回 → 重新提交，回到待检验 */
     async resubmitWorkorder(id) {
       await request.post('/workorder/resubmit', { id })
-      await this.reloadCore()
+      await this.fetchWorkorders()
     },
     /** 待检验 → 提交进入检验中 */
     async submitWorkorder(id) {
       await request.post('/workorder/submit', { id })
-      await this.reloadCore()
+      await this.fetchWorkorders()
     },
     /** 检验中 → 提交检验结果，进入待打印 */
     async submitResult(id, result) {
       await request.post('/workorder/submit_result', { id, ...result })
-      await this.reloadCore()
+      await this.fetchWorkorders()
     },
     /** 待打印 → 打印后已完成（支持批量） */
     async markPrinted(ids) {
       await request.post('/workorder/print', { ids: Array.isArray(ids) ? ids : [ids] })
-      await this.reloadCore()
+      await this.fetchWorkorders()
     },
     /** 待检验 → 批量提交，进入检验中 */
     async batchSubmitWorkorders(ids) {
       const list = Array.isArray(ids) ? ids : [ids]
       await Promise.all(list.map((id) => request.post('/workorder/submit', { id })))
-      await this.reloadCore()
+      await this.fetchWorkorders()
     },
     /** 检验中 → 批量提交检验结果，进入待打印 */
     async batchSubmitResults(ids, common, rows = {}) {
@@ -227,7 +270,7 @@ export const useBusinessStore = defineStore('business', {
       await Promise.all(
         list.map((id) => request.post('/workorder/submit_result', { id, ...common, ...(rows[id] || {}) }))
       )
-      await this.reloadCore()
+      await this.fetchWorkorders()
     },
 
     /* ---------- 安全阀库 ---------- */
