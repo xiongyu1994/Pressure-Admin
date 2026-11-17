@@ -1,8 +1,10 @@
 <script setup>
 import { ref, reactive, computed, watch, h } from 'vue'
-import { useMessage } from 'naive-ui'
+import { NSpace, useMessage } from 'naive-ui'
 import { NButton, NTag, NPopconfirm } from 'naive-ui'
+import { Search as SearchIcon, Refresh as RefreshIcon } from '@vicons/ionicons5'
 import ValveFormModal from './ValveFormModal.vue'
+import ValvePoolModal from './ValvePoolModal.vue'
 import { WORKORDER_STATUS, useBusinessStore } from '@/store/business'
 import { hasPerm } from '@/utils/permission'
 import { API_BASE } from '@/utils/request'
@@ -90,7 +92,7 @@ const opsColumn = {
   key: 'ops',
   width: 170,
   render(row) {
-    return h('div', { class: 'ops-cell' }, [
+    return h(NSpace, [
       h(NButton, { size: 'tiny', secondary: true, type: 'primary', onClick: () => openValveEdit(row) }, { default: () => '编辑' }),
       h(NButton, { size: 'tiny', secondary: true, type: 'success', onClick: () => copyValve(row) }, { default: () => '复制' }),
       h(
@@ -161,59 +163,37 @@ function confirmSubmit() {
   emit('update:show', false)
 }
 
-/* ---------- 选择已有安全阀（安全阀库） ---------- */
+/* ---------- 选择已有安全阀（历次委托单阀门清单汇总） ---------- */
 const selectShow = ref(false)
-const selectLoading = ref(false)
-const selectSaving = ref(false)
-const selectedValveKeys = ref([])
+const poolRef = ref(null)
 
 function openValveSelect() {
-  selectedValveKeys.value = []
   selectShow.value = true
-  selectLoading.value = true
-  store
-    .fetchValves()
-    .catch((e) => message.error(e.message || '加载安全阀库失败'))
-    .finally(() => {
-      selectLoading.value = false
-    })
 }
 
-const libraryColumns = [
-  { type: 'selection' },
-  { title: '安全阀型号', key: 'vavleModel', width: 130, ellipsis: { tooltip: true } },
-  { title: '公称通径mm', key: 'diameterNominal', width: 95 },
-  { title: '出厂编号', key: 'manuNo', width: 130, ellipsis: { tooltip: true } },
-  { title: '工作压力MPa', key: 'workingPress', width: 105 },
-  { title: '要求整定压力MPa', key: 'setPress', width: 135 },
-  { title: '安装位置', key: 'tagNo', width: 120, ellipsis: { tooltip: true } },
-  { title: '制造单位', key: 'manufacturer', ellipsis: { tooltip: true } }
-]
-
-async function confirmValveSelect() {
-  if (!selectedValveKeys.value.length) {
-    message.warning('请先勾选要添加的安全阀')
-    return
-  }
-  const picked = (store.valveLibrary || []).filter((v) => selectedValveKeys.value.includes(v.id))
-  if (!picked.length) {
-    message.warning('选中的安全阀不存在')
-    return
-  }
-  selectSaving.value = true
+/* 批量确认：把勾选的阀门添加进当前委托单 */
+async function onPoolConfirm(rows) {
   try {
-    const payload = picked.map((v) => {
-      const { id: _i, createTime: _c, updateTime: _u, ...fields } = v
-      return fields
-    })
+    const payload = rows.map((v) => poolRef.value?.stripValve(v) || v)
     await store.addCommissionValves(props.row.id, payload)
-    selectShow.value = false
     message.success(`已添加 ${payload.length} 台安全阀`)
     detail.value = await store.fetchCommissionDetail(props.row.id)
   } catch (e) {
     message.error(e.message || '添加失败')
-  } finally {
-    selectSaving.value = false
+  }
+}
+
+/* 复制：再复制一条新数据（行内复制传单条，批量复制传数组），不带 libId 由后端生成新库记录 */
+async function onPoolCopyRow(payload) {
+  const rows = Array.isArray(payload) ? payload : [payload]
+  try {
+    await store.addCommissionValves(props.row.id, rows)
+    message.success(`已复制 ${rows.length} 台安全阀`)
+    detail.value = await store.fetchCommissionDetail(props.row.id)
+    poolRef.value?.clearChecked()
+    poolRef.value?.reload()
+  } catch (e) {
+    message.error(e.message || '复制失败')
   }
 }
 
@@ -350,6 +330,78 @@ function printLabels() {
   margin-top: 4px;
 }
 
+/* ---------- 选择已有安全阀弹窗 ---------- */
+.pool-search {
+  margin-bottom: 14px;
+  padding: 14px 16px 10px;
+  background: #fafbfc;
+  border: 1px solid #eef0f4;
+  border-radius: 6px;
+
+  .pool-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    row-gap: 12px;
+    column-gap: 20px;
+
+    .field {
+      display: flex;
+      align-items: center;
+
+      .flabel {
+        flex: none;
+        width: 110px;
+        text-align: right;
+        padding-right: 10px;
+        color: #666;
+        font-size: 13px;
+        white-space: nowrap;
+      }
+    }
+  }
+
+  .pool-btns {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 12px;
+  }
+}
+
+.pool-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 10px;
+
+  .pool-count {
+    color: #666;
+    font-size: 13px;
+
+    b {
+      margin: 0 2px;
+      color: #2b6de8;
+    }
+  }
+}
+
+.pool-page {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+
+  .pool-total {
+    color: #888;
+    font-size: 13px;
+  }
+}
+
+.pool-footer {
+  display: flex;
+  justify-content: center;
+}
+
 </style>
 
 <template>
@@ -457,25 +509,13 @@ function printLabels() {
     <!-- 阀门新增 / 编辑弹窗（与现场送检一致的完整表单） -->
     <ValveFormModal v-model:show="editShow" :valve="editingValve" @confirm="handleValveConfirm" />
 
-    <!-- 选择已有安全阀弹窗 -->
-    <n-modal v-model:show="selectShow" preset="card" title="选择已有安全阀" style="width: 860px">
-      <n-data-table
-        size="small"
-        :columns="libraryColumns"
-        :data="store.valveLibrary"
-        :loading="selectLoading"
-        :row-key="(r) => r.id"
-        max-height="380"
-        v-model:checked-row-keys="selectedValveKeys"
-      />
-      <template #footer>
-        <div style="display: flex; justify-content: flex-end; gap: 10px">
-          <n-button @click="selectShow = false">取消</n-button>
-          <n-button type="primary" :loading="selectSaving" @click="confirmValveSelect">
-            添加（{{ selectedValveKeys.length }}）
-          </n-button>
-        </div>
-      </template>
-    </n-modal>
+    <!-- 选择已有安全阀弹窗（安全阀数据池） -->
+    <ValvePoolModal
+      ref="poolRef"
+      v-model:show="selectShow"
+      :show-ops="canMaintain"
+      @confirm="onPoolConfirm"
+      @copy="onPoolCopyRow"
+    />
   </n-modal>
 </template>

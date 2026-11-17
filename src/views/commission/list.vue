@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { NProgress, useMessage } from 'naive-ui'
 import { NButton, NSpace, NTag, NPopconfirm } from 'naive-ui'
 import QRCode from 'qrcode'
-import { useBusinessStore, COMMISSION_STATUS } from '@/store/business'
+import { useBusinessStore, COMMISSION_STATUS, COMMISSION_STATUS_OPTIONS } from '@/store/business'
 import request from '@/utils/request'
 import { hasPerm } from '@/utils/permission'
 import { printHtml } from '@/utils/print'
@@ -31,7 +31,7 @@ const filters = reactive({
 
 const statusOptions = [
   { label: '全部', value: null },
-  ...Object.entries(COMMISSION_STATUS).map(([k, v]) => ({ label: v.label, value: k }))
+  ...COMMISSION_STATUS_OPTIONS
 ]
 
 function resetSearch() {
@@ -59,7 +59,7 @@ const list = computed(() =>
 )
 
 /* ---------------- 表格 ---------------- */
-const columns = [
+const baseColumns = [
   {
     title: '操作',
     key: 'actions',
@@ -85,7 +85,8 @@ const columns = [
           )
         )
       }
-      if (row.status === 'pending') {
+      // 等待签名/等待预检：未签名显示「签名」按钮，签名完成后显示「预检」按钮
+      if (row.status === 'sign' || row.status === 'pending') {
         // if (hasPerm('commission:list:approve')) {
         //   ops.push(
         //     h(
@@ -202,16 +203,20 @@ const columns = [
     key: 'reportDone',
     width: 110,
     render(row) {
-      
-      return h(
-        NProgress,
-        { 
+      // 进度 = 已完成数量 / 当前阀门总数量；条上不显示百分比，下方展示 已完成/总数
+      const done = row.reportDone || 0
+      const total = row.valveCount || 0
+      const pct = total ? Math.round((done / total) * 100) : 0
+      return h('div', { class: 'progress-cell' }, [
+        h(NProgress, {
           type: 'line',
-          percentage: row.pendingValveCount / row.valveCount * 100
-        },
-       
-      )
-      //return `${row.reportDone || 0} / ${row.valveCount || 0}`
+          percentage: pct,
+          showIndicator: false,
+          color: '#26448f',
+          railColor: '#e5e8ef'
+        }),
+        h('span', { class: 'progress-text' }, `${done}/${total}`)
+      ])
     }
   },
   {
@@ -228,8 +233,70 @@ const columns = [
       )
     }
   },
-  { title: '委托日期', key: 'createTime', width: 150, sorter: 'default' }
+  // 固定在右侧：列较多需横向滚动时，委托日期始终完整可见
+  { title: '委托日期', key: 'createTime', width: 150, fixed: 'right', sorter: 'default' }
 ]
+
+/* ---------------- 列宽拖拽伸缩 ---------------- */
+/** 各列当前宽度（拖动表头右边缘实时调整） */
+const colWidths = reactive({
+  actions: 250,
+  status: 100,
+  precheck: 70,
+  code: 132,
+  custName: 180,
+  address: 150,
+  client: 100,
+  clientTel: 120,
+  contact: 90,
+  contactTel: 120,
+  examName: 150,
+  completedNum: 210,
+  reportDone: 110,
+  pendingValveCount: 100,
+  createTime: 150
+})
+
+/** 表格总宽 = 各列宽之和，拖宽某列时表格同步加宽 */
+const tableScrollX = computed(() => Object.values(colWidths).reduce((a, b) => a + b, 0))
+
+/** 鼠标按下拖拽条：按横向位移实时改列宽（最小 60px） */
+function startResize(e, key) {
+  e.preventDefault()
+  e.stopPropagation()
+  const th = e.target.closest('th')
+  const startX = e.clientX
+  const startW = th ? th.offsetWidth : colWidths[key] || 100
+  const move = (ev) => {
+    colWidths[key] = Math.max(60, Math.round(startW + ev.clientX - startX))
+  }
+  const up = () => {
+    document.removeEventListener('mousemove', move)
+    document.removeEventListener('mouseup', up)
+    document.body.style.cursor = ''
+    document.body.style.userSelect = ''
+  }
+  document.addEventListener('mousemove', move)
+  document.addEventListener('mouseup', up)
+  document.body.style.cursor = 'col-resize'
+  document.body.style.userSelect = 'none'
+}
+
+/** 包一列表头：标题 + 右边缘拖拽条 */
+function withResizer(col) {
+  return {
+    ...col,
+    minWidth: undefined,
+    width: colWidths[col.key],
+    title: () =>
+      h('div', { class: 'th-resize-wrap' }, [
+        h('span', { class: 'th-resize-title' }, col.title),
+        h('span', { class: 'th-resizer', onMousedown: (e) => startResize(e, col.key) })
+      ])
+  }
+}
+
+const columns = computed(() => baseColumns.map(withResizer))
 
 /* ---------------- 行操作 ---------------- */
 const detailShow = ref(false)
@@ -595,7 +662,7 @@ const pendingColumns = [
       :columns="columns"
       :data="list"
       :loading="store.loading.commissions"
-      :scroll-x="1900"
+      :scroll-x="tableScrollX"
       size="small"
       :pagination="{ pageSize: 15, showSizePicker: true, pageSizes: [15, 30, 60, 100] }"
     />
@@ -664,7 +731,7 @@ const pendingColumns = [
         :data="pendingFiltered"
         :loading="pendingLoading"
         size="small"
-        :scroll-x="1250"
+        :scroll-x="1800"
         :row-key="(r) => r.valveId"
         :pagination="{ pageSize: 15, showSizePicker: true, pageSizes: [15, 30, 60, 100] }"
       />
@@ -779,6 +846,63 @@ const pendingColumns = [
 
   .sign-hint {
     color: #b0b3ba;
+  }
+}
+
+.progress-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-right: 8px;
+
+  .progress-text {
+    font-size: 12px;
+    color: #666;
+    line-height: 16px;
+  }
+}
+
+/* 列宽拖拽：表头右边缘悬停出现蓝色竖条，按住左右拖动伸缩列宽 */
+:deep(.n-data-table-th) {
+  position: relative;
+}
+
+:deep(.th-resize-wrap) {
+  display: flex;
+  align-items: center;
+  width: 100%;
+
+  .th-resize-title {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .th-resizer {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: -2px;
+    width: 8px;
+    cursor: col-resize;
+    z-index: 5;
+
+    &::after {
+      content: '';
+      position: absolute;
+      right: 3px;
+      top: 20%;
+      bottom: 20%;
+      width: 2px;
+      background: transparent;
+      border-radius: 1px;
+    }
+
+    &:hover::after {
+      background: #2b6de8;
+    }
   }
 }
 </style>

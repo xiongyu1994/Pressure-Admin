@@ -12,7 +12,7 @@ function sign_find_commission($token)
 {
     if ($token === '') return null;
     return q_one(
-        'SELECT id, code, cust_name, sign_img, sign_time FROM commission WHERE sign_token = ? AND is_del = 0 LIMIT 1',
+        'SELECT id, code, cust_name, status, sign_img, sign_time FROM commission WHERE sign_token = ? AND is_del = 0 LIMIT 1',
         [$token]
     );
 }
@@ -67,6 +67,8 @@ if (isset($_GET['action'])) {
     q_update('commission', [
         'sign_img'  => 'uploads/sign/' . $file,
         'sign_time' => date('Y-m-d H:i:s'),
+        // 签名完成后：等待签名 → 等待预检
+        'status'    => $row['status'] === 'sign' ? 'pending' : $row['status'],
     ], 'id = ?', [$row['id']]);
     echo json_encode(['code' => 0, 'message' => 'ok', 'data' => ['saved' => true]], JSON_UNESCAPED_UNICODE);
     exit;

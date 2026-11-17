@@ -1,6 +1,7 @@
 <script setup>
 import { ref, reactive, computed, watch } from 'vue'
 import { useMessage } from 'naive-ui'
+import { useBusinessStore } from '@/store/business'
 
 const props = defineProps({
   show: { type: Boolean, default: false },
@@ -10,6 +11,7 @@ const props = defineProps({
 const emit = defineEmits(['update:show', 'confirm'])
 
 const message = useMessage()
+const store = useBusinessStore()
 const formRef = ref(null)
 const submitting = ref(false)
 
@@ -44,9 +46,17 @@ function emptyForm() {
     isComplete: '是',
     isNameplate: '是',
     parity: '离线校验',
+    checkMethod: null,
     count: 1
   }
 }
+
+/** 在线校验方法（TSG 92-2026 三种在线校验方法） */
+const ONLINE_CHECK_METHODS = [
+  '采用系统压力源升压开启进行校验',
+  '采用其他压力源升压开启进行校验',
+  '采用在线校验装置辅助开启进行校验'
+]
 
 const form = reactive(emptyForm())
 
@@ -98,6 +108,7 @@ watch(
         isComplete: v.isComplete || '是',
         isNameplate: v.isNameplate || '是',
         parity: v.parity || '离线校验',
+        checkMethod: v.checkMethod || null,
         count: 1
       })
     }
@@ -107,8 +118,44 @@ watch(
 function buildValve() {
   return {
     ...form,
+    // 离线校验没有方法字段
+    checkMethod: form.parity === '在线校验' ? form.checkMethod : null,
     manuDate: form.manuDate ? new Date(form.manuDate).toISOString().slice(0, 10) : ''
   }
+}
+
+/** 切回离线校验时清空方法 */
+function onParityChange(v) {
+  if (v !== '在线校验') form.checkMethod = null
+}
+
+/** 清空内容：全部字段清成空白（下拉恢复「请选择」、文本框全空），不回默认值；
+ *  校验方式（离线/在线）保持当前选择不清空；提交数量保持 1 */
+function clearedForm() {
+  const base = emptyForm()
+  const out = {}
+  Object.keys(base).forEach((k) => {
+    if (k === 'count') {
+      out[k] = 1
+    } else if (typeof base[k] === 'string') {
+      out[k] = ''
+    } else {
+      out[k] = null
+    }
+  })
+  out.parity = form.parity // 校验方式保留当前选择
+  return out
+}
+
+/** 清空内容：恢复表单空白状态 */
+function handleClear() {
+  Object.assign(form, clearedForm())
+  formRef.value?.restoreValidation()
+}
+
+/** 连续添加：功能待确认，暂不处理 */
+function handleKeepAdd() {
+  // TODO: 连续添加功能待确认后实现
 }
 
 async function handleSubmit() {
@@ -118,19 +165,24 @@ async function handleSubmit() {
     return
   }
   submitting.value = true
-  setTimeout(() => {
+  try {
     if (isEdit.value) {
       emit('confirm', buildValve())
       message.success('保存成功')
     } else {
+      // 新增模式：立即写入安全阀库（已有阀门列表即时可查），返回记录带 libId
       const count = Math.max(1, Math.min(form.count || 1, 20))
       const valves = Array.from({ length: count }, (_, i) => buildValve())
-      emit('confirm', valves)
-      message.success(`已添加 ${count} 台安全阀`)
+      const saved = await store.addLibValves(valves)
+      emit('confirm', saved)
+      message.success(`已添加 ${saved.length} 台安全阀，并同步至已有阀门库`)
     }
-    submitting.value = false
     emit('update:show', false)
-  }, 250)
+  } catch (e) {
+    message.error(e.message || '保存失败')
+  } finally {
+    submitting.value = false
+  }
 }
 
 defineExpose({
@@ -234,19 +286,60 @@ defineExpose({
           <n-select v-model:value="form.isNameplate" :options="['是', '否'].map((v) => ({ label: v, value: v }))" />
         </n-form-item-gi>
         <n-form-item-gi label="校验方式">
-          <n-select v-model:value="form.parity" :options="['离线校验', '在线校验'].map((v) => ({ label: v, value: v }))" />
+          <n-radio-group v-model:value="form.parity" @update:value="onParityChange">
+            <n-space align="center" :size="24">
+              <n-radio value="离线校验">离线校验</n-radio>
+              <n-radio value="在线校验">在线校验</n-radio>
+            </n-space>
+          </n-radio-group>
         </n-form-item-gi>
-        <n-form-item-gi v-if="!isEdit" label="提交数量">
-          <n-input-number v-model:value="form.count" style="width: 100%" :min="1" :max="20" />
+        <n-form-item-gi v-if="form.parity === '在线校验'" label="方法">
+          <n-select
+            v-model:value="form.checkMethod"
+            placeholder="请选择"
+            clearable
+            :options="ONLINE_CHECK_METHODS.map((v) => ({ label: v, value: v }))"
+          />
         </n-form-item-gi>
       </n-grid>
     </n-form>
 
     <template #footer>
-      <div style="display: flex; justify-content: flex-end; gap: 10px">
-        <n-button @click="emit('update:show', false)">取消</n-button>
-        <n-button type="primary" :loading="submitting" @click="handleSubmit">确认提交</n-button>
+      <div class="footer-wrap">
+        <div v-if="!isEdit" class="count-row">
+          <span class="count-label">提交数量</span>
+          <n-input-number v-model:value="form.count" :min="1" :max="20" style="width: 200px" />
+        </div>
+        <div class="btn-row">
+          <n-button v-if="!isEdit" type="primary" ghost @click="handleKeepAdd">连续添加</n-button>
+          <n-button type="primary" :loading="submitting" @click="handleSubmit">确认提交</n-button>
+          <n-button @click="handleClear">清空内容</n-button>
+        </div>
       </div>
     </template>
   </n-modal>
 </template>
+
+<style lang="scss" scoped>
+.footer-wrap {
+  .count-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 16px;
+
+    .count-label {
+      font-size: 14px;
+      color: #333;
+    }
+  }
+
+  .btn-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+  }
+}
+</style>

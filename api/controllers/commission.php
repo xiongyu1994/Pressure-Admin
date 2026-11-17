@@ -141,7 +141,7 @@ function api_commission_add()
         'plan_receiver_time'=> (string) param('planReceiverTime', ''),
         'deliverer'         => (string) param('deliverer', ''),
         'delivery_time'     => (string) param('deliveryTime', ''),
-        'status'            => 'pending',
+        'status'            => 'sign',
         'create_by'         => $user['name'],
     ];
 
@@ -161,7 +161,10 @@ function api_commission_add()
     if (!$id) err('委托单号生成失败，请稍后重试');
 
     foreach ($valves as $v) {
-        q_insert('commission_valve', array_merge(['commission_id' => $id], valve_to_row($v)));
+        if (!is_array($v)) continue;
+        // 每台新增阀门同步写入安全阀库（已有库记录则复用），阀门清单关联库 id
+        $libId = ensure_lib_valve($v);
+        q_insert('commission_valve', array_merge(['commission_id' => $id, 'lib_id' => $libId], valve_to_row($v)));
     }
 
     ok(['id' => $id, 'code' => $code]);
@@ -299,6 +302,51 @@ function api_commission_sign_status()
 }
 
 /**
+ * 新增/复用安全阀库记录：阀门带 libId 且库中存在则复用，否则插入安全阀库，返回库 id
+ * （保证「每新增一条阀门数据，已有安全阀池同步 +1」）
+ */
+function ensure_lib_valve($valve)
+{
+    $libId = isset($valve['libId']) ? (int) $valve['libId'] : 0;
+    if ($libId > 0) {
+        $exists = q_one('SELECT id FROM safety_valve WHERE id = ? AND is_del = 0', [$libId]);
+        if ($exists) {
+            return $libId;
+        }
+    }
+    $row = valve_to_row($valve);
+    if (!$row) {
+        return 0;
+    }
+    return (int) q_insert('safety_valve', $row);
+}
+
+/**
+ * 新增安全阀：立即写入安全阀库（不等委托单提交），返回带 libId 的记录
+ * 「选择已有阀门」弹窗的数据源即安全阀库，因此确认提交后立即可查
+ * POST /commission/lib_add  { valves: [阀门对象...] }
+ */
+function api_commission_lib_add()
+{
+    $valves = param('valves', []);
+    if (!is_array($valves) || !count($valves)) err('请提供阀门数据');
+
+    $user = current_user();
+    $list = [];
+    foreach ($valves as $v) {
+        if (!is_array($v)) continue;
+        $row = valve_to_row($v);
+        if (!$row) continue;
+        $libId = (int) q_insert('safety_valve', $row);
+        $out = valve_row(array_merge($row, ['id' => $libId]));
+        $out['libId'] = $libId;
+        $list[] = $out;
+    }
+    if (!$list) err('没有可保存的阀门数据');
+    ok(['list' => $list, 'count' => count($list)]);
+}
+
+/**
  * 委托单新增阀门（手动新增 / 选择已有安全阀 / 复制行均可）
  * POST /commission/valve_add  { id: 委托单id, valves: [阀门对象...] }
  */
@@ -314,13 +362,109 @@ function api_commission_valve_add()
     $n = 0;
     foreach ($valves as $v) {
         if (!is_array($v)) continue;
+        // 同步写入安全阀库（已有库记录则复用），保证「已有安全阀」数据同步增加
+        $libId = ensure_lib_valve($v);
         $data = valve_to_row($v);
         if (!$data) continue;
-        q_insert('commission_valve', array_merge(['commission_id' => $id], $data));
+        q_insert('commission_valve', array_merge(['commission_id' => $id, 'lib_id' => $libId], $data));
         $n++;
     }
     if (!$n) err('没有可保存的阀门数据');
     ok(['count' => $n]);
+}
+
+/**
+ * 选择已有安全阀：全部安全阀数据（每次新增阀门都会同步进库），关联委托单展示使用单位/校验编号
+ * GET /commission/valve_pool?custId=&checkCode=&equipType=&idNo=&manuNo=&vavleModel=&workingMedia=&setPress=&page=&limit=
+ */
+function api_commission_valve_pool()
+{
+    [$page, $limit, $offset] = page_params();
+
+    $where = 's.is_del = 0';
+    $params = [];
+    $custId = (int) param('custId', 0);
+    if ($custId > 0) {
+        $where .= ' AND c.id = ?';
+        $params[] = $custId;
+    }
+    $likeMap = [
+        'checkCode'  => 'w.order_code',
+        'idNo'       => 's.id_no',
+        'manuNo'     => 's.manu_no',
+        'vavleModel' => 's.vavle_model',
+    ];
+    foreach ($likeMap as $key => $col) {
+        $v = trim((string) param($key, ''));
+        if ($v !== '') {
+            $where .= " AND $col LIKE ?";
+            $params[] = "%$v%";
+        }
+    }
+    $eqMap = [
+        'equipType'    => 's.protected_equip_type',
+        'workingMedia' => 's.working_media',
+    ];
+    foreach ($eqMap as $key => $col) {
+        $v = trim((string) param($key, ''));
+        if ($v !== '') {
+            $where .= " AND $col = ?";
+            $params[] = $v;
+        }
+    }
+    $setPress = trim((string) param('setPress', ''));
+    if ($setPress !== '' && is_numeric($setPress)) {
+        $where .= ' AND s.set_press = ?';
+        $params[] = (float) $setPress;
+    }
+
+    // 主表 = 安全阀库（每次新增阀门都会写入），关联阀门清单→委托单→工单取使用单位/校验编号/状态
+    $join = 'safety_valve s
+        LEFT JOIN commission_valve cv ON cv.lib_id = s.id
+        LEFT JOIN commission c ON c.id = cv.commission_id AND c.is_del = 0
+        LEFT JOIN workorder w ON w.valve_id = cv.id AND w.is_del = 0';
+
+    $total = q_scalar("SELECT COUNT(DISTINCT s.id) FROM $join WHERE $where", $params);
+    $rows = q_all(
+        "SELECT s.*,
+                MAX(c.cust_name)  AS pool_cust_name,
+                MAX(w.order_code) AS pool_order_code,
+                MAX(w.status)     AS pool_status
+         FROM $join
+         WHERE $where
+         GROUP BY s.id
+         ORDER BY s.id DESC
+         LIMIT $limit OFFSET $offset",
+        $params
+    );
+
+    $list = [];
+    foreach ($rows as $r) {
+        $item = valve_row($r);
+        $item['libId']      = (int) $r['id'];       // 安全阀库 id（复制时复用，不再重复入库）
+        $item['custName']   = (string) ($r['pool_cust_name'] ?? '');
+        $item['checkCode']  = (string) ($r['pool_order_code'] ?? '');
+        $item['checkStatus'] = (string) ($r['pool_status'] ?? '');
+        $list[] = $item;
+    }
+
+    // 下拉筛选选项（设备类型 / 工作介质 / 安全阀型号）
+    $facets = [
+        'equipTypes' => array_column(
+            q_all("SELECT DISTINCT s.protected_equip_type AS v FROM $join WHERE $where AND s.protected_equip_type <> '' ORDER BY v", $params),
+            'v'
+        ),
+        'mediaList' => array_column(
+            q_all("SELECT DISTINCT s.working_media AS v FROM $join WHERE $where AND s.working_media <> '' ORDER BY v", $params),
+            'v'
+        ),
+        'models' => array_column(
+            q_all("SELECT DISTINCT s.vavle_model AS v FROM $join WHERE $where AND s.vavle_model <> '' ORDER BY v LIMIT 100", $params),
+            'v'
+        ),
+    ];
+
+    ok(array_merge(page_data($list, (int) $total, $page, $limit), ['facets' => $facets]));
 }
 
 /** 删除委托单阀门 POST /commission/valve_delete  { id: 阀门明细id } */

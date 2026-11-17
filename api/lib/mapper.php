@@ -29,6 +29,7 @@ $VALVE_FIELDS = [
     'isComplete'            => 'is_complete',
     'isNameplate'           => 'is_nameplate',
     'parity'                => 'parity',
+    'checkMethod'           => 'check_method',
 ];
 
 /** 把前端传来的阀门对象转成数据库行 */

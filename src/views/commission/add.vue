@@ -5,8 +5,7 @@ import { useMessage } from 'naive-ui'
 import { NButton, NSpace, NPopconfirm } from 'naive-ui'
 import { useBusinessStore } from '@/store/business'
 import ValveFormModal from '@/components/commission/ValveFormModal.vue'
-import ValvePickerModal from '@/components/commission/ValvePickerModal.vue'
-
+import ValvePoolModal from '@/components/commission/ValvePoolModal.vue'
 const router = useRouter()
 const message = useMessage()
 const store = useBusinessStore()
@@ -104,7 +103,22 @@ const valveColumns = [
 ]
 
 function addFromLibrary(picked) {
-  valves.value.push(...picked)
+  // 行内复制传单条，批量复制传数组；剔除池数据的业务字段，保留字段供后端入库
+  // 复制（copy 事件）不带 libId → 后端生成新的安全阀库记录；确认提交带 libId → 复用原库记录
+  const arr = Array.isArray(picked) ? picked : [picked]
+  const rows = arr.map((v) => {
+    const {
+      id: _i,
+      custName: _cn,
+      checkCode: _cc,
+      checkStatus: _cs,
+      createTime: _ct,
+      updateTime: _ut,
+      ...fields
+    } = v
+    return fields
+  })
+  valves.value.push(...rows)
 }
 
 function addNewValves(list) {
@@ -112,7 +126,9 @@ function addNewValves(list) {
 }
 
 function copyValve(i) {
-  valves.value.splice(i + 1, 0, { ...valves.value[i] })
+  // 复制 = 再复制一条数据：去掉 libId，委托单提交时后端会为副本生成新的安全阀库记录
+  const { libId: _lib, ...rest } = valves.value[i]
+  valves.value.splice(i + 1, 0, rest)
 }
 
 function removeValve(i) {
@@ -142,7 +158,7 @@ async function handleSubmit() {
       deliveryTime: form.deliveryTime ? new Date(form.deliveryTime).toLocaleString('zh-CN', { hour12: false }) : '',
       valves: valves.value
     })
-    message.success(res?.code ? `委托单 ${res.code} 提交成功，等待审核` : '委托单提交成功，等待审核')
+    message.success(res?.code ? `委托单 ${res.code} 提交成功，等待手机签名` : '委托单提交成功，等待手机签名')
     router.push('/commission/list')
   } catch (e) {
     message.error(e.message || '提交失败')
@@ -233,7 +249,7 @@ const unitOptions = computed(() => store.units.map((u) => ({ label: u.name, valu
       <n-button type="primary" size="large" v-perm="'commission:add:submit'" :loading="submitting" @click="handleSubmit">确认提交</n-button>
     </div>
 
-    <ValvePickerModal v-model:show="pickerShow" @confirm="addFromLibrary" />
+    <ValvePoolModal v-model:show="pickerShow" @confirm="addFromLibrary" @copy="addFromLibrary" />
     <ValveFormModal v-model:show="valveFormShow" @confirm="addNewValves" />
   </div>
 </template>

@@ -68,6 +68,7 @@ CREATE TABLE IF NOT EXISTS `safety_valve` (
   `is_complete` VARCHAR(4) DEFAULT '是' COMMENT '阀体及零部件是否完整',
   `is_nameplate` VARCHAR(4) DEFAULT '是' COMMENT '是否有金属铭牌',
   `parity` VARCHAR(20) DEFAULT '离线校验' COMMENT '校验方式',
+  `check_method` VARCHAR(100) DEFAULT NULL COMMENT '在线校验方法',
   `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP,
   `is_del` TINYINT DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='安全阀库';
@@ -89,7 +90,7 @@ CREATE TABLE IF NOT EXISTS `commission` (
   `plan_receiver_time` VARCHAR(30) DEFAULT '' COMMENT '预约取阀时间',
   `deliverer` VARCHAR(50) DEFAULT '' COMMENT '送阀人',
   `delivery_time` VARCHAR(30) DEFAULT '' COMMENT '送阀时间',
-  `status` ENUM('pending','approved','rejected') DEFAULT 'pending' COMMENT 'pending待审核/approved已通过/rejected已退回',
+  `status` ENUM('sign','pending','approved','rejected') DEFAULT 'sign' COMMENT 'sign等待签名/pending等待预检/approved等待检验/rejected已退回',
   `reject_reason` VARCHAR(255) DEFAULT '' COMMENT '退回原因',
   `precheck` TINYINT DEFAULT 0 COMMENT '是否通过预检',
   `paid` TINYINT DEFAULT 0 COMMENT '是否付费',
@@ -109,6 +110,7 @@ CREATE TABLE IF NOT EXISTS `commission` (
 CREATE TABLE IF NOT EXISTS `commission_valve` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `commission_id` INT NOT NULL,
+  `lib_id` INT DEFAULT 0 COMMENT '关联安全阀库id',
   `equip_type` VARCHAR(30) DEFAULT '安全阀',
   `protected_equip_type` VARCHAR(30) DEFAULT '',
   `working_media` VARCHAR(30) DEFAULT '',
@@ -136,6 +138,7 @@ CREATE TABLE IF NOT EXISTS `commission_valve` (
   `is_complete` VARCHAR(4) DEFAULT '是',
   `is_nameplate` VARCHAR(4) DEFAULT '是',
   `parity` VARCHAR(20) DEFAULT '离线校验',
+  `check_method` VARCHAR(100) DEFAULT NULL COMMENT '在线校验方法',
   KEY `idx_commission` (`commission_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='委托单安全阀清单';
 
@@ -183,6 +186,7 @@ CREATE TABLE IF NOT EXISTS `workorder` (
   `is_complete` VARCHAR(4) DEFAULT '是',
   `is_nameplate` VARCHAR(4) DEFAULT '是',
   `parity` VARCHAR(20) DEFAULT '离线校验',
+  `check_method` VARCHAR(100) DEFAULT NULL COMMENT '在线校验方法',
   KEY `idx_status` (`status`),
   KEY `idx_commission` (`commission_id`),
   KEY `idx_order_code` (`order_code`)

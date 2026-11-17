@@ -3,7 +3,8 @@ import request from '@/utils/request'
 
 /** 委托单状态（文案与参考站一致） */
 export const COMMISSION_STATUS = {
-  pending: { label: '等待预检', type: 'warning', code: 20 },
+  sign: { label: '等待签名', type: 'warning', code: 10 },
+  pending: { label: '等待预检', type: 'info', code: 20 },
   approved: { label: '等待检验', type: 'success', code: 40 },
   rejected: { label: '已退回', type: 'error', code: 30 }
 }
@@ -191,6 +192,15 @@ export const useBusinessStore = defineStore('business', {
       const data = await request.post('/commission/valve_add', { id: commissionId, valves })
       await this.fetchCommissions()
       return data
+    },
+    /** 选择已有安全阀：历次委托单阀门清单汇总（筛选/分页） */
+    fetchValvePool(params) {
+      return request.get('/commission/valve_pool', params)
+    },
+    /** 新增安全阀：确认提交即写入安全阀库（已有阀门列表立即可查），返回带 libId 的记录 */
+    async addLibValves(valves) {
+      const data = await request.post('/commission/lib_add', { valves })
+      return data.list || []
     },
     /** 删除委托单阀门 */
     async removeCommissionValve(valveId) {

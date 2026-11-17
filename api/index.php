@@ -71,8 +71,12 @@ try {
         'commission/update'   => ['POST', true,  'api_commission_update', 'commission:list:edit'],
         // 编辑委托单阀门信息（查看弹窗「编辑」按钮）
         'commission/valve_update' => ['POST', true, 'api_commission_valve_update', 'commission:list:edit'],
+        // 新增安全阀：立即写入安全阀库（现场送检 / 委托单编辑弹窗共用，不等委托单提交）
+        'commission/lib_add'      => ['POST', true, 'api_commission_lib_add', ['commission:add:valve', 'commission:list:edit']],
         // 委托单新增 / 删除阀门（查看弹窗：新增安全阀、选择已有安全阀、复制、删除）
         'commission/valve_add'    => ['POST', true, 'api_commission_valve_add', 'commission:list:edit'],
+        // 选择已有安全阀：历次委托单阀门清单汇总（筛选/分页）
+        'commission/valve_pool'   => ['GET', true, 'api_commission_valve_pool', 'commission:list:edit'],
         'commission/valve_delete' => ['POST', true, 'api_commission_valve_delete', 'commission:list:edit'],
         // action 的子权限（通过/退回/预检/付费/删除）在控制器内按 action 细分校验
         'commission/action'   => ['POST', true,  'api_commission_action', 'commission:list'],
