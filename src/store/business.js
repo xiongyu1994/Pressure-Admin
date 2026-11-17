@@ -77,6 +77,9 @@ export const useBusinessStore = defineStore('business', {
     workorders: [],
     valveLibrary: [],
 
+    /* 安全阀列表「批量送检」暂存：跳转到现场送检页时预填阀门清单 */
+    batchInspectValves: [],
+
     /* 工作台（后端统计） */
     stats: { checkedTotal: 0, unchecked: 0, waitTotal: 0, commissionTotal: 0, customerTotal: 0 },
     inspectorRanking: [],
@@ -288,9 +291,27 @@ export const useBusinessStore = defineStore('business', {
       await request.post('/valve/add', payload)
       await this.fetchValves()
     },
+    async updateValve(payload) {
+      await request.post('/valve/update', payload)
+      await this.fetchValves()
+    },
     async deleteValve(id) {
       await request.post('/valve/delete', { id })
       await this.fetchValves()
+    },
+
+    /* ---------- 客户管理（使用单位） ---------- */
+    async addUnit(payload) {
+      await request.post('/unit/add', payload)
+      await this.fetchUnits()
+    },
+    async updateUnit(payload) {
+      await request.post('/unit/update', payload)
+      await this.fetchUnits()
+    },
+    async deleteUnit(id) {
+      await request.post('/unit/delete', { id })
+      await this.fetchUnits()
     }
   }
 })

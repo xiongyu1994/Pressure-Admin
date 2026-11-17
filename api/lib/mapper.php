@@ -32,12 +32,27 @@ $VALVE_FIELDS = [
     'checkMethod'           => 'check_method',
 ];
 
-/** 把前端传来的阀门对象转成数据库行 */
-function valve_to_row($valve)
+/** 安全阀库（safety_valve）独有字段：状态 / 唯一识别 / 检验时间等池元数据 */
+$VALVE_LIB_ONLY_FIELDS = [
+    'status'                => 'status',
+    'uniqueCode'            => 'unique_code',
+    'checkTime'             => 'check_time',
+    'nextCheckTime'         => 'next_check_time',
+    'periodYears'           => 'period_years',
+    'custName'              => 'cust_name',
+    'region'                => 'region',
+];
+
+/** 安全阀库字段集 = 基础字段 + 池元数据（valve_to_row($v, true) / valve_row 使用） */
+$VALVE_LIB_FIELDS = array_merge($VALVE_FIELDS, $VALVE_LIB_ONLY_FIELDS);
+
+/** 把前端传来的阀门对象转成数据库行（$lib=true 时包含安全阀库专属字段，用于 safety_valve） */
+function valve_to_row($valve, $lib = false)
 {
-    global $VALVE_FIELDS;
+    global $VALVE_FIELDS, $VALVE_LIB_FIELDS;
+    $fields = $lib ? $VALVE_LIB_FIELDS : $VALVE_FIELDS;
     $row = [];
-    foreach ($VALVE_FIELDS as $camel => $snake) {
+    foreach ($fields as $camel => $snake) {
         if (isset($valve[$camel])) {
             $row[$snake] = $valve[$camel];
         } elseif (isset($valve[$snake])) {
@@ -47,12 +62,12 @@ function valve_to_row($valve)
     return $row;
 }
 
-/** 数据库行转前端驼峰结构 */
+/** 数据库行转前端驼峰结构（字段存在才输出，兼容两张表） */
 function valve_row($row)
 {
-    global $VALVE_FIELDS;
+    global $VALVE_LIB_FIELDS;
     $out = ['id' => isset($row['id']) ? (int) $row['id'] : null];
-    foreach ($VALVE_FIELDS as $camel => $snake) {
+    foreach ($VALVE_LIB_FIELDS as $camel => $snake) {
         if (array_key_exists($snake, $row)) {
             $out[$camel] = $row[$snake];
         }

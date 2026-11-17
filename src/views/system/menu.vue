@@ -181,7 +181,6 @@ const iconOptions = Object.keys(iconMap).map((k) => ({ label: k, value: k }))
       :columns="columns"
       :data="menuStore.menus"
       :loading="menuStore.loading"
-      row-key="id"
       default-expand-all
       children-key="children"
     />

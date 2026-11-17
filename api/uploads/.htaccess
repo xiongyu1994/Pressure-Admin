@@ -1,0 +1,5 @@
+# uploads 目录静态文件（模板/签名图片等）由 Apache 直接输出，
+# 补充 CORS 头，避免前端跨域 fetch（如下载模板）被浏览器拦截
+<IfModule mod_headers.c>
+    Header set Access-Control-Allow-Origin *
+</IfModule>

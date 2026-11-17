@@ -121,6 +121,16 @@ function addFromLibrary(picked) {
   valves.value.push(...rows)
 }
 
+/* 安全阀列表「批量送检」跳转过来：预填勾选的阀门清单 */
+onMounted(() => {
+  if (store.batchInspectValves && store.batchInspectValves.length) {
+    const picked = store.batchInspectValves
+    store.batchInspectValves = []
+    addFromLibrary(picked)
+    message.success(`已带入 ${picked.length} 台待送检安全阀`)
+  }
+})
+
 function addNewValves(list) {
   valves.value.push(...list)
 }

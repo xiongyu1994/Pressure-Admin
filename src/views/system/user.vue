@@ -105,13 +105,14 @@ const columns = [
   { title: '姓名', key: 'name', width: 110 },
   { title: '账号', key: 'account', width: 120 },
   { title: '手机号', key: 'phone', width: 120 },
-  { title: '单位名称', key: 'unitName', minWidth: 200, ellipsis: { tooltip: true } },
+  { title: '单位名称', key: 'unitName', minWidth: 180, ellipsis: { tooltip: true } },
+  { title: '站点', key: 'site', width: 170, ellipsis: { tooltip: true }, render: (r) => r.site || '/' },
   {
     title: '身份',
     key: 'identity',
     width: 100,
     render(row) {
-      const typeMap = { 管理员: 'error', 检验员: 'info', 客户代表: 'success' }
+      const typeMap = { 管理员: 'error', 录入人员: 'info', 检验人员: 'success', 审核员: 'warning', 打印人员: 'default', 录入审核: 'primary' }
       return h(
         NTag,
         { size: 'small', bordered: false, type: typeMap[row.identity] || 'default' },
@@ -151,6 +152,23 @@ async function toggleStatus(row, v) {
 const showModal = ref(false)
 const saving = ref(false)
 const editingId = ref(null)
+
+/** 身份选项（对齐参考系统） */
+const IDENTITIES = ['管理员', '录入人员', '检验人员', '审核员', '打印人员', '录入审核']
+/** 站点选项：从站点管理读取开启状态的站点，读取失败回退默认 */
+const SITES_DEFAULT = ['武汉翼华技术有限公司']
+const siteOptions = ref([...SITES_DEFAULT])
+
+async function loadSites() {
+  try {
+    const data = await request.get('/system/site/list', { page: 1, limit: 200, status: 1 })
+    const names = (data.list || []).map((s) => s.name).filter(Boolean)
+    if (names.length) siteOptions.value = names
+  } catch {}
+}
+
+loadSites()
+
 const form = reactive({
   account: '',
   password: '',
@@ -158,16 +176,28 @@ const form = reactive({
   name: '',
   phone: '',
   unitName: '',
-  identity: '检验员'
+  site: [],
+  identity: '检验人员',
+  status: false
 })
 
 function openModal(row) {
   if (row) {
     editingId.value = row.id
-    Object.assign(form, { account: row.account, password: '', password2: '', name: row.name, phone: row.phone, unitName: row.unitName, identity: row.identity })
+    Object.assign(form, {
+      account: row.account,
+      password: '',
+      password2: '',
+      name: row.name,
+      phone: row.phone,
+      unitName: row.unitName,
+      site: row.site ? String(row.site).split(',').filter(Boolean) : [],
+      identity: row.identity,
+      status: !!row.status
+    })
   } else {
     editingId.value = null
-    Object.assign(form, { account: '', password: '', password2: '', name: '', phone: '', unitName: '', identity: '检验员' })
+    Object.assign(form, { account: '', password: '', password2: '', name: '', phone: '', unitName: '', site: [], identity: '检验人员', status: false })
   }
   showModal.value = true
 }
@@ -176,6 +206,22 @@ async function save() {
   if (!form.account || !form.name) {
     message.warning('请填写账号和姓名')
     return
+  }
+  if (!form.identity) {
+    message.warning('请选择身份')
+    return
+  }
+  if (!form.site.length) {
+    message.warning('请选择站点')
+    return
+  }
+  const common = {
+    name: form.name,
+    phone: form.phone,
+    unitName: form.unitName,
+    site: form.site.join(','),
+    identity: form.identity,
+    status: form.status ? 1 : 0
   }
   saving.value = true
   try {
@@ -191,20 +237,11 @@ async function save() {
       await request.post('/system/user/add', {
         account: form.account,
         password: form.password,
-        name: form.name,
-        phone: form.phone,
-        unitName: form.unitName,
-        identity: form.identity
+        ...common
       })
       message.success('新增账号成功')
     } else {
-      const payload = {
-        id: editingId.value,
-        name: form.name,
-        phone: form.phone,
-        unitName: form.unitName,
-        identity: form.identity
-      }
+      const payload = { id: editingId.value, ...common }
       if (form.password) payload.password = form.password
       await request.post('/system/user/update', payload)
       message.success('修改成功')
@@ -278,38 +315,47 @@ async function removeRow(row) {
       v-model:show="showModal"
       preset="card"
       :title="editingId ? '编辑系统账号' : '新增系统账号'"
-      style="width: 500px"
+      style="width: 640px"
     >
       <n-form label-placement="left" label-width="90" size="small">
-        <n-form-item label="账号" required>
-          <n-input v-model:value="form.account" :disabled="!!editingId" placeholder="登录账号" />
-        </n-form-item>
-        <n-form-item v-if="!editingId" label="密码" required>
-          <n-input v-model:value="form.password" type="password" show-password-on="click" placeholder="密码" />
-        </n-form-item>
-        <n-form-item v-if="!editingId" label="重复密码" required>
-          <n-input v-model:value="form.password2" type="password" show-password-on="click" placeholder="重复密码" />
-        </n-form-item>
-        <n-form-item label="姓名" required>
-          <n-input v-model:value="form.name" placeholder="姓名" />
-        </n-form-item>
-        <n-form-item label="手机号">
-          <n-input v-model:value="form.phone" placeholder="手机号" />
-        </n-form-item>
-        <n-form-item label="单位名称">
-          <n-input v-model:value="form.unitName" placeholder="单位名称" />
-        </n-form-item>
-        <n-form-item label="身份">
-          <n-select
-            v-model:value="form.identity"
-            :options="['管理员', '检验员', '客户代表'].map((v) => ({ label: v, value: v }))"
-          />
-        </n-form-item>
-        <n-form-item label="签名">
-          <n-upload :max="1" accept="image/*" default-upload="false">
-            <n-button size="small">上传签名</n-button>
-          </n-upload>
-        </n-form-item>
+        <n-grid :cols="2" :x-gap="16">
+          <n-form-item-gi label="账号" required>
+            <n-input v-model:value="form.account" :disabled="!!editingId" placeholder="请输入" />
+          </n-form-item-gi>
+          <n-form-item-gi v-if="!editingId" label="密码" required>
+            <n-input v-model:value="form.password" type="password" show-password-on="click" placeholder="请输入" />
+          </n-form-item-gi>
+          <n-form-item-gi v-if="!editingId" label="重复密码" required>
+            <n-input v-model:value="form.password2" type="password" show-password-on="click" placeholder="请输入" />
+          </n-form-item-gi>
+          <n-form-item-gi label="姓名" required>
+            <n-input v-model:value="form.name" placeholder="请输入" />
+          </n-form-item-gi>
+          <n-form-item-gi label="手机号">
+            <n-input v-model:value="form.phone" placeholder="请输入" />
+          </n-form-item-gi>
+          <n-form-item-gi label="单位名称">
+            <n-input v-model:value="form.unitName" placeholder="请输入" />
+          </n-form-item-gi>
+          <n-form-item-gi label="身份" required>
+            <n-select v-model:value="form.identity" placeholder="请选择" :options="IDENTITIES.map((v) => ({ label: v, value: v }))" />
+          </n-form-item-gi>
+          <n-form-item-gi label="站点" required>
+            <n-checkbox-group v-model:value="form.site">
+              <n-checkbox v-for="s in siteOptions" :key="s" :value="s" :label="s" />
+            </n-checkbox-group>
+          </n-form-item-gi>
+          <n-form-item-gi label="状态">
+            <n-switch v-model:value="form.status" size="medium">
+              <template #unchecked>OFF</template>
+            </n-switch>
+          </n-form-item-gi>
+          <n-form-item-gi label="签名">
+            <n-upload :max="1" accept="image/*" default-upload="false">
+              <n-button size="small">上传签名</n-button>
+            </n-upload>
+          </n-form-item-gi>
+        </n-grid>
       </n-form>
       <template #footer>
         <div style="display: flex; justify-content: flex-end; gap: 10px">

@@ -132,10 +132,91 @@ export const asyncRoutes = [
     ]
   },
   {
+    path: '/valve',
+    name: 'Valve',
+    meta: { title: '安全阀管理', icon: 'CubeOutline', permission: 'valve' },
+    children: [
+      {
+        path: '/valve/add',
+        name: 'ValveAdd',
+        component: () => import('@/views/valve/add.vue'),
+        meta: {
+          title: '新增安全阀',
+          icon: 'AddCircleOutline',
+          permission: 'valve:add',
+          buttons: [{ perm: 'valve:add:save', label: '保存安全阀' }]
+        }
+      },
+      {
+        path: '/valve/list',
+        name: 'ValveList',
+        component: () => import('@/views/valve/list.vue'),
+        meta: {
+          title: '安全阀列表',
+          icon: 'GridOutline',
+          permission: 'valve:list',
+          buttons: [
+            { perm: 'valve:add', label: '新增安全阀' },
+            { perm: 'valve:list:edit', label: '编辑安全阀' },
+            { perm: 'valve:list:delete', label: '删除安全阀' },
+            { perm: 'valve:list:export', label: '导出' }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    path: '/customer',
+    name: 'Customer',
+    component: () => import('@/views/customer/list.vue'),
+    meta: {
+      title: '客户管理',
+      icon: 'PeopleOutline',
+      permission: 'customer',
+      buttons: [
+        { perm: 'customer:add', label: '新增客户' },
+        { perm: 'customer:edit', label: '编辑客户' },
+        { perm: 'customer:delete', label: '删除客户' }
+      ]
+    }
+  },
+  {
     path: '/system',
     name: 'System',
     meta: { title: '系统管理', icon: 'SettingsOutline', permission: 'system' },
     children: [
+      {
+        path: '/system/site',
+        name: 'SystemSite',
+        component: () => import('@/views/system/site.vue'),
+        meta: {
+          title: '站点管理',
+          icon: 'ServerOutline',
+          permission: 'system:site',
+          buttons: [
+            { perm: 'system:site:add', label: '新增站点' },
+            { perm: 'system:site:edit', label: '编辑站点' },
+            { perm: 'system:site:delete', label: '删除站点' },
+            { perm: 'system:site:status', label: '站点启停' }
+          ]
+        }
+      },
+      {
+        path: '/system/tpl',
+        name: 'SystemTpl',
+        component: () => import('@/views/system/tpl.vue'),
+        meta: {
+          title: '模版管理',
+          icon: 'DocumentOutline',
+          permission: 'system:tpl',
+          buttons: [
+            { perm: 'system:tpl:add', label: '新增模版' },
+            { perm: 'system:tpl:edit', label: '编辑模版' },
+            { perm: 'system:tpl:delete', label: '删除模版' },
+            { perm: 'system:tpl:status', label: '模版启停' }
+          ]
+        }
+      },
       {
         path: '/system/user',
         name: 'SystemUser',

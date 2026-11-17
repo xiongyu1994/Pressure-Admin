@@ -32,6 +32,8 @@ require_once __DIR__ . '/controllers/commission.php';
 require_once __DIR__ . '/controllers/workorder.php';
 require_once __DIR__ . '/controllers/sysuser.php';
 require_once __DIR__ . '/controllers/sysrole.php';
+require_once __DIR__ . '/controllers/site.php';
+require_once __DIR__ . '/controllers/template.php';
 require_once __DIR__ . '/controllers/sysmenu.php';
 
 cors();
@@ -54,11 +56,17 @@ try {
         'workbench/chart'     => ['GET',  true,  'api_workbench_chart',   'dashboard'],
         'workbench/rank/inspector' => ['GET', true, 'api_rank_inspector', 'dashboard'],
         'workbench/rank/unit'      => ['GET', true, 'api_rank_unit',      'dashboard'],
-        'unit/list'           => ['GET',  true,  'api_unit_list',         ['commission', 'commission:add']],
+        // 使用单位 / 客户管理
+        'unit/list'           => ['GET',  true,  'api_unit_list',         ['commission', 'commission:add', 'customer']],
+        'unit/add'            => ['POST', true,  'api_unit_add',          'customer'],
+        'unit/update'         => ['POST', true,  'api_unit_update',       'customer'],
+        'unit/delete'         => ['POST', true,  'api_unit_delete',       'customer'],
         // 安全阀库
-        'valve/list'          => ['GET',  true,  'api_valve_list',        ['commission', 'commission:add']],
-        'valve/add'           => ['POST', true,  'api_valve_add',         'commission:add:valve'],
-        'valve/delete'        => ['POST', true,  'api_valve_delete',      'commission:add:valve'],
+        'valve/list'          => ['GET',  true,  'api_valve_list',        ['commission', 'commission:add', 'valve', 'valve:list']],
+        'valve/add'           => ['POST', true,  'api_valve_add',         ['valve', 'valve:add', 'commission:add:valve']],
+        'valve/update'        => ['POST', true,  'api_valve_update',      ['valve', 'valve:list:edit', 'commission:add:valve']],
+        'valve/delete'        => ['POST', true,  'api_valve_delete',      ['valve', 'valve:list:delete', 'commission:add:valve']],
+        'valve/import'        => ['POST', true,  'api_valve_import',      ['valve', 'valve:add']],
         // 委托单
         'commission/list'     => ['GET',  true,  'api_commission_list',   'commission:list'],
         'commission/detail'   => ['GET',  true,  'api_commission_detail', ['commission', 'commission:list']],
@@ -100,6 +108,19 @@ try {
         'system/role/permissions' => ['POST', true, 'api_sysrole_permissions', 'system:role:perm'],
         'system/role/delete'      => ['POST', true, 'api_sysrole_delete',      'system:role:delete'],
         // 菜单访问设置
+        // 站点管理
+        'system/site/list'    => ['GET',  true, 'api_site_list',    'system:site'],
+        'system/site/add'     => ['POST', true, 'api_site_add',     'system:site:add'],
+        'system/site/update'  => ['POST', true, 'api_site_update',  'system:site:edit'],
+        'system/site/status'  => ['POST', true, 'api_site_status',  'system:site:status'],
+        'system/site/delete'  => ['POST', true, 'api_site_delete',  'system:site:delete'],
+        // 模版管理
+        'system/tpl/list'     => ['GET',  true, 'api_tpl_list',    'system:tpl'],
+        'system/tpl/types'    => ['GET',  true, 'api_tpl_types',   'system:tpl'],
+        'system/tpl/add'      => ['POST', true, 'api_tpl_add',     'system:tpl:add'],
+        'system/tpl/update'   => ['POST', true, 'api_tpl_update',  'system:tpl:edit'],
+        'system/tpl/status'   => ['POST', true, 'api_tpl_status',  'system:tpl:status'],
+        'system/tpl/delete'   => ['POST', true, 'api_tpl_delete',  'system:tpl:delete'],
         'system/menu/list'    => ['GET',  true, 'api_sysmenu_list',        'system:menu'],
         'system/menu/add'     => ['POST', true, 'api_sysmenu_add',         'system:menu:add'],
         'system/menu/update'  => ['POST', true, 'api_sysmenu_update',      'system:menu:edit'],

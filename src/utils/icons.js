@@ -22,7 +22,10 @@ import {
   AddOutline,
   CreateOutline,
   TrashOutline,
-  LogOutOutline
+  LogOutOutline,
+  ServerOutline,
+  DocumentOutline,
+  CubeOutline
 } from '@vicons/ionicons5'
 
 export const iconMap = {
@@ -33,13 +36,16 @@ export const iconMap = {
   PersonOutline,
   ShieldCheckmarkOutline,
   ListOutline,
+  ServerOutline,
+  DocumentOutline,
   CreateOutline,
   ClipboardOutline,
   CheckmarkDoneOutline,
   TimeOutline,
   ReaderOutline,
   PeopleOutline,
-  NotificationsOutline
+  NotificationsOutline,
+  CubeOutline
 }
 
 /** 渲染 naive-ui 菜单图标 */

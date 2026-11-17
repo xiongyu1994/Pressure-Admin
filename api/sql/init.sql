@@ -15,7 +15,8 @@ CREATE TABLE IF NOT EXISTS `sys_user` (
   `name` VARCHAR(50) NOT NULL COMMENT '姓名',
   `phone` VARCHAR(20) DEFAULT '' COMMENT '手机号',
   `unit_name` VARCHAR(150) DEFAULT '' COMMENT '单位名称',
-  `identity` VARCHAR(20) DEFAULT '检验员' COMMENT '身份：管理员/检验员/客户代表',
+  `site` VARCHAR(255) DEFAULT '' COMMENT '站点(逗号分隔)',
+  `identity` VARCHAR(20) DEFAULT '检验人员' COMMENT '身份：管理员/录入人员/检验人员/审核员/打印人员/录入审核',
   `permissions` TEXT COMMENT '权限标识，逗号分隔，*为全部权限（role_id 为 0 时生效）',
   `role_id` INT NOT NULL DEFAULT 0 COMMENT '关联角色，0=使用自身 permissions',
   `sign` VARCHAR(255) DEFAULT '' COMMENT '签名图片路径',
@@ -35,6 +36,10 @@ CREATE TABLE IF NOT EXISTS `unit` (
   `address` VARCHAR(255) DEFAULT '' COMMENT '单位地址',
   `client` VARCHAR(50) DEFAULT '' COMMENT '联系人',
   `client_tel` VARCHAR(20) DEFAULT '' COMMENT '联系电话',
+  `entrust_client` VARCHAR(50) DEFAULT '' COMMENT '委托人',
+  `entrust_tel` VARCHAR(20) DEFAULT '' COMMENT '委托人电话',
+  `bank_name` VARCHAR(100) DEFAULT '' COMMENT '开户行',
+  `tax_no` VARCHAR(50) DEFAULT '' COMMENT '纳税人识别号',
   `is_del` TINYINT DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='使用单位';
 
@@ -69,6 +74,13 @@ CREATE TABLE IF NOT EXISTS `safety_valve` (
   `is_nameplate` VARCHAR(4) DEFAULT '是' COMMENT '是否有金属铭牌',
   `parity` VARCHAR(20) DEFAULT '离线校验' COMMENT '校验方式',
   `check_method` VARCHAR(100) DEFAULT NULL COMMENT '在线校验方法',
+  `status` VARCHAR(10) DEFAULT '正常' COMMENT '状态',
+  `unique_code` VARCHAR(50) DEFAULT '' COMMENT '唯一识别',
+  `check_time` VARCHAR(20) DEFAULT '' COMMENT '检验时间',
+  `next_check_time` VARCHAR(20) DEFAULT '' COMMENT '下次检验时间',
+  `period_years` INT DEFAULT 1 COMMENT '周期(年)',
+  `cust_name` VARCHAR(150) DEFAULT '' COMMENT '送检单位名称',
+  `region` VARCHAR(100) DEFAULT '' COMMENT '区域',
   `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP,
   `is_del` TINYINT DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='安全阀库';
@@ -325,24 +337,68 @@ CREATE TABLE IF NOT EXISTS `sys_menu` (
   `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='菜单访问配置';
 
--- 角色种子数据（与 sys_user 的 role_id 对应）
+-- 角色种子数据（与系统账号身份对应）：管理员/录入人员/检验人员/审核员/打印人员/录入审核
 -- permissions 同时包含「菜单权限」与「按钮权限」（模块:页面:按钮），支持 xxx:* 前缀通配
 INSERT INTO `sys_role` (`name`,`label`,`remark`,`permissions`,`built_in`) VALUES
-('admin', '系统管理员', '拥有系统全部权限', '*', 1),
-('inspector', '检验员', '业务操作权限（可检验/打印，无审核、删除与系统写权限）',
+('admin', '管理员', '拥有系统全部权限', '*', 1),
+('input', '录入人员', '送检信息录入与签名相关权限',
+ 'dashboard,commission,commission:add,commission:add:submit,commission:add:valve,commission:list,commission:list:view,commission:list:add,commission:list:edit,commission:list:sign,commission:list:precheck', 0),
+('inspector', '检验人员', '业务操作权限（可检验/打印，无审核、删除与系统写权限）',
  'dashboard,commission,commission:add,commission:add:submit,commission:add:valve,commission:list,commission:list:view,commission:list:print,commission:list:pending,workorder,workorder:view,workorder:reject,workorder:reject:resubmit,workorder:wait,workorder:wait:submit,workorder:inspection,workorder:inspection:result,workorder:print,workorder:print:print,workorder:print:export,workorder:all,workorder:all:print,workorder:all:export,system,system:user', 0),
-('customer', '客户代表', '仅可查看工作台与委托单', 'dashboard,commission,commission:list,commission:list:view,workorder,workorder:all', 0);
+('auditor', '审核员', '委托单审核相关权限',
+ 'dashboard,commission,commission:list,commission:list:view,commission:list:approve,commission:list:reject,workorder,workorder:all', 0),
+('printer', '打印人员', '标签与报告打印相关权限',
+ 'dashboard,workorder,workorder:print,workorder:print:print,workorder:print:export,workorder:all,workorder:all:print,workorder:all:export', 0),
+('input_audit', '录入审核', '录入与审核权限合集',
+ 'dashboard,commission,commission:add,commission:add:submit,commission:add:valve,commission:list,commission:list:view,commission:list:add,commission:list:edit,commission:list:approve,commission:list:reject,workorder,workorder:wait,workorder:inspection', 0);
 
--- 账号关联角色：admin -> 系统管理员(1)，whyh_006 -> 检验员(2)
+-- 账号关联角色：admin -> 管理员(1)，whyh_006 -> 检验人员(2)
 UPDATE `sys_user` SET `role_id` = 1 WHERE `account` = 'admin';
 UPDATE `sys_user` SET `role_id` = 2 WHERE `account` = 'whyh_006';
+
+-- 站点表（站点管理）
+CREATE TABLE IF NOT EXISTS `site` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `parent_id` INT NOT NULL DEFAULT 0 COMMENT '上级站点id，0=无',
+  `name` VARCHAR(150) NOT NULL COMMENT '站点名称',
+  `manager` VARCHAR(50) DEFAULT '' COMMENT '负责人',
+  `tel` VARCHAR(20) DEFAULT '' COMMENT '联系电话',
+  `address` VARCHAR(255) DEFAULT '' COMMENT '地址',
+  `status` TINYINT DEFAULT 1 COMMENT '1开启 0关闭',
+  `is_del` TINYINT DEFAULT 0,
+  `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='站点';
+
+INSERT INTO `site` (`parent_id`,`name`,`manager`,`tel`,`address`,`status`) VALUES
+(0, '武汉翼华技术有限公司', '周志钢', '13697323638', '湖北省武汉市青山区冶金大道中国一冶高新技术产业户', 1);
+
+-- 模版表（模版管理）
+CREATE TABLE IF NOT EXISTS `tpl` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `site_id` INT NOT NULL DEFAULT 0 COMMENT '站点id',
+  `type` VARCHAR(50) DEFAULT '' COMMENT '类型：校验报告/校验记录/台账/委托单',
+  `name` VARCHAR(150) NOT NULL COMMENT '模板名称',
+  `file_name` VARCHAR(255) DEFAULT '' COMMENT '模板文件名',
+  `file_path` VARCHAR(255) DEFAULT '' COMMENT '模板文件相对路径',
+  `status` TINYINT DEFAULT 1 COMMENT '1开启 0关闭',
+  `is_del` TINYINT DEFAULT 0,
+  `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='模版';
+
+INSERT INTO `tpl` (`site_id`,`type`,`name`,`file_name`,`file_path`,`status`) VALUES
+(1, '校验报告', '校验报告', '校验报告模板.docx', 'uploads/tpl/tpl_check_report.docx', 1),
+(1, '校验记录', '校验记录20260918', 1),
+(1, '台账', '安全阀台账', 1),
+(1, '委托单', '委托单', 1);
 
 -- 菜单种子数据（与前端动态路由树一致）
 INSERT INTO `sys_menu` (`parent_id`,`title`,`path`,`permission`,`icon`,`type`,`sort`,`visible`) VALUES
 (0, '工作台',   '/dashboard',        'dashboard',      'SpeedometerOutline',   'menu', 1, 1),
 (0, '委托单管理', '/commission',       'commission',     'DocumentTextOutline',  'dir',  2, 1),
 (0, '检验管理',  '/workorder',        'workorder',      'CheckboxOutline',      'dir',  3, 1),
-(0, '系统管理',  '/system',           'system',         'SettingsOutline',      'dir',  4, 1),
+(0, '安全阀管理', '/valve',            'valve',          'CubeOutline',          'dir',  4, 1),
+(0, '客户管理',  '/customer',         'customer',       'PeopleOutline',        'menu', 5, 1),
+(0, '系统管理',  '/system',           'system',         'SettingsOutline',      'dir',  6, 1),
 (2, '现场送检',  '/commission/add',   'commission:add', 'CreateOutline',        'menu', 1, 1),
 (2, '送检列表',  '/commission/list',  'commission:list','ListOutline',          'menu', 2, 1),
 (3, '校验退回',  '/workorder/reject',     'workorder:reject',     '', 'menu', 1, 1),
@@ -350,6 +406,10 @@ INSERT INTO `sys_menu` (`parent_id`,`title`,`path`,`permission`,`icon`,`type`,`s
 (3, '检验中',    '/workorder/inspection', 'workorder:inspection', '', 'menu', 3, 1),
 (3, '待打印',    '/workorder/print',      'workorder:print',      '', 'menu', 4, 1),
 (3, '已完成',    '/workorder/all',        'workorder:all',        '', 'menu', 5, 1),
-(4, '系统账号',    '/system/user', 'system:user', 'PersonOutline',          'menu', 1, 1),
-(4, '权限设置',    '/system/role', 'system:role', 'ShieldCheckmarkOutline', 'menu', 2, 1),
-(4, '菜单访问设置', '/system/menu', 'system:menu', 'ListOutline',           'menu', 3, 1);
+(4, '站点管理',    '/system/site', 'system:site', 'ServerOutline',          'menu', 0, 1),
+(4, '模版管理',    '/system/tpl',  'system:tpl',  'DocumentOutline',        'menu', 1, 1),
+(4, '系统账号',    '/system/user', 'system:user', 'PersonOutline',          'menu', 2, 1),
+(4, '权限设置',    '/system/role', 'system:role', 'ShieldCheckmarkOutline', 'menu', 3, 1),
+(4, '菜单访问设置', '/system/menu', 'system:menu', 'ListOutline',           'menu', 4, 1),
+(17, '新增安全阀', '/valve/add',  'valve:add',  'AddCircleOutline',       'menu', 1, 1),
+(17, '安全阀列表', '/valve/list', 'valve:list', 'GridOutline',            'menu', 2, 1);

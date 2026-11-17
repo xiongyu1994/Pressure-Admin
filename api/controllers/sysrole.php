@@ -19,7 +19,9 @@ function role_row($r)
 /** GET /system/role/list */
 function api_sysrole_list()
 {
-    $rows = q_all('SELECT * FROM sys_role WHERE is_del = 0 ORDER BY built_in DESC, id');
+    // 内置角色按固定顺序展示：管理员、录入人员、检验人员、审核员、打印人员、录入审核
+    $order = "FIELD(label,'管理员','录入人员','检验人员','审核员','打印人员','录入审核')";
+    $rows = q_all('SELECT * FROM sys_role WHERE is_del = 0 ORDER BY built_in DESC, IF(' . $order . ' = 0, 99, ' . $order . '), id');
     ok(array_map('role_row', $rows));
 }
 

@@ -22,7 +22,7 @@ function api_sysuser_list()
 
     $total = q_scalar("SELECT COUNT(*) FROM sys_user WHERE $where", $params);
     $rows = q_all(
-        "SELECT id, account, name, phone, unit_name, identity, sign, status, last_time, last_ip, create_time
+        "SELECT id, account, name, phone, unit_name, site, identity, sign, status, last_time, last_ip, create_time
          FROM sys_user WHERE $where ORDER BY id LIMIT $limit OFFSET $offset",
         $params
     );
@@ -34,6 +34,7 @@ function api_sysuser_list()
             'name'      => $r['name'],
             'phone'     => $r['phone'],
             'unitName'  => $r['unit_name'],
+            'site'      => isset($r['site']) ? (string) $r['site'] : '',
             'identity'  => $r['identity'],
             'sign'      => $r['sign'] ? true : false,
             'status'    => (int) $r['status'] === 1,
@@ -63,12 +64,27 @@ function api_sysuser_add()
         'name'       => $name,
         'phone'      => (string) param('phone', ''),
         'unit_name'  => (string) param('unitName', ''),
-        'identity'   => (string) param('identity', '检验员'),
-        'permissions'=> (string) param('permissions', 'dashboard'),
+        'site'       => (string) param('site', ''),
+        'identity'   => (string) param('identity', '检验人员'),
+        'permissions'=> identity_default_perms((string) param('identity', '检验人员')),
         'sign'       => (string) param('sign', ''),
-        'status'     => 1,
+        'status'     => (int) param('status', 1) === 0 ? 0 : 1,
     ]);
     ok(['id' => $id]);
+}
+
+/** 身份 → 默认权限集合（新建账号按身份授予，可在权限设置中再调整） */
+function identity_default_perms($identity)
+{
+    $map = [
+        '管理员'   => '*',
+        '录入人员' => 'dashboard,commission,commission:add,commission:add:submit,commission:add:valve,commission:list,commission:list:view,commission:list:add,commission:list:edit,commission:list:sign,commission:list:precheck',
+        '检验人员' => 'dashboard,workorder,workorder:wait,workorder:wait:submit,workorder:inspection,workorder:inspection:result,workorder:all',
+        '审核员'   => 'dashboard,commission,commission:list,commission:list:view,commission:list:approve,commission:list:reject,workorder,workorder:all',
+        '打印人员' => 'dashboard,workorder,workorder:print,workorder:print:print,workorder:print:export,workorder:all,workorder:all:print,workorder:all:export',
+        '录入审核' => 'dashboard,commission,commission:add,commission:add:submit,commission:add:valve,commission:list,commission:list:view,commission:list:add,commission:list:edit,commission:list:approve,commission:list:reject,workorder,workorder:wait,workorder:inspection',
+    ];
+    return isset($map[$identity]) ? $map[$identity] : 'dashboard';
 }
 
 function api_sysuser_update()
@@ -78,7 +94,7 @@ function api_sysuser_update()
     if (!q_scalar('SELECT id FROM sys_user WHERE id = ? AND is_del = 0', [$id])) err('账号不存在');
 
     $data = [];
-    foreach (['name', 'phone', 'unit_name', 'identity', 'permissions', 'sign'] as $snake) {
+    foreach (['name', 'phone', 'unit_name', 'site', 'identity', 'permissions', 'sign', 'status'] as $snake) {
         $camel = lcfirst(str_replace('_', '', ucwords($snake, '_')));
         $v = param($camel, param($snake));
         if ($v !== null) $data[$snake] = $v;

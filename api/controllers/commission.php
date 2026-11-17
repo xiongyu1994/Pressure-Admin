@@ -314,9 +314,12 @@ function ensure_lib_valve($valve)
             return $libId;
         }
     }
-    $row = valve_to_row($valve);
+    $row = valve_to_row($valve, true);
     if (!$row) {
         return 0;
+    }
+    if (empty($row['unique_code'])) {
+        $row['unique_code'] = gen_unique_code();
     }
     return (int) q_insert('safety_valve', $row);
 }
