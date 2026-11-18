@@ -378,7 +378,7 @@ async function onFileChange(e) {
       :pagination="{ page, pageSize, itemCount: total, showSizePicker: true, pageSizes: [20, 50, 100], onChange: onPageChange, onUpdatePageSize: onPageSizeChange }"
     />
 
-    <ValveFormModal v-model:show="formShow" :valve="editing" @confirm="handleConfirm" />
+    <ValveFormModal v-model:show="formShow" :valve="editing" :submit-perm="editing ? 'valve:list:edit' : 'valve:add:save'" @confirm="handleConfirm" />
 
     <!-- 查看 -->
     <n-modal v-model:show="viewShow" preset="card" title="查看安全阀" style="width: 860px">

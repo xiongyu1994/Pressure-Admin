@@ -92,14 +92,13 @@ function require_permission($user, $perm)
     }
 }
 
-/** 用户权限数组：优先取关联角色的权限，未关联角色时用账号自身 permissions */
+/** 用户权限数组：绑定了角色时以角色权限为准（角色是权限设置的唯一入口），
+ *  未绑定角色或角色无权限配置时回退用账号自身 permissions */
 function user_permissions($user)
 {
     static $cache = [];
     $key = (int) $user['id'] . ':' . (int) $user['role_id'];
     if (isset($cache[$key])) return $cache[$key];
-
-    if (trim($user['permissions']) === '*') return $cache[$key] = ['*'];
 
     if (!empty($user['role_id'])) {
         $role = q_one('SELECT permissions FROM sys_role WHERE id = ? AND is_del = 0', [$user['role_id']]);
@@ -108,6 +107,8 @@ function user_permissions($user)
             return $cache[$key] = array_values(array_filter(array_map('trim', explode(',', $role['permissions']))));
         }
     }
+
+    if (trim($user['permissions']) === '*') return $cache[$key] = ['*'];
 
     return $cache[$key] = array_values(array_filter(array_map('trim', explode(',', $user['permissions'] ?: ''))));
 }

@@ -56,6 +56,9 @@ const detailOpen = ref(true)
 
 const canEditValve = hasPerm('commission:list:edit')
 
+/** 修改校验编号按钮权限 */
+const canEditCode = hasPerm('commission:list:editCode')
+
 /** 编辑模式才展示：操作栏 + 新增/选择按钮 */
 const canMaintain = computed(() => props.mode === 'edit' && canEditValve)
 
@@ -69,9 +72,28 @@ const pressRangeText = (r) => {
 const dash = (v) => (v === '' || v == null ? '/' : v)
 
 /** 基础列（查看 / 编辑模式共用） */
+const codeColumn = {
+  title: '校验编号',
+  key: 'orderCode',
+  width: 170,
+  render(r) {
+    const nodes = [h('span', { style: 'word-break: break-all' }, dash(r.orderCode))]
+    if (canEditCode && r.woId) {
+      nodes.push(
+        h(
+          NButton,
+          { size: 'tiny', secondary: true, type: 'primary', onClick: () => openCodeEdit(r) },
+          { default: () => '编辑' }
+        )
+      )
+    }
+    return h('div', { style: 'display:flex;align-items:center;gap:6px' }, nodes)
+  }
+}
+
 const baseColumns = [
   { title: '#', key: 'idx', width: 50, render: (r, i) => i + 1 },
-  { title: '校验编号', key: 'orderCode', width: 110, render: (r) => dash(r.orderCode) },
+  codeColumn,
   { title: '安全阀型号', key: 'vavleModel', width: 130, ellipsis: { tooltip: true } },
   { title: '公称通径mm', key: 'diameterNominal', width: 95 },
   { title: '出厂编号', key: 'manuNo', width: 120, ellipsis: { tooltip: true } },
@@ -194,6 +216,48 @@ async function onPoolCopyRow(payload) {
     poolRef.value?.reload()
   } catch (e) {
     message.error(e.message || '复制失败')
+  }
+}
+
+/* ---------- 修改校验编号弹窗（校验编号 / 校验编号2 / SN / sn_code） ---------- */
+const codeShow = ref(false)
+const codeSaving = ref(false)
+const codeForm = reactive({ id: 0, orderCode: '', orderCode2: '', sn: '', snCode: '' })
+
+function openCodeEdit(r) {
+  // SN/sn_code 初始值 = 流水号部分（校验编号去掉年月前缀，如 20261101 → 01）；历史数据为空时按校验编号推导
+  const serialPart = (r.orderCode || '').length > 6 ? (r.orderCode || '').slice(6) : ''
+  Object.assign(codeForm, {
+    id: r.woId || 0,
+    orderCode: r.orderCode || '',
+    orderCode2: r.orderCode2 || '',
+    sn: r.sn || serialPart,
+    snCode: r.snCode || serialPart
+  })
+  codeShow.value = true
+}
+
+async function saveCode() {
+  if (!codeForm.orderCode.trim()) {
+    message.warning('校验编号不能为空')
+    return
+  }
+  codeSaving.value = true
+  try {
+    await store.updateWorkorderCode({
+      id: codeForm.id,
+      orderCode: codeForm.orderCode.trim(),
+      orderCode2: codeForm.orderCode2.trim(),
+      sn: codeForm.sn.trim(),
+      snCode: codeForm.snCode.trim()
+    })
+    message.success('校验编号已修改')
+    codeShow.value = false
+    detail.value = await store.fetchCommissionDetail(props.row.id)
+  } catch (e) {
+    message.error(e.message || '修改失败')
+  } finally {
+    codeSaving.value = false
   }
 }
 
@@ -508,6 +572,30 @@ function printLabels() {
 
     <!-- 阀门新增 / 编辑弹窗（与现场送检一致的完整表单） -->
     <ValveFormModal v-model:show="editShow" :valve="editingValve" @confirm="handleValveConfirm" />
+
+    <!-- 修改校验编号弹窗 -->
+    <n-modal v-model:show="codeShow" preset="card" title="修改校验编号" style="width: 460px">
+      <n-form label-placement="left" label-width="90" size="small" style="padding: 6px 0">
+        <n-form-item label="校验编号" required>
+          <n-input v-model:value="codeForm.orderCode" placeholder="请输入校验编号" />
+        </n-form-item>
+        <n-form-item label="校验编号2">
+          <n-input v-model:value="codeForm.orderCode2" placeholder="请输入" />
+        </n-form-item>
+        <n-form-item label="SN">
+          <n-input v-model:value="codeForm.sn" placeholder="请输入" />
+        </n-form-item>
+        <n-form-item label="sn_code">
+          <n-input v-model:value="codeForm.snCode" placeholder="请输入" />
+        </n-form-item>
+      </n-form>
+      <template #footer>
+        <div style="display: flex; justify-content: flex-end; gap: 10px">
+          <n-button @click="codeShow = false">取消</n-button>
+          <n-button type="primary" :loading="codeSaving" @click="saveCode">确定</n-button>
+        </div>
+      </template>
+    </n-modal>
 
     <!-- 选择已有安全阀弹窗（安全阀数据池） -->
     <ValvePoolModal

@@ -130,6 +130,8 @@ const WORKORDER_STATUS_MAP = {
   wait: '待检验',
   inspection: '检验中',
   rejected: '校验退回',
+  audit: '待审核',
+  approval: '待审批',
   print: '待打印',
   done: '已完成'
 }

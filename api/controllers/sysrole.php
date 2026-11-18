@@ -78,16 +78,15 @@ function api_sysrole_permissions()
     if (!is_array($perms)) err('权限参数格式错误');
     $perms = array_values(array_unique(array_filter(array_map('trim', $perms))));
 
-    if ((int) $row['built_in'] === 1) {
-        // 内置管理员角色固定为全部权限
-        $value = '*';
-    } else {
-        $value = implode(',', $perms);
-    }
+    // 按前端勾选结果保存（内置角色也允许取消勾选部分按钮权限，不再强制 '*'）
+    $value = implode(',', $perms);
     q_update('sys_role', ['permissions' => $value], 'id = ?', [$id]);
 
-    // 权限变更后使关联账号的登录态失效，重新登录生效
-    q_update('sys_user', ['login_token' => '', 'token_expire' => 0], 'role_id = ?', [$id]);
+    // 权限变更后使该角色其它关联账号的登录态失效，重新登录生效；
+    // 排除当前操作人自己，否则保存成功的同时会把自己的 token 清空，后续请求全部 401
+    $me = current_user(false);
+    $meId = $me ? (int) $me['id'] : 0;
+    q_update('sys_user', ['login_token' => '', 'token_expire' => 0], 'role_id = ? AND id <> ?', [$id, $meId]);
     ok(null);
 }
 

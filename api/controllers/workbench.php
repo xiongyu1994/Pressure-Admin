@@ -127,7 +127,8 @@ function api_rank_unit()
 function api_unit_list()
 {
     $keyword   = trim((string) param('keyword', ''));
-    $client    = trim((string) param('client', ''));      // 姓名（联系人）
+    $userName  = trim((string) param('userName', ''));    // 姓名
+    $client    = trim((string) param('client', ''));      // 联系人
     $clientTel = trim((string) param('clientTel', ''));   // 联系人电话
     $entrustTel = trim((string) param('entrustTel', '')); // 委托人电话
 
@@ -137,6 +138,10 @@ function api_unit_list()
         $where[] = '(name LIKE ? OR client LIKE ?)';
         $args[] = '%' . $keyword . '%';
         $args[] = '%' . $keyword . '%';
+    }
+    if ($userName !== '') {
+        $where[] = 'user_name LIKE ?';
+        $args[] = '%' . $userName . '%';
     }
     if ($client !== '') {
         $where[] = 'client LIKE ?';
@@ -150,19 +155,25 @@ function api_unit_list()
         $where[] = 'entrust_tel LIKE ?';
         $args[] = '%' . $entrustTel . '%';
     }
-    $sql = 'SELECT id, name, address, client, client_tel, entrust_client, entrust_tel, bank_name, tax_no FROM unit WHERE ' . implode(' AND ', $where) . ' ORDER BY id';
+    $sql = 'SELECT id, user_name, mobile, name, identity, address, client, client_tel, entrust_client, entrust_tel, bank_name, apply_unit, tax_no, last_login_time, last_login_ip FROM unit WHERE ' . implode(' AND ', $where) . ' ORDER BY id';
     $rows = $args ? q_all($sql, $args) : q_all($sql);
     ok(array_map(function ($r) {
         return [
             'id' => (int) $r['id'],
+            'userName' => isset($r['user_name']) ? (string) $r['user_name'] : '',
+            'mobile' => isset($r['mobile']) ? (string) $r['mobile'] : '',
             'name' => $r['name'],
+            'identity' => isset($r['identity']) && $r['identity'] !== '' ? $r['identity'] : '送检单位',
             'address' => $r['address'],
             'client' => $r['client'],
             'clientTel' => $r['client_tel'],
             'entrustClient' => isset($r['entrust_client']) ? (string) $r['entrust_client'] : '',
             'entrustTel' => isset($r['entrust_tel']) ? (string) $r['entrust_tel'] : '',
             'bankName' => isset($r['bank_name']) ? (string) $r['bank_name'] : '',
+            'applyUnit' => isset($r['apply_unit']) ? (string) $r['apply_unit'] : '',
             'taxNo' => isset($r['tax_no']) ? (string) $r['tax_no'] : '',
+            'lastLoginTime' => isset($r['last_login_time']) ? (string) $r['last_login_time'] : '',
+            'lastLoginIp' => isset($r['last_login_ip']) ? (string) $r['last_login_ip'] : '',
         ];
     }, $rows));
 }
@@ -171,15 +182,19 @@ function api_unit_list()
 function api_unit_add()
 {
     $name = trim((string) param('name', ''));
-    if ($name === '') err('请输入客户名称');
+    if ($name === '') err('请输入单位名称');
     $id = q_insert('unit', [
+        'user_name' => (string) param('userName', ''),
+        'mobile'    => (string) param('mobile', ''),
         'name'      => $name,
+        'identity'  => '送检单位',
         'address'   => (string) param('address', ''),
         'client'    => (string) param('client', ''),
         'client_tel'=> (string) param('clientTel', ''),
         'entrust_client' => (string) param('entrustClient', ''),
         'entrust_tel'    => (string) param('entrustTel', ''),
         'bank_name' => (string) param('bankName', ''),
+        'apply_unit'=> (string) param('applyUnit', ''),
         'tax_no'    => (string) param('taxNo', ''),
     ]);
     ok(['id' => (int) $id]);
@@ -194,12 +209,25 @@ function api_unit_update()
     if (!$row) err('客户不存在');
 
     $data = [];
-    foreach (['name' => 'name', 'address' => 'address', 'client' => 'client', 'clientTel' => 'client_tel', 'entrustClient' => 'entrust_client', 'entrustTel' => 'entrust_tel', 'bankName' => 'bank_name', 'taxNo' => 'tax_no'] as $camel => $snake) {
+    foreach (['userName' => 'user_name', 'mobile' => 'mobile', 'name' => 'name', 'address' => 'address', 'client' => 'client', 'clientTel' => 'client_tel', 'entrustClient' => 'entrust_client', 'entrustTel' => 'entrust_tel', 'bankName' => 'bank_name', 'applyUnit' => 'apply_unit', 'taxNo' => 'tax_no'] as $camel => $snake) {
         if (param($camel) !== null) $data[$snake] = param($camel);
     }
     if (!$data) err('没有需要修改的字段');
     q_update('unit', $data, 'id = ?', [$id]);
     ok(null);
+}
+
+/** 重置客户密码 POST /unit/reset_password */
+function api_unit_reset_password()
+{
+    $id = (int) param('id', 0);
+    if (!$id) err('缺少参数 id');
+    $row = q_one('SELECT id, name FROM unit WHERE id = ? AND is_del = 0', [$id]);
+    if (!$row) err('客户不存在');
+    $newPwd = trim((string) param('password', ''));
+    if ($newPwd === '') $newPwd = '123456';
+    q_update('unit', ['password' => md5($newPwd)], 'id = ?', [$id]);
+    ok(['password' => $newPwd]);
 }
 
 /** 删除客户 POST /unit/delete */

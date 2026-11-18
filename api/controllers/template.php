@@ -1,7 +1,7 @@
 <?php
 /** 模版管理（权限由 index.php 路由表统一校验：system:tpl / system:tpl:*） */
 
-const TPL_TYPES = ['校验报告', '校验记录', '台账', '委托单'];
+const TPL_TYPES = ['校验报告', '校验记录', '台账', '委托单', '收费单', '委托单-未确认', '报告封面', '脱脂报告', '脱脂记录'];
 
 function tpl_row($r)
 {

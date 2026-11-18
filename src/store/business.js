@@ -25,6 +25,8 @@ export const WORKORDER_STATUS = {
   rejected: { label: '校验退回', type: 'error', code: 0 },
   wait: { label: '待检验', type: 'warning', code: 1 },
   inspection: { label: '检验中', type: 'info', code: 2 },
+  audit: { label: '待审核', type: 'warning', code: 3 },
+  approval: { label: '待审批', type: 'info', code: 4 },
   print: { label: '待打印', type: 'default', code: 5 },
   done: { label: '已完成', type: 'success', code: 6 }
 }
@@ -261,9 +263,25 @@ export const useBusinessStore = defineStore('business', {
       await request.post('/workorder/submit', { id })
       await this.fetchWorkorders()
     },
-    /** 检验中 → 提交检验结果，进入待打印 */
+    /** 检验中 → 提交检验结果，进入待审核 */
     async submitResult(id, result) {
       await request.post('/workorder/submit_result', { id, ...result })
+      await this.fetchWorkorders()
+    },
+    /** 修改工单校验编号（含校验编号2/SN/sn_code） */
+    async updateWorkorderCode(payload) {
+      await request.post('/workorder/update_code', payload)
+    },
+    /** 待审核 → 审核通过进入待审批 / 退回到校验退回（支持批量） */
+    async auditWorkorders(ids, pass, reason = '') {
+      const list = Array.isArray(ids) ? ids : [ids]
+      await request.post('/workorder/audit', { ids: list, pass, reason })
+      await this.fetchWorkorders()
+    },
+    /** 待审批 → 审批通过进入待打印 / 退回到校验退回（支持批量） */
+    async approveWorkorders(ids, pass, reason = '') {
+      const list = Array.isArray(ids) ? ids : [ids]
+      await request.post('/workorder/approve', { ids: list, pass, reason })
       await this.fetchWorkorders()
     },
     /** 待打印 → 打印后已完成（支持批量） */
@@ -277,7 +295,7 @@ export const useBusinessStore = defineStore('business', {
       await Promise.all(list.map((id) => request.post('/workorder/submit', { id })))
       await this.fetchWorkorders()
     },
-    /** 检验中 → 批量提交检验结果，进入待打印 */
+    /** 检验中 → 批量提交检验结果，进入待审核 */
     async batchSubmitResults(ids, common, rows = {}) {
       const list = Array.isArray(ids) ? ids : [ids]
       await Promise.all(

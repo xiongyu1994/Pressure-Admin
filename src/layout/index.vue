@@ -3,6 +3,7 @@ import { useAppStore } from '@/store/app'
 import Sidebar from './Sidebar.vue'
 import HeaderBar from './Header.vue'
 import TagsView from './TagsView.vue'
+import Breadcrumb from './Breadcrumb.vue'
 
 const appStore = useAppStore()
 </script>
@@ -19,6 +20,7 @@ const appStore = useAppStore()
       <div class="app-tags">
         <TagsView />
       </div>
+      <Breadcrumb />
       <main class="app-content">
         <router-view v-slot="{ Component, route }">
           <component :is="Component" :key="route.fullPath" />

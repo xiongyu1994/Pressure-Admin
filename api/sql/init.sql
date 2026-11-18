@@ -32,14 +32,21 @@ CREATE TABLE IF NOT EXISTS `sys_user` (
 -- 使用单位表
 CREATE TABLE IF NOT EXISTS `unit` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `user_name` VARCHAR(50) DEFAULT '' COMMENT '姓名',
+  `mobile` VARCHAR(20) DEFAULT '' COMMENT '手机号',
   `name` VARCHAR(150) NOT NULL COMMENT '单位名称',
+  `identity` VARCHAR(30) DEFAULT '送检单位' COMMENT '身份',
+  `password` VARCHAR(64) DEFAULT '' COMMENT '登录密码(md5)',
   `address` VARCHAR(255) DEFAULT '' COMMENT '单位地址',
   `client` VARCHAR(50) DEFAULT '' COMMENT '联系人',
   `client_tel` VARCHAR(20) DEFAULT '' COMMENT '联系电话',
   `entrust_client` VARCHAR(50) DEFAULT '' COMMENT '委托人',
   `entrust_tel` VARCHAR(20) DEFAULT '' COMMENT '委托人电话',
   `bank_name` VARCHAR(100) DEFAULT '' COMMENT '开户行',
+  `apply_unit` VARCHAR(150) DEFAULT '' COMMENT '申请单位',
   `tax_no` VARCHAR(50) DEFAULT '' COMMENT '纳税人识别号',
+  `last_login_time` DATETIME NULL COMMENT '最后登录时间',
+  `last_login_ip` VARCHAR(50) DEFAULT '' COMMENT '最后登录IP',
   `is_del` TINYINT DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='使用单位';
 
@@ -105,7 +112,21 @@ CREATE TABLE IF NOT EXISTS `commission` (
   `status` ENUM('sign','pending','approved','rejected') DEFAULT 'sign' COMMENT 'sign等待签名/pending等待预检/approved等待检验/rejected已退回',
   `reject_reason` VARCHAR(255) DEFAULT '' COMMENT '退回原因',
   `precheck` TINYINT DEFAULT 0 COMMENT '是否通过预检',
-  `paid` TINYINT DEFAULT 0 COMMENT '是否付费',
+  `paid` TINYINT DEFAULT 0 COMMENT '收费状态 0待收费 1已收费',
+  `total_price` DECIMAL(10,2) DEFAULT 0 COMMENT '总校验费',
+  `repair_price` DECIMAL(10,2) DEFAULT 0 COMMENT '总维修费',
+  `seller_price` DECIMAL(10,2) DEFAULT 0 COMMENT '总销售',
+  `payable_amount` DECIMAL(10,2) DEFAULT 0 COMMENT '应开金额',
+  `actual_amount` DECIMAL(10,2) DEFAULT 0 COMMENT '实开金额',
+  `payment_method` VARCHAR(50) DEFAULT '' COMMENT '收款方式',
+  `payment_date` DATE DEFAULT NULL COMMENT '收款日期',
+  `billing_unit` VARCHAR(150) DEFAULT '' COMMENT '开票单位',
+  `invoice_number` VARCHAR(100) DEFAULT '' COMMENT '发票号码',
+  `invoice_date` DATE DEFAULT NULL COMMENT '开票日期',
+  `seller` VARCHAR(50) DEFAULT '' COMMENT '销售',
+  `overbilled_inspection` DECIMAL(10,2) DEFAULT 0 COMMENT '检验多开',
+  `overbilled_seller` DECIMAL(10,2) DEFAULT 0 COMMENT '销售多开',
+  `fee_note` VARCHAR(255) DEFAULT '' COMMENT '收费备注',
   `sign_token` VARCHAR(64) DEFAULT '' COMMENT '手机签名令牌',
   `sign_img` VARCHAR(255) DEFAULT '' COMMENT '手机签名图片路径',
   `sign_time` DATETIME DEFAULT NULL COMMENT '手机签名时间',
@@ -151,6 +172,7 @@ CREATE TABLE IF NOT EXISTS `commission_valve` (
   `is_nameplate` VARCHAR(4) DEFAULT '是',
   `parity` VARCHAR(20) DEFAULT '离线校验',
   `check_method` VARCHAR(100) DEFAULT NULL COMMENT '在线校验方法',
+  `period_years` INT DEFAULT 1 COMMENT '周期(年)',
   KEY `idx_commission` (`commission_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='委托单安全阀清单';
 
@@ -161,13 +183,17 @@ CREATE TABLE IF NOT EXISTS `workorder` (
   `valve_id` INT NOT NULL DEFAULT 0 COMMENT '对应委托单安全阀清单ID（0=历史数据，按出厂编号回查）',
   `code` VARCHAR(30) DEFAULT '' COMMENT '委托单号',
   `order_code` VARCHAR(30) NOT NULL DEFAULT '' COMMENT '检验编号',
+  `order_code2` VARCHAR(50) DEFAULT '' COMMENT '校验编号2',
+  `sn` VARCHAR(50) DEFAULT '' COMMENT 'SN',
+  `sn_code` VARCHAR(50) DEFAULT '' COMMENT 'sn_code',
   `cust_name` VARCHAR(150) DEFAULT '' COMMENT '使用单位',
   `client` VARCHAR(50) DEFAULT '' COMMENT '使用单位联系人',
   `client_tel` VARCHAR(20) DEFAULT '' COMMENT '使用单位联系电话',
-  `status` ENUM('rejected','wait','inspection','print','done') DEFAULT 'wait' COMMENT 'rejected校验退回/wait待检验/inspection检验中/print待打印/done已完成',
+  `status` ENUM('rejected','wait','inspection','audit','approval','print','done') DEFAULT 'wait' COMMENT 'rejected校验退回/wait待检验/inspection检验中/audit待审核/approval待审批/print待打印/done已完成',
   `reject_reason` VARCHAR(255) DEFAULT '' COMMENT '退回原因',
   `inspector` VARCHAR(50) DEFAULT '' COMMENT '校验员',
   `inspector_time` DATETIME DEFAULT NULL COMMENT '校验时间',
+  `period_years` INT DEFAULT 1 COMMENT '周期(年)',
   `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '状态时间',
   `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '委托日期',
   `is_del` TINYINT DEFAULT 0,
@@ -239,7 +265,7 @@ CREATE TABLE IF NOT EXISTS `workorder_result` (
 INSERT INTO `sys_user` (`account`,`password`,`name`,`phone`,`unit_name`,`identity`,`permissions`,`status`) VALUES
 ('admin',    MD5('admin123'), '系统管理员', '13800000001', '平台运营中心', '管理员', '*', 1),
 ('whyh_006', MD5('123456'),   '周宽',       '13800000002', '武汉翼华技术设备有限公司', '检验员',
- 'dashboard,commission,commission:add,commission:add:submit,commission:add:valve,commission:list,commission:list:view,commission:list:print,commission:list:pending,workorder,workorder:view,workorder:reject,workorder:reject:resubmit,workorder:wait,workorder:wait:submit,workorder:inspection,workorder:inspection:result,workorder:print,workorder:print:print,workorder:print:export,workorder:all,workorder:all:print,workorder:all:export,system,system:user', 1);
+ 'dashboard,commission,commission:add,commission:add:submit,commission:add:valve,commission:list,commission:list:view,commission:list:print,commission:list:pending,workorder,workorder:view,workorder:reject,workorder:reject:resubmit,workorder:wait,workorder:wait:submit,workorder:inspection,workorder:inspection:result,workorder:audit,workorder:audit:pass,workorder:audit:reject,workorder:approval,workorder:approval:pass,workorder:approval:reject,workorder:print,workorder:print:print,workorder:print:export,workorder:all,workorder:all:print,workorder:all:export,system,system:user', 1);
 
 INSERT INTO `unit` (`name`,`address`,`client`,`client_tel`) VALUES
 ('武汉翼华技术设备有限公司','武汉东湖高新区光谷大道1号','刘建国','13970000001'),
@@ -344,7 +370,7 @@ INSERT INTO `sys_role` (`name`,`label`,`remark`,`permissions`,`built_in`) VALUES
 ('input', '录入人员', '送检信息录入与签名相关权限',
  'dashboard,commission,commission:add,commission:add:submit,commission:add:valve,commission:list,commission:list:view,commission:list:add,commission:list:edit,commission:list:sign,commission:list:precheck', 0),
 ('inspector', '检验人员', '业务操作权限（可检验/打印，无审核、删除与系统写权限）',
- 'dashboard,commission,commission:add,commission:add:submit,commission:add:valve,commission:list,commission:list:view,commission:list:print,commission:list:pending,workorder,workorder:view,workorder:reject,workorder:reject:resubmit,workorder:wait,workorder:wait:submit,workorder:inspection,workorder:inspection:result,workorder:print,workorder:print:print,workorder:print:export,workorder:all,workorder:all:print,workorder:all:export,system,system:user', 0),
+ 'dashboard,commission,commission:add,commission:add:submit,commission:add:valve,commission:list,commission:list:view,commission:list:print,commission:list:pending,workorder,workorder:view,workorder:reject,workorder:reject:resubmit,workorder:wait,workorder:wait:submit,workorder:inspection,workorder:inspection:result,workorder:audit,workorder:audit:pass,workorder:audit:reject,workorder:approval,workorder:approval:pass,workorder:approval:reject,workorder:print,workorder:print:print,workorder:print:export,workorder:all,workorder:all:print,workorder:all:export,system,system:user', 0),
 ('auditor', '审核员', '委托单审核相关权限',
  'dashboard,commission,commission:list,commission:list:view,commission:list:approve,commission:list:reject,workorder,workorder:all', 0),
 ('printer', '打印人员', '标签与报告打印相关权限',
@@ -376,7 +402,7 @@ INSERT INTO `site` (`parent_id`,`name`,`manager`,`tel`,`address`,`status`) VALUE
 CREATE TABLE IF NOT EXISTS `tpl` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `site_id` INT NOT NULL DEFAULT 0 COMMENT '站点id',
-  `type` VARCHAR(50) DEFAULT '' COMMENT '类型：校验报告/校验记录/台账/委托单',
+  `type` VARCHAR(50) DEFAULT '' COMMENT '类型：校验报告/校验记录/台账/委托单/收费单/委托单-未确认/报告封面/脱脂报告/脱脂记录',
   `name` VARCHAR(150) NOT NULL COMMENT '模板名称',
   `file_name` VARCHAR(255) DEFAULT '' COMMENT '模板文件名',
   `file_path` VARCHAR(255) DEFAULT '' COMMENT '模板文件相对路径',
@@ -387,9 +413,9 @@ CREATE TABLE IF NOT EXISTS `tpl` (
 
 INSERT INTO `tpl` (`site_id`,`type`,`name`,`file_name`,`file_path`,`status`) VALUES
 (1, '校验报告', '校验报告', '校验报告模板.docx', 'uploads/tpl/tpl_check_report.docx', 1),
-(1, '校验记录', '校验记录20260918', 1),
-(1, '台账', '安全阀台账', 1),
-(1, '委托单', '委托单', 1);
+(1, '校验记录', '校验记录20260918', '校验记录模板.docx', 'uploads/tpl/tpl_check_record.docx', 1),
+(1, '台账', '安全阀台账', '安全阀台账模板.xlsx', 'uploads/tpl/tpl_ledger.xlsx', 1),
+(1, '委托单', '委托单', '委托单模板.xlsx', 'uploads/tpl/tpl_commission.xlsx', 1);
 
 -- 菜单种子数据（与前端动态路由树一致）
 INSERT INTO `sys_menu` (`parent_id`,`title`,`path`,`permission`,`icon`,`type`,`sort`,`visible`) VALUES
@@ -401,11 +427,14 @@ INSERT INTO `sys_menu` (`parent_id`,`title`,`path`,`permission`,`icon`,`type`,`s
 (0, '系统管理',  '/system',           'system',         'SettingsOutline',      'dir',  6, 1),
 (2, '现场送检',  '/commission/add',   'commission:add', 'CreateOutline',        'menu', 1, 1),
 (2, '送检列表',  '/commission/list',  'commission:list','ListOutline',          'menu', 2, 1),
+(2, '收费列表',  '/commission/charge','commission:charge','CashOutline',        'menu', 3, 1),
 (3, '校验退回',  '/workorder/reject',     'workorder:reject',     '', 'menu', 1, 1),
 (3, '待检验',    '/workorder/wait',       'workorder:wait',       '', 'menu', 2, 1),
 (3, '检验中',    '/workorder/inspection', 'workorder:inspection', '', 'menu', 3, 1),
-(3, '待打印',    '/workorder/print',      'workorder:print',      '', 'menu', 4, 1),
-(3, '已完成',    '/workorder/all',        'workorder:all',        '', 'menu', 5, 1),
+(3, '待审核',    '/workorder/audit',      'workorder:audit',      '', 'menu', 4, 1),
+(3, '待审批',    '/workorder/approval',   'workorder:approval',   '', 'menu', 5, 1),
+(3, '待打印',    '/workorder/print',      'workorder:print',      '', 'menu', 6, 1),
+(3, '已完成',    '/workorder/all',        'workorder:all',        '', 'menu', 7, 1),
 (4, '站点管理',    '/system/site', 'system:site', 'ServerOutline',          'menu', 0, 1),
 (4, '模版管理',    '/system/tpl',  'system:tpl',  'DocumentOutline',        'menu', 1, 1),
 (4, '系统账号',    '/system/user', 'system:user', 'PersonOutline',          'menu', 2, 1),

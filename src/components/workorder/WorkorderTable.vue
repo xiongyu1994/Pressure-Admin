@@ -9,7 +9,7 @@ import SubmitResultModal from './SubmitResultModal.vue'
 import WorkorderDetail from './WorkorderDetail.vue'
 
 const props = defineProps({
-  /** 当前页面状态：rejected / wait / inspection / print / done */
+  /** 当前页面状态：rejected / wait / inspection / audit / approval / print / done */
   status: { type: String, required: true },
   /** 是否显示退回原因列 */
   showRejectReason: { type: Boolean, default: false },
@@ -172,7 +172,24 @@ const columns = computed(() => {
   return cols
 })
 
-const opWidth = computed(() => (props.status === 'print' || props.status === 'done' ? 200 : 150))
+const opWidth = computed(() =>
+  props.status === 'audit' || props.status === 'approval'
+    ? 170
+    : props.status === 'print' || props.status === 'done'
+      ? 200
+      : 150
+)
+
+/** 审核 / 审批页：通过 / 退回权限 */
+function gatePerms() {
+  return props.status === 'audit'
+    ? { pass: 'workorder:audit:pass', reject: 'workorder:audit:reject' }
+    : { pass: 'workorder:approval:pass', reject: 'workorder:approval:reject' }
+}
+function gateStore() {
+  return props.status === 'audit' ? 'auditWorkorders' : 'approveWorkorders'
+}
+const passLabel = computed(() => (props.status === 'approval' ? '审批通过' : '通过'))
 
 /** 打印 / 导出权限：待打印页与已完成页分别授权 */
 function printPerm() {
@@ -209,6 +226,28 @@ function renderRowOps(row) {
         NButton,
         { size: 'tiny', type: 'info', quaternary: true, onClick: () => openSubmitResult(row) },
         { default: () => '提交结果' }
+      )
+    )
+  }
+  if ((props.status === 'audit' || props.status === 'approval') && hasPerm(gatePerms().pass)) {
+    ops.push(
+      h(
+        NPopconfirm,
+        { onPositiveClick: () => handleGate([row.id], true) },
+        {
+          trigger: () =>
+            h(NButton, { size: 'tiny', type: 'success', quaternary: true }, { default: () => passLabel.value }),
+          default: () => `确认${passLabel.value}「${row.orderCode}」吗？`
+        }
+      )
+    )
+  }
+  if ((props.status === 'audit' || props.status === 'approval') && hasPerm(gatePerms().reject)) {
+    ops.push(
+      h(
+        NButton,
+        { size: 'tiny', type: 'error', quaternary: true, onClick: () => openReject([row.id]) },
+        { default: () => '退回' }
       )
     )
   }
@@ -274,6 +313,60 @@ async function handleResubmit(row) {
     message.success(`「${row.orderCode}」已重新提交到待检验`)
   } catch (e) {
     message.error(e.message || '重新提交失败')
+  }
+}
+
+/* ---------------- 审核 / 审批 ---------------- */
+const gateLoading = ref(false)
+
+async function handleGate(ids, pass) {
+  if (gateLoading.value) return
+  gateLoading.value = true
+  const codes = list.value
+    .filter((w) => ids.includes(w.id))
+    .map((r) => r.orderCode)
+    .join('、')
+  try {
+    await store[gateStore()](ids, pass)
+    message.success(pass ? `已${passLabel.value}：${codes}` : `已退回：${codes}`)
+    checkedKeys.value = checkedKeys.value.filter((k) => !ids.includes(k))
+  } catch (e) {
+    message.error(e.message || '操作失败')
+  } finally {
+    gateLoading.value = false
+  }
+}
+
+/** 退回原因弹窗 */
+const rejectShow = ref(false)
+const rejectIds = ref([])
+const rejectReason = ref('')
+
+function openReject(ids) {
+  rejectIds.value = ids
+  rejectReason.value = ''
+  rejectShow.value = true
+}
+
+async function confirmReject() {
+  if (!rejectReason.value.trim()) {
+    message.warning('请填写退回原因')
+    return
+  }
+  await handleGate(rejectIds.value, false)
+  if (rejectIds.value.length) rejectShow.value = false
+}
+
+function batchGate(pass) {
+  const ids = checkedKeys.value.filter((k) => list.value.some((w) => w.id === k))
+  if (!ids.length) {
+    message.warning('请先勾选工单')
+    return
+  }
+  if (pass) {
+    handleGate(ids, true)
+  } else {
+    openReject(ids)
   }
 }
 
@@ -400,6 +493,21 @@ function rowProps(row) {
       </n-form-item>
     </n-form>
 
+    <!-- 审核 / 审批批量工具栏 -->
+    <div v-if="status === 'audit' || status === 'approval'" class="toolbar">
+      <n-space>
+        <n-button
+          size="small"
+          type="primary"
+          :loading="gateLoading"
+          v-perm="gatePerms().pass"
+          @click="batchGate(true)"
+        >批量{{ passLabel }}</n-button>
+        <n-button size="small" type="error" secondary v-perm="gatePerms().reject" @click="batchGate(false)">批量退回</n-button>
+      </n-space>
+      <span class="selected-tip">已选 {{ checkedKeys.length }} 条</span>
+    </div>
+
     <!-- 批量工具栏 -->
     <div v-if="batchPrint" class="toolbar">
       <n-space>
@@ -425,6 +533,22 @@ function rowProps(row) {
 
     <WorkorderDetail v-model:show="detailShow" :row="detailRow" />
     <SubmitResultModal v-model:show="submitShow" :row="submitRow" />
+
+    <!-- 退回原因 -->
+    <n-modal v-model:show="rejectShow" preset="card" :title="status === 'approval' ? '审批退回' : '审核退回'" style="width: 460px">
+      <n-input
+        v-model:value="rejectReason"
+        type="textarea"
+        placeholder="请填写退回原因（必填）"
+        :autosize="{ minRows: 3, maxRows: 6 }"
+      />
+      <template #footer>
+        <div style="display: flex; justify-content: flex-end; gap: 10px">
+          <n-button @click="rejectShow = false">取消</n-button>
+          <n-button type="error" :loading="gateLoading" @click="confirmReject">确认退回</n-button>
+        </div>
+      </template>
+    </n-modal>
   </div>
 </template>
 

@@ -25,7 +25,8 @@ import {
   LogOutOutline,
   ServerOutline,
   DocumentOutline,
-  CubeOutline
+  CubeOutline,
+  CashOutline
 } from '@vicons/ionicons5'
 
 export const iconMap = {
@@ -45,7 +46,8 @@ export const iconMap = {
   ReaderOutline,
   PeopleOutline,
   NotificationsOutline,
-  CubeOutline
+  CubeOutline,
+  CashOutline
 }
 
 /** 渲染 naive-ui 菜单图标 */

@@ -18,7 +18,7 @@ const pageSize = ref(15)
 const filter = reactive({ siteId: null, type: null })
 
 const siteOptions = ref([])
-const TPL_TYPES = ['校验报告', '校验记录', '台账', '委托单']
+const TPL_TYPES = ['校验报告', '校验记录', '台账', '委托单', '收费单', '委托单-未确认', '报告封面', '脱脂报告', '脱脂记录']
 
 async function loadSiteOptions() {
   try {
@@ -118,7 +118,15 @@ function openView(row) {
 }
 
 /**
- * 点击 Word 图标下载模板文件（uploads 目录由 Apache 静态直出，无需鉴权）
+ * 是否 Excel 模板（决定查看弹窗图标样式）
+ */
+function isExcelFile(row) {
+  const f = (row.fileName || row.filePath || '').toLowerCase()
+  return f.endsWith('.xlsx') || f.endsWith('.xls')
+}
+
+/**
+ * 点击图标下载模板文件（uploads 目录由 Apache 静态直出，无需鉴权）
  * 用 <a> 直接触发下载而非 fetch 拉取：静态文件没有 CORS 头，
  * 前端源与 API 源不同源时 fetch 会被浏览器拦截（报 CORS 错误）
  */
@@ -305,7 +313,15 @@ onMounted(() => {
               :title="viewRow.filePath ? '点击下载：' + (viewRow.fileName || '模板文件') : '暂未上传文件'"
               @click="downloadTpl(viewRow)"
             >
-              <svg width="76" height="76" viewBox="0 0 80 80" aria-hidden="true">
+              <svg v-if="isExcelFile(viewRow)" width="76" height="76" viewBox="0 0 80 80" aria-hidden="true">
+                <rect width="80" height="80" rx="16" fill="#217346" />
+                <rect x="42" y="16" width="26" height="48" rx="2" fill="#FFFFFF" />
+                <rect x="42" y="32" width="26" height="2.6" fill="#217346" />
+                <rect x="42" y="47" width="26" height="2.6" fill="#217346" />
+                <rect x="55" y="16" width="2.6" height="48" fill="#217346" />
+                <text x="8" y="55" font-family="Arial, sans-serif" font-size="34" font-weight="bold" fill="#FFFFFF">X</text>
+              </svg>
+              <svg v-else width="76" height="76" viewBox="0 0 80 80" aria-hidden="true">
                 <rect width="80" height="80" rx="16" fill="#2B579A" />
                 <rect x="42" y="16" width="26" height="48" rx="2" fill="#FFFFFF" />
                 <rect x="46" y="24" width="18" height="2.6" fill="#2B579A" />

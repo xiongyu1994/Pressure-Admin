@@ -62,7 +62,23 @@ export const asyncRoutes = [
             { perm: 'commission:list:delete', label: '删除' },
             { perm: 'commission:list:print', label: '打印委托单' },
             { perm: 'commission:list:export', label: '批量导出' },
-            { perm: 'commission:list:pending', label: '待检阀门' }
+            { perm: 'commission:list:pending', label: '待检阀门' },
+            { perm: 'commission:list:editCode', label: '修改校验编号' }
+          ]
+        }
+      },
+      {
+        path: '/commission/charge',
+        name: 'CommissionCharge',
+        component: () => import('@/views/commission/charge.vue'),
+        meta: {
+          title: '收费列表',
+          icon: 'CashOutline',
+          permission: 'commission:charge',
+          buttons: [
+            { perm: 'commission:charge:view', label: '查看收费详情' },
+            { perm: 'commission:charge:pay', label: '登记收费' },
+            { perm: 'commission:charge:reset', label: '重置收费' }
           ]
         }
       }
@@ -101,6 +117,32 @@ export const asyncRoutes = [
           title: '检验中',
           permission: 'workorder:inspection',
           buttons: [{ perm: 'workorder:inspection:result', label: '提交检验结果' }]
+        }
+      },
+      {
+        path: '/workorder/audit',
+        name: 'WorkorderAudit',
+        component: () => import('@/views/workorder/audit.vue'),
+        meta: {
+          title: '待审核',
+          permission: 'workorder:audit',
+          buttons: [
+            { perm: 'workorder:audit:pass', label: '审核通过' },
+            { perm: 'workorder:audit:reject', label: '审核退回' }
+          ]
+        }
+      },
+      {
+        path: '/workorder/approval',
+        name: 'WorkorderApproval',
+        component: () => import('@/views/workorder/approval.vue'),
+        meta: {
+          title: '待审批',
+          permission: 'workorder:approval',
+          buttons: [
+            { perm: 'workorder:approval:pass', label: '审批通过' },
+            { perm: 'workorder:approval:reject', label: '审批退回' }
+          ]
         }
       },
       {
@@ -174,9 +216,7 @@ export const asyncRoutes = [
       icon: 'PeopleOutline',
       permission: 'customer',
       buttons: [
-        { perm: 'customer:add', label: '新增客户' },
-        { perm: 'customer:edit', label: '编辑客户' },
-        { perm: 'customer:delete', label: '删除客户' }
+        { perm: 'customer:resetPwd', label: '重置密码' }
       ]
     }
   },

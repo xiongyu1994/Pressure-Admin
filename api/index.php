@@ -29,6 +29,7 @@ require_once __DIR__ . '/controllers/auth.php';
 require_once __DIR__ . '/controllers/workbench.php';
 require_once __DIR__ . '/controllers/valve.php';
 require_once __DIR__ . '/controllers/commission.php';
+require_once __DIR__ . '/controllers/fee.php';
 require_once __DIR__ . '/controllers/workorder.php';
 require_once __DIR__ . '/controllers/sysuser.php';
 require_once __DIR__ . '/controllers/sysrole.php';
@@ -61,6 +62,7 @@ try {
         'unit/add'            => ['POST', true,  'api_unit_add',          'customer'],
         'unit/update'         => ['POST', true,  'api_unit_update',       'customer'],
         'unit/delete'         => ['POST', true,  'api_unit_delete',       'customer'],
+        'unit/reset_password' => ['POST', true,  'api_unit_reset_password', 'customer:resetPwd'],
         // 安全阀库
         'valve/list'          => ['GET',  true,  'api_valve_list',        ['commission', 'commission:add', 'valve', 'valve:list']],
         'valve/add'           => ['POST', true,  'api_valve_add',         ['valve', 'valve:add', 'commission:add:valve']],
@@ -76,6 +78,11 @@ try {
         'commission/sign_qrcode' => ['GET', true, 'api_commission_sign_qrcode', 'commission:list:sign'],
         'commission/sign_status' => ['GET', true, 'api_commission_sign_status', 'commission:list:sign'],
         'commission/add'      => ['POST', true,  'api_commission_add',    'commission:add'],
+        // 收费列表（委托单管理）
+        'fee/list'            => ['GET',  true,  'api_fee_list',   'commission:charge'],
+        'fee/detail'          => ['GET',  true,  'api_fee_detail', 'commission:charge'],
+        'fee/save'            => ['POST', true,  'api_fee_save',   'commission:charge:pay'],
+        'fee/reset'           => ['POST', true,  'api_fee_reset',  'commission:charge:reset'],
         'commission/update'   => ['POST', true,  'api_commission_update', 'commission:list:edit'],
         // 编辑委托单阀门信息（查看弹窗「编辑」按钮）
         'commission/valve_update' => ['POST', true, 'api_commission_valve_update', 'commission:list:edit'],
@@ -91,9 +98,12 @@ try {
         // 检验工单
         'workorder/list'      => ['GET',  true,  'api_workorder_list',    'workorder'],
         'workorder/detail'    => ['GET',  true,  'api_workorder_detail',  'workorder'],
+        'workorder/update_code' => ['POST', true, 'api_workorder_update_code', 'commission:list:editCode'],
         'workorder/submit'    => ['POST', true,  'api_workorder_submit',  'workorder:wait:submit'],
         'workorder/resubmit'  => ['POST', true,  'api_workorder_resubmit','workorder:reject:resubmit'],
         'workorder/submit_result' => ['POST', true, 'api_workorder_submit_result', 'workorder:inspection:result'],
+        'workorder/audit'     => ['POST', true,  'api_workorder_audit',   ['workorder:audit:pass', 'workorder:audit:reject']],
+        'workorder/approve'   => ['POST', true,  'api_workorder_approve', ['workorder:approval:pass', 'workorder:approval:reject']],
         'workorder/print'     => ['POST', true,  'api_workorder_print',   ['workorder:print:print', 'workorder:all:print']],
         // 系统账号
         'system/user/list'    => ['GET',  true,  'api_sysuser_list',      'system:user'],

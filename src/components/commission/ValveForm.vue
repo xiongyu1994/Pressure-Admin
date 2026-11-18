@@ -1,5 +1,5 @@
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useMessage } from 'naive-ui'
 import { useBusinessStore } from '@/store/business'
 
@@ -10,7 +10,9 @@ import { useBusinessStore } from '@/store/business'
  */
 const props = defineProps({
   /** 传入含 id 的阀门对象 = 编辑模式（隐藏提交数量）；不传/为空 = 新增模式 */
-  valve: { type: Object, default: null }
+  valve: { type: Object, default: null },
+  /** 提交按钮所需按钮级权限标识（v-perm），按使用场景由父组件传入 */
+  submitPerm: { type: String, default: 'valve:add:save' }
 })
 const emit = defineEmits(['confirm'])
 
@@ -113,12 +115,32 @@ function fill(v) {
   })
 }
 
-/** 打开时初始化：编辑模式回填，新增模式重置（供父组件调用） */
+/** 打开时初始化：编辑模式回填，新增模式重置并预填安全阀库第一条（供父组件调用） */
 function init(v) {
   Object.assign(form, emptyForm())
   if (v && v.id) fill(v)
+  else prefillFirst()
   formRef.value?.restoreValidation()
 }
+
+/** 新增模式预填：默认填充安全阀库列表的第一条数据（列表未加载时先拉取） */
+async function prefillFirst() {
+  try {
+    let list = store.valveLibrary
+    if (!list || !list.length) {
+      await store.fetchValves()
+      list = store.valveLibrary
+    }
+    if (list && list.length) fill(list[0])
+  } catch {
+    /* 列表加载失败时保持空白表单 */
+  }
+}
+
+onMounted(() => {
+  // 页面内嵌（/valve/add）不走 init，挂载时新增模式同样预填
+  if (!isEdit.value) prefillFirst()
+})
 
 function buildValve() {
   return {
@@ -303,7 +325,7 @@ defineExpose({ init, reset: () => Object.assign(form, emptyForm()) })
       </div>
       <div class="btn-row">
         <n-button v-if="!isEdit" type="primary" ghost @click="handleKeepAdd">连续添加</n-button>
-        <n-button type="primary" :loading="submitting" @click="handleSubmit">确认提交</n-button>
+        <n-button v-perm="submitPerm" type="primary" :loading="submitting" @click="handleSubmit">确认提交</n-button>
         <n-button @click="handleClear">清空内容</n-button>
       </div>
     </div>

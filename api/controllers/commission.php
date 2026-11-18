@@ -229,7 +229,8 @@ function generate_workorders($row, $baseCode = '')
     $base = $baseCode !== '' ? (int) $baseCode : 0;
     foreach ($valves as $i => $v) {
         $woData = $v;
-        unset($woData['id']);
+        // 剔除 commission_valve 特有、workorder 没有的列（整行复制不能把 lib_id 等带进工单表）
+        unset($woData['id'], $woData['lib_id']);
         $woData['valve_id'] = (int) $v['id'];
         $woData['commission_id'] = (int) $row['id'];
         $woData['code'] = $row['code'];
@@ -240,6 +241,10 @@ function generate_workorders($row, $baseCode = '')
         $woData['update_time'] = date('Y-m-d H:i:s');
         if ($baseCode !== '') {
             $woData['order_code'] = (string) ($base + $i);
+            // SN / sn_code 初始值 = 流水号部分（校验编号去掉年月前缀，如 20261101 → 01）
+            $serialPart = substr($woData['order_code'], 6);
+            $woData['sn'] = $serialPart;
+            $woData['sn_code'] = $serialPart;
         } else {
             $nextWo = (int) q_scalar('SELECT IFNULL(MAX(id), 0) + 1 FROM workorder');
             $woData['order_code'] = 'JY' . date('Y') . str_pad((string) $nextWo, 5, '0', STR_PAD_LEFT);
@@ -546,7 +551,12 @@ function api_commission_action()
 
         case 'precheck':
             // 预检通过：必须先完成手机签名，并录入全局唯一的开抽流水号 → 状态变为「等待检验」
-            if ($row['status'] !== 'pending') err('仅等待预检的委托单可以通过预检');
+            if ($row['status'] !== 'pending') {
+                if ($row['status'] === 'approved' && !empty($row['precheck'])) {
+                    err('该委托单已通过预检（流水号 ' . $row['serial_no'] . '），当前为等待检验状态，请刷新页面查看最新状态');
+                }
+                err('仅等待预检的委托单可以通过预检');
+            }
             if (empty($row['sign_img'])) err('该委托单尚未完成手机签名，无法通过预检');
             $serial = trim((string) param('serialNo', param('serial_no', '')));
             if ($serial === '') err('请输入开抽流水号');

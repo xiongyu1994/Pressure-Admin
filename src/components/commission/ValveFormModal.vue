@@ -6,7 +6,9 @@ import ValveForm from './ValveForm.vue'
 const props = defineProps({
   show: { type: Boolean, default: false },
   /** 传入含 id 的阀门对象 = 编辑模式（回填数据、隐藏提交数量）；不传/为空 = 新增模式 */
-  valve: { type: Object, default: null }
+  valve: { type: Object, default: null },
+  /** 透传给 ValveForm 的提交按钮权限标识 */
+  submitPerm: { type: String, default: 'valve:add:save' }
 })
 const emit = defineEmits(['update:show', 'confirm'])
 
@@ -37,6 +39,6 @@ function onConfirm(payload) {
     style="width: 1200px"
     @update:show="(v) => emit('update:show', v)"
   >
-    <ValveForm ref="formRef" :valve="valve" @confirm="onConfirm" />
+    <ValveForm ref="formRef" :valve="valve" :submit-perm="submitPerm" @confirm="onConfirm" />
   </n-modal>
 </template>

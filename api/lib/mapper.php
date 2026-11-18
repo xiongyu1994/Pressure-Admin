@@ -30,6 +30,7 @@ $VALVE_FIELDS = [
     'isNameplate'           => 'is_nameplate',
     'parity'                => 'parity',
     'checkMethod'           => 'check_method',
+    'periodYears'           => 'period_years',
 ];
 
 /** 安全阀库（safety_valve）独有字段：状态 / 唯一识别 / 检验时间等池元数据 */
@@ -38,7 +39,6 @@ $VALVE_LIB_ONLY_FIELDS = [
     'uniqueCode'            => 'unique_code',
     'checkTime'             => 'check_time',
     'nextCheckTime'         => 'next_check_time',
-    'periodYears'           => 'period_years',
     'custName'              => 'cust_name',
     'region'                => 'region',
 ];
@@ -172,9 +172,10 @@ function commission_row($row)
 function commission_with_valves($row)
 {
     $out = commission_row($row);
-    // 关联工单取每台阀门的校验编号与校验状态（workorder.valve_id 关联）
+    // 关联工单取每台阀门的校验编号/校验编号2/SN/sn_code 与校验状态（workorder.valve_id 关联）
     $valves = q_all(
-        'SELECT cv.*, w.order_code AS wo_order_code, w.status AS wo_status
+        'SELECT cv.*, w.id AS wo_id, w.order_code AS wo_order_code, w.order_code2 AS wo_order_code2,
+                w.sn AS wo_sn, w.sn_code AS wo_sn_code, w.status AS wo_status
          FROM commission_valve cv
          LEFT JOIN workorder w ON w.valve_id = cv.id AND w.is_del = 0
          WHERE cv.commission_id = ?',
@@ -183,7 +184,11 @@ function commission_with_valves($row)
     $out['valves'] = array_map('valve_row', $valves);
     foreach ($out['valves'] as $i => $v) {
         $src = $valves[$i];
+        $out['valves'][$i]['woId'] = isset($src['wo_id']) ? (int) $src['wo_id'] : 0;
         $out['valves'][$i]['orderCode'] = isset($src['wo_order_code']) ? (string) $src['wo_order_code'] : '';
+        $out['valves'][$i]['orderCode2'] = isset($src['wo_order_code2']) ? (string) $src['wo_order_code2'] : '';
+        $out['valves'][$i]['sn'] = isset($src['wo_sn']) ? (string) $src['wo_sn'] : '';
+        $out['valves'][$i]['snCode'] = isset($src['wo_sn_code']) ? (string) $src['wo_sn_code'] : '';
         $out['valves'][$i]['checkStatus'] = isset($src['wo_status']) ? (string) $src['wo_status'] : '';
     }
     return $out;

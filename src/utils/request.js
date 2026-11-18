@@ -72,11 +72,12 @@ async function request(method, path, params = {}) {
   const json = await res.json().catch(() => ({ code: -1, message: '响应解析失败' }))
 
   if (json.code === 401) {
-    // 登录过期：清空本地登录态，跳转登录页
+    // 登录过期：清空本地登录态（含 Pinia 内存态，否则路由守卫会弹回工作台），跳转登录页
     TOKEN = ''
     localStorage.removeItem('api_token')
     localStorage.removeItem('admin_token')
-    if (location.hash !== '#/login') location.hash = '#/login'
+    // 动态引入避免循环依赖（user store 也引用了本模块）
+    import('@/store/user').then(({ useUserStore }) => useUserStore().forceLogout())
   }
   if (json.code !== 0) {
     return Promise.reject(new Error(json.message || '请求失败'))

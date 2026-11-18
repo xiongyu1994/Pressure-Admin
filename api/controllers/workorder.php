@@ -110,6 +110,24 @@ function api_workorder_submit()
     ok(null);
 }
 
+/** 修改校验编号（含校验编号2/SN/sn_code）POST /workorder/update_code { id, orderCode?, orderCode2?, sn?, snCode? } */
+function api_workorder_update_code()
+{
+    $id = (int) param('id', 0);
+    if (!$id) err('缺少参数 id');
+    $row = q_one('SELECT id FROM workorder WHERE id = ? AND is_del = 0', [$id]);
+    if (!$row) err('工单不存在');
+
+    $data = [];
+    foreach (['orderCode' => 'order_code', 'orderCode2' => 'order_code2', 'sn' => 'sn', 'snCode' => 'sn_code'] as $camel => $snake) {
+        if (param($camel) !== null) $data[$snake] = trim((string) param($camel));
+    }
+    if (!$data) err('没有需要修改的字段');
+    if (isset($data['order_code']) && $data['order_code'] === '') err('校验编号不能为空');
+    q_update('workorder', $data, 'id = ?', [$id]);
+    ok(null);
+}
+
 /** 校验退回 → 重新提交到待检验 */
 function api_workorder_resubmit()
 {
@@ -122,7 +140,7 @@ function api_workorder_resubmit()
     ok(null);
 }
 
-/** 检验中 → 提交检验结果，进入待打印 */
+/** 检验中 → 提交检验结果，进入待审核 */
 function api_workorder_submit_result()
 {
     $id = (int) param('id', 0);
@@ -165,7 +183,7 @@ function api_workorder_submit_result()
             q_insert('workorder_result', $data);
         }
         q_update('workorder', [
-            'status'         => 'print',
+            'status'         => 'audit',
             'inspector'      => $inspector,
             'inspector_time' => $inspectorTime,
             'update_time'    => date('Y-m-d H:i:s'),
@@ -192,4 +210,52 @@ function api_workorder_print()
         array_merge([date('Y-m-d H:i:s')], $ids)
     );
     ok(['updated' => (int) $count]);
+}
+
+/**
+ * 审核接口（待审核页）：通过 → 待审批；退回 → 校验退回。
+ * POST /workorder/audit { ids: [..], pass: true|false, reason: '退回原因' }
+ */
+function api_workorder_audit()
+{
+    workorder_gate('audit', 'approval');
+}
+
+/**
+ * 审批接口（待审批页）：审批通过 → 待打印；退回 → 校验退回。
+ * POST /workorder/approve { ids: [..], pass: true|false, reason: '退回原因' }
+ */
+function api_workorder_approve()
+{
+    workorder_gate('approval', 'print');
+}
+
+/** 通用状态闸门：$from 状态 → 通过 $to / 退回 rejected */
+function workorder_gate($from, $to)
+{
+    $in  = input();
+    $ids = isset($in['ids']) && is_array($in['ids']) ? array_map('intval', $in['ids']) : [];
+    if (!$ids && (int) param('id', 0)) $ids = [(int) param('id')];
+    if (!$ids) err('缺少参数 ids');
+
+    $pass   = param('pass', null);
+    $pass   = $pass === null ? true : (bool) $pass;
+    $reason = trim((string) param('reason', ''));
+
+    if ($pass) {
+        $marks = implode(',', array_fill(0, count($ids), '?'));
+        $count = q_exec(
+            "UPDATE workorder SET status=?, reject_reason='', update_time=? WHERE id IN ($marks) AND status=? AND is_del=0",
+            array_merge([$to, date('Y-m-d H:i:s')], $ids, [$from])
+        );
+        ok(['updated' => (int) $count]);
+    } else {
+        if ($reason === '') err('请填写退回原因');
+        $marks = implode(',', array_fill(0, count($ids), '?'));
+        $count = q_exec(
+            "UPDATE workorder SET status='rejected', reject_reason=?, update_time=? WHERE id IN ($marks) AND status=? AND is_del=0",
+            array_merge([$reason, date('Y-m-d H:i:s')], $ids, [$from])
+        );
+        ok(['updated' => (int) $count]);
+    }
 }

@@ -260,7 +260,7 @@ const unitOptions = computed(() => store.units.map((u) => ({ label: u.name, valu
     </div>
 
     <ValvePoolModal v-model:show="pickerShow" @confirm="addFromLibrary" @copy="addFromLibrary" />
-    <ValveFormModal v-model:show="valveFormShow" @confirm="addNewValves" />
+    <ValveFormModal v-model:show="valveFormShow" submit-perm="commission:add:valve" @confirm="addNewValves" />
   </div>
 </template>
 

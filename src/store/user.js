@@ -51,9 +51,11 @@ export const useUserStore = defineStore('user', {
       }
       return data
     },
-    async logout() {
-      // 后端销毁 token（失败不阻塞登出流程）
-      request.post('/logout').catch(() => {})
+    /**
+     * 本地强制登出（401 登录过期时由 request.js 调用）：
+     * 只清空本地登录态并跳转登录页，不请求后端（避免再次 401 死循环）。
+     */
+    forceLogout() {
       this.token = ''
       this.name = ''
       this.roles = []
@@ -76,7 +78,12 @@ export const useUserStore = defineStore('user', {
       import('@/store/menu').then(({ useMenuStore }) => {
         useMenuStore().reset()
       })
-      router.push('/login')
+      if (router.currentRoute.value.path !== '/login') router.push('/login')
+    },
+    async logout() {
+      // 后端销毁 token（失败不阻塞登出流程）
+      request.post('/logout').catch(() => {})
+      this.forceLogout()
     }
   }
 })

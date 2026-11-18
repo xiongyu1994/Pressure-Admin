@@ -97,7 +97,7 @@ async function handleSubmit() {
       inspectorTime: fmtDateTime(form.inspectorTime)
     })
     emit('update:show', false)
-    message.success(`「${form.orderCode}」检验结果已提交，进入待打印`)
+    message.success(`「${form.orderCode}」检验结果已提交，进入待审核`)
   } catch (e) {
     message.error(e.message || '提交失败')
   } finally {
