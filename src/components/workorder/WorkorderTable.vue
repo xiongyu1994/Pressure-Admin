@@ -6,6 +6,7 @@ import { useBusinessStore, WORKORDER_STATUS } from '@/store/business'
 import { hasPerm } from '@/utils/permission'
 import { buildReportHtml, buildRecordHtml, printHtml, downloadTxt } from '@/utils/print'
 import SubmitResultModal from './SubmitResultModal.vue'
+import BatchSubmitResultModal from './BatchSubmitResultModal.vue'
 import WorkorderDetail from './WorkorderDetail.vue'
 
 const props = defineProps({
@@ -370,6 +371,44 @@ function batchGate(pass) {
   }
 }
 
+/* ---------------- 检验中批量提交结果 ---------------- */
+const batchResultShow = ref(false)
+
+function openBatchSubmitResult() {
+  const rows = list.value.filter((w) => checkedKeys.value.includes(w.id))
+  if (!rows.length) {
+    message.warning('请先勾选工单')
+    return
+  }
+  batchResultShow.value = true
+}
+
+/* ---------------- 待检验批量提交 ---------------- */
+const batchSubmitLoading = ref(false)
+
+async function batchSubmit() {
+  const ids = checkedKeys.value.filter((k) => list.value.some((w) => w.id === k))
+  if (!ids.length) {
+    message.warning('请先勾选工单')
+    return
+  }
+  if (batchSubmitLoading.value) return
+  batchSubmitLoading.value = true
+  const codes = list.value
+    .filter((w) => ids.includes(w.id))
+    .map((r) => r.orderCode)
+    .join('、')
+  try {
+    await store.batchSubmitWorkorders(ids)
+    message.success(`已批量提交：${codes}`)
+    checkedKeys.value = []
+  } catch (e) {
+    message.error(e.message || '批量提交失败')
+  } finally {
+    batchSubmitLoading.value = false
+  }
+}
+
 async function markPrintedSafe(ids) {
   try {
     await store.markPrinted(ids)
@@ -493,6 +532,30 @@ function rowProps(row) {
       </n-form-item>
     </n-form>
 
+    <!-- 检验中批量提交结果工具栏 -->
+    <div v-if="status === 'inspection'" class="toolbar inline">
+      <n-button
+        size="small"
+        type="success"
+        ghost
+        v-perm="'workorder:inspection:result'"
+        @click="openBatchSubmitResult"
+      >批量提交结果</n-button>
+      <span class="selected-tip">已选中<span class="sel-count">{{ checkedKeys.length }}</span>条数据</span>
+    </div>
+
+    <!-- 待检验批量提交工具栏 -->
+    <div v-if="status === 'wait'" class="toolbar inline">
+      <n-button
+        size="small"
+        type="warning"
+        :loading="batchSubmitLoading"
+        v-perm="'workorder:wait:submit'"
+        @click="batchSubmit"
+      >批量提交</n-button>
+      <span class="selected-tip">已选中<span class="sel-count">{{ checkedKeys.length }}</span>条数据</span>
+    </div>
+
     <!-- 审核 / 审批批量工具栏 -->
     <div v-if="status === 'audit' || status === 'approval'" class="toolbar">
       <n-space>
@@ -533,6 +596,7 @@ function rowProps(row) {
 
     <WorkorderDetail v-model:show="detailShow" :row="detailRow" />
     <SubmitResultModal v-model:show="submitShow" :row="submitRow" />
+    <BatchSubmitResultModal v-model:show="batchResultShow" :rows="list.filter((w) => checkedKeys.includes(w.id))" />
 
     <!-- 退回原因 -->
     <n-modal v-model:show="rejectShow" preset="card" :title="status === 'approval' ? '审批退回' : '审核退回'" style="width: 460px">
@@ -564,9 +628,19 @@ function rowProps(row) {
   justify-content: space-between;
   margin-bottom: 12px;
 
+  &.inline {
+    justify-content: flex-start;
+    gap: 12px;
+  }
+
   .selected-tip {
     font-size: 13px;
     color: $text-secondary;
+
+    .sel-count {
+      color: #2b6de8;
+      padding: 0 2px;
+    }
   }
 }
 </style>

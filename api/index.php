@@ -31,6 +31,7 @@ require_once __DIR__ . '/controllers/valve.php';
 require_once __DIR__ . '/controllers/commission.php';
 require_once __DIR__ . '/controllers/fee.php';
 require_once __DIR__ . '/controllers/workorder.php';
+require_once __DIR__ . '/controllers/capi.php';
 require_once __DIR__ . '/controllers/sysuser.php';
 require_once __DIR__ . '/controllers/sysrole.php';
 require_once __DIR__ . '/controllers/site.php';
@@ -136,6 +137,13 @@ try {
         'system/menu/update'  => ['POST', true, 'api_sysmenu_update',      'system:menu:edit'],
         'system/menu/visible' => ['POST', true, 'api_sysmenu_visible',     'system:menu:visible'],
         'system/menu/delete'  => ['POST', true, 'api_sysmenu_delete',      'system:menu:delete'],
+        // C端（校验设备操作员）：needAuth=false，由 capi.php 的 current_cuser() 自行鉴权
+        'c/login'             => ['POST', false, 'api_c_login',     ''],
+        'c/logout'            => ['POST', false, 'api_c_logout',    ''],
+        'c/task/list'         => ['GET',  false, 'api_c_task_list',   ''],
+        'c/task/detail'       => ['GET',  false, 'api_c_task_detail', ''],
+        'c/task/claim'        => ['POST', false, 'api_c_task_claim',  ''],
+        'c/task/result'       => ['POST', false, 'api_c_task_result', ''],
     ];
 
     if (!isset($routes[$route])) {

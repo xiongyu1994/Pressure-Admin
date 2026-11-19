@@ -29,6 +29,25 @@ CREATE TABLE IF NOT EXISTS `sys_user` (
   `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='系统账号';
 
+-- C端校验设备操作员（与B端sys_user完全隔离，仅能登录C端接口）
+CREATE TABLE IF NOT EXISTS `c_user` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `account` VARCHAR(30) NOT NULL UNIQUE COMMENT '登录账号',
+  `password` CHAR(32) NOT NULL COMMENT '密码 md5',
+  `name` VARCHAR(50) DEFAULT '' COMMENT '姓名（作为工单校验员）',
+  `phone` VARCHAR(20) DEFAULT '' COMMENT '手机号',
+  `device_sn` VARCHAR(50) DEFAULT '' COMMENT '绑定校验设备编号',
+  `status` TINYINT DEFAULT 1 COMMENT '1启用 0停用',
+  `fail_count` TINYINT DEFAULT 0 COMMENT '连续密码错误次数',
+  `lock_until` INT DEFAULT 0 COMMENT '锁定截止时间戳',
+  `login_token` VARCHAR(64) DEFAULT '' COMMENT '登录token',
+  `token_expire` INT DEFAULT 0 COMMENT 'token过期时间戳',
+  `last_time` DATETIME DEFAULT NULL COMMENT '最后登录时间',
+  `last_ip` VARCHAR(50) DEFAULT '' COMMENT '最后登录IP',
+  `is_del` TINYINT DEFAULT 0,
+  `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='C端校验设备操作员';
+
 -- 使用单位表
 CREATE TABLE IF NOT EXISTS `unit` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
