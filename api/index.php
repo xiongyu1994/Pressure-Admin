@@ -95,6 +95,7 @@ try {
         'commission/valve_pool'   => ['GET', true, 'api_commission_valve_pool', 'commission:list:edit'],
         'commission/valve_delete' => ['POST', true, 'api_commission_valve_delete', 'commission:list:edit'],
         // action 的子权限（通过/退回/预检/付费/删除）在控制器内按 action 细分校验
+        'commission/next_serial' => ['GET', true,  'api_commission_next_serial', 'commission:list'],
         'commission/action'   => ['POST', true,  'api_commission_action', 'commission:list'],
         // 检验工单
         'workorder/list'      => ['GET',  true,  'api_workorder_list',    'workorder'],
@@ -119,8 +120,8 @@ try {
         'system/role/permissions' => ['POST', true, 'api_sysrole_permissions', 'system:role:perm'],
         'system/role/delete'      => ['POST', true, 'api_sysrole_delete',      'system:role:delete'],
         // 菜单访问设置
-        // 站点管理
-        'system/site/list'    => ['GET',  true, 'api_site_list',    'system:site'],
+        // 站点管理（list 为基础数据下拉，站点/模版/系统账号多处复用，登录即可读）
+        'system/site/list'    => ['GET',  true, 'api_site_list',    ''],
         'system/site/add'     => ['POST', true, 'api_site_add',     'system:site:add'],
         'system/site/update'  => ['POST', true, 'api_site_update',  'system:site:edit'],
         'system/site/status'  => ['POST', true, 'api_site_status',  'system:site:status'],
@@ -144,6 +145,7 @@ try {
         'c/task/detail'       => ['GET',  false, 'api_c_task_detail', ''],
         'c/task/claim'        => ['POST', false, 'api_c_task_claim',  ''],
         'c/task/result'       => ['POST', false, 'api_c_task_result', ''],
+        'c/task/done'         => ['GET',  false, 'api_c_task_done',   ''],
     ];
 
     if (!isset($routes[$route])) {

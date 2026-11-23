@@ -14,7 +14,10 @@ function workorder_select_sql()
         r.pressure_gauge_accuracy AS r_pressure_gauge_accuracy, r.pressure_gauge_range AS r_pressure_gauge_range,
         r.device_model AS r_device_model, r.device_sn AS r_device_sn,
         r.testing_pressure1 AS r_testing_pressure1, r.testing_pressure2 AS r_testing_pressure2,
-        r.testing_pressure3 AS r_testing_pressure3, r.test_status AS r_test_status
+        r.testing_pressure3 AS r_testing_pressure3, r.test_status AS r_test_status,
+        r.maintenance_info AS r_maintenance_info,
+        r.leak_rate AS r_leak_rate,
+        r.curve_data1 AS r_curve_data1, r.curve_data2 AS r_curve_data2, r.curve_data3 AS r_curve_data3
         FROM workorder w
         LEFT JOIN workorder_result r ON r.workorder_id = w.id ';
 }
@@ -156,7 +159,8 @@ function api_workorder_submit_result()
         'pressure_gauge_num', 'pressure_gauge_lifespan', 'pressure_gauge_num2',
         'pressure_gauge_lifespan2', 'pressure_gauge_accuracy', 'pressure_gauge_range',
         'device_model', 'device_sn', 'testing_pressure1', 'testing_pressure2',
-        'testing_pressure3', 'test_status',
+        'testing_pressure3', 'test_status', 'maintenance_info', 'leak_rate',
+        'curve_data1', 'curve_data2', 'curve_data3',
     ];
 
     $data = [];

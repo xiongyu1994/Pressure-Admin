@@ -320,7 +320,7 @@ async function handleResubmit(row) {
 /* ---------------- 审核 / 审批 ---------------- */
 const gateLoading = ref(false)
 
-async function handleGate(ids, pass) {
+async function handleGate(ids, pass, reason = '') {
   if (gateLoading.value) return
   gateLoading.value = true
   const codes = list.value
@@ -328,7 +328,7 @@ async function handleGate(ids, pass) {
     .map((r) => r.orderCode)
     .join('、')
   try {
-    await store[gateStore()](ids, pass)
+    await store[gateStore()](ids, pass, reason)
     message.success(pass ? `已${passLabel.value}：${codes}` : `已退回：${codes}`)
     checkedKeys.value = checkedKeys.value.filter((k) => !ids.includes(k))
   } catch (e) {
@@ -354,7 +354,7 @@ async function confirmReject() {
     message.warning('请填写退回原因')
     return
   }
-  await handleGate(rejectIds.value, false)
+  await handleGate(rejectIds.value, false, rejectReason.value.trim())
   if (rejectIds.value.length) rejectShow.value = false
 }
 

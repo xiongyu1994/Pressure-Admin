@@ -33,10 +33,13 @@ function emptyForm() {
     deviceModel: 'SFA-150',
     deviceSn: '',
     testStatus: '合格',
+    maintenanceInfo: [],
     inspector: store.inspectors[0],
     inspectorTime: Date.now()
   }
 }
+
+const MAINTAIN_OPTIONS = ['解体、清洗、除锈', '先脱脂', '经解体检查合格', '其他']
 
 const form = reactive(emptyForm())
 
@@ -72,6 +75,7 @@ async function handleSubmit() {
   try {
     const common = {
       ...form,
+      maintenanceInfo: form.maintenanceInfo.join('；'),
       pressureGaugeLifespan: fmtDate(form.pressureGaugeLifespan),
       pressureGaugeLifespan2: fmtDate(form.pressureGaugeLifespan2),
       inspectorTime: fmtDateTime(form.inspectorTime)
@@ -144,6 +148,14 @@ async function handleSubmit() {
         </n-form-item-gi>
         <n-form-item-gi label="备注">
           <n-input v-model:value="form.note" />
+        </n-form-item-gi>
+        <n-form-item-gi label="维护检修情况" span="3">
+          <n-select
+            v-model:value="form.maintenanceInfo"
+            multiple
+            :options="MAINTAIN_OPTIONS.map((v) => ({ label: v, value: v }))"
+            placeholder="可多选"
+          />
         </n-form-item-gi>
       </n-grid>
 

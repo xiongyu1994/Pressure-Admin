@@ -24,6 +24,8 @@ CREATE TABLE IF NOT EXISTS `sys_user` (
   `last_time` DATETIME DEFAULT NULL COMMENT '最后登录时间',
   `last_ip` VARCHAR(50) DEFAULT '' COMMENT '最后登录IP',
   `login_token` VARCHAR(64) DEFAULT '' COMMENT '登录token',
+  `c_login_token` VARCHAR(64) DEFAULT '' COMMENT 'C端登录token（检验人员账号登录C端专用，与B端互不影响）',
+  `c_token_expire` INT DEFAULT 0 COMMENT 'C端token过期时间戳',
   `token_expire` INT DEFAULT 0 COMMENT 'token过期时间戳',
   `is_del` TINYINT DEFAULT 0,
   `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -255,6 +257,7 @@ CREATE TABLE IF NOT EXISTS `workorder_result` (
   `workorder_id` INT NOT NULL UNIQUE,
   `order_code` VARCHAR(30) DEFAULT '',
   `tightness_press` DECIMAL(6,2) COMMENT '要求密封压力',
+  `leak_rate` VARCHAR(50) COMMENT '密封试泄漏率',
   `set_press` DECIMAL(6,2) COMMENT '要求整定压力MPa',
   `test_media` VARCHAR(20) COMMENT '校验介质',
   `test_temprature` VARCHAR(20) COMMENT '校验介质温度',
@@ -274,6 +277,10 @@ CREATE TABLE IF NOT EXISTS `workorder_result` (
   `testing_pressure2` DECIMAL(6,2) COMMENT '整定压力2',
   `testing_pressure3` DECIMAL(6,2) COMMENT '整定压力3',
   `test_status` VARCHAR(20) COMMENT '校验结果：合格/维修后合格/不合格',
+  `maintenance_info` VARCHAR(255) COMMENT '维护检修情况',
+  `curve_data1` MEDIUMTEXT COMMENT '第1次试验压力-时间曲线数据(JSON)',
+  `curve_data2` MEDIUMTEXT COMMENT '第2次试验压力-时间曲线数据(JSON)',
+  `curve_data3` MEDIUMTEXT COMMENT '第3次试验压力-时间曲线数据(JSON)',
   `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='检验结果';
 

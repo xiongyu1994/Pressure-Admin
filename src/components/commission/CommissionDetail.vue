@@ -71,6 +71,9 @@ const pressRangeText = (r) => {
 }
 const dash = (v) => (v === '' || v == null ? '/' : v)
 
+/** 校验编号旁编辑按钮：查看模式且有权限才显示（编辑模式下走行内编辑，不再展示） */
+const showCodeEditBtn = computed(() => props.mode !== 'edit' && canEditCode)
+
 /** 基础列（查看 / 编辑模式共用） */
 const codeColumn = {
   title: '校验编号',
@@ -78,7 +81,7 @@ const codeColumn = {
   width: 170,
   render(r) {
     const nodes = [h('span', { style: 'word-break: break-all' }, dash(r.orderCode))]
-    if (canEditCode && r.woId) {
+    if (showCodeEditBtn.value && r.woId) {
       nodes.push(
         h(
           NButton,

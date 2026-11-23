@@ -37,6 +37,10 @@ function emptyForm() {
     testingPressure2: null,
     testingPressure3: null,
     testStatus: '合格',
+    maintenanceInfo: [],
+    curveData1: '',
+    curveData2: '',
+    curveData3: '',
     inspector: store.inspectors[0],
     inspectorTime: Date.now()
   }
@@ -82,6 +86,33 @@ function fmtDate(ts) {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
 }
 
+const MAINTAIN_OPTIONS = ['解体、清洗、除锈', '先脱脂', '经解体检查合格', '其他']
+
+/** 估算曲线数据点数（JSON 数组或每行一点） */
+function countPoints(str) {
+  if (!str) return 0
+  try {
+    const arr = JSON.parse(str)
+    if (Array.isArray(arr)) return arr.length
+  } catch {}
+  return str.split(/\r?\n/).filter((l) => l.trim()).length
+}
+
+function handleCurveFile(no, options) {
+  const raw = options.file?.file
+  if (!raw) return
+  const reader = new FileReader()
+  reader.onload = () => {
+    form[`curveData${no}`] = String(reader.result || '')
+    message.success(`整定压力${no}曲线数据已导入（${countPoints(form[`curveData${no}`])} 个点）`)
+  }
+  reader.readAsText(raw)
+}
+
+function clearCurve(no) {
+  form[`curveData${no}`] = ''
+}
+
 async function handleSubmit() {
   try {
     await formRef.value?.validate()
@@ -92,6 +123,7 @@ async function handleSubmit() {
   try {
     await store.submitResult(props.row.id, {
       ...form,
+      maintenanceInfo: form.maintenanceInfo.join('；'),
       pressureGaugeLifespan: fmtDate(form.pressureGaugeLifespan),
       pressureGaugeLifespan2: fmtDate(form.pressureGaugeLifespan2),
       inspectorTime: fmtDateTime(form.inspectorTime)
@@ -166,6 +198,14 @@ async function handleSubmit() {
         <n-form-item-gi label="备注">
           <n-input v-model:value="form.note" />
         </n-form-item-gi>
+        <n-form-item-gi label="维护检修情况" span="3">
+          <n-select
+            v-model:value="form.maintenanceInfo"
+            multiple
+            :options="MAINTAIN_OPTIONS.map((v) => ({ label: v, value: v }))"
+            placeholder="可多选"
+          />
+        </n-form-item-gi>
       </n-grid>
 
       <n-divider title-placement="left">压力表信息</n-divider>
@@ -228,6 +268,30 @@ async function handleSubmit() {
       </n-grid>
     </n-form>
 
+    <n-divider title-placement="left" style="margin-top: 4px">曲线数据（三次试验抓取）</n-divider>
+    <div class="curve-list">
+      <div v-for="no in [1, 2, 3]" :key="no" class="curve-row">
+        <span class="curve-name">整定压力{{ no }}曲线</span>
+        <n-upload
+          :show-upload-list="false"
+          accept=".json,.csv,.txt"
+          :custom-request="(opt) => handleCurveFile(no, opt)"
+        >
+          <n-button size="small">{{ form[`curveData${no}`] ? '重新导入' : '导入曲线数据' }}</n-button>
+        </n-upload>
+        <span class="curve-tip" :class="{ ok: form[`curveData${no}`] }">
+          {{
+            form[`curveData${no}`]
+              ? `已导入 ${countPoints(form[`curveData${no}`])} 个点`
+              : '支持 .json / .csv / .txt（JSON 数组或每行 时间,压力）'
+          }}
+        </span>
+        <n-button v-if="form[`curveData${no}`]" quaternary size="small" @click="clearCurve(no)">
+          清除
+        </n-button>
+      </div>
+    </div>
+
     <template #footer>
       <div style="display: flex; justify-content: flex-end; gap: 10px">
         <n-button @click="emit('update:show', false)">取消</n-button>
@@ -236,3 +300,34 @@ async function handleSubmit() {
     </template>
   </n-modal>
 </template>
+
+<style lang="scss" scoped>
+.curve-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 4px 0 8px;
+
+  .curve-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    .curve-name {
+      width: 110px;
+      font-size: 13px;
+      color: #333;
+    }
+
+    .curve-tip {
+      flex: 1;
+      font-size: 12px;
+      color: #999;
+
+      &.ok {
+        color: #18a058;
+      }
+    }
+  }
+}
+</style>

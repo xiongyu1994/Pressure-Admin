@@ -133,6 +133,11 @@ function result_row($row)
         'testingPressure2'       => $row['r_testing_pressure2'] ?? null,
         'testingPressure3'       => $row['r_testing_pressure3'] ?? null,
         'testStatus'             => $row['r_test_status'] ?? null,
+        'maintenanceInfo'        => $row['r_maintenance_info'] ?? null,
+        'leakRate'               => $row['r_leak_rate'] ?? null,
+        'curveData1'             => $row['r_curve_data1'] ?? null,
+        'curveData2'             => $row['r_curve_data2'] ?? null,
+        'curveData3'             => $row['r_curve_data3'] ?? null,
     ];
 }
 

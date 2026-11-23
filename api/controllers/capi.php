@@ -1,8 +1,10 @@
 <?php
 /** C端（校验设备操作员）接口：登录 / 任务列表 / 领取 / 上传校验结果
  *
- *  与 B 端完全隔离：
- *  - 账号存于 c_user 表，token 只查 c_user，不进任何 B 端权限体系
+ *  账号来源两处：
+ *  - c_user 表（设备操作员专用账号），token 存 c_user.login_token
+ *  - sys_user 表中身份为「检验员/检验人员」的 B 端账号也可登录（回退），token 存 sys_user.login_token
+ *    （current_cuser 按 token 先查 c_user、再查 sys_user，返回结构归一化，业务无感知）
  *  - 路由需在 index.php 中将 needAuth 置 false，由本文件 current_cuser() 自行鉴权
  *  - 任务 = workorder 中 status IN (wait, inspection) 的数据（后台待检验 + 检验中）
  */
@@ -10,6 +12,9 @@
 const C_TOKEN_TTL     = 7 * 86400;   // token 有效期 7 天
 const C_MAX_FAIL      = 5;           // 连续密码错误上限
 const C_LOCK_SECONDS  = 600;         // 锁定时长（秒）
+
+// 允许登录 C 端的 B 端身份（校验人员/检验员，sys_user.identity）
+const B_INSPECTOR_IDENTITIES = "('检验员','检验人员')";
 
 /** 获取当前 C 端登录用户（token 只查 c_user 表） */
 function current_cuser($required = true)
@@ -34,12 +39,31 @@ function current_cuser($required = true)
     }
 
     $user = q_one('SELECT * FROM c_user WHERE login_token = ? AND is_del = 0 AND status = 1', [$token]);
-    if (!$user || (int) $user['token_expire'] < time()) {
-        if ($required) err('登录已过期，请重新登录', 401);
-        return null;
+    if ($user && (int) $user['token_expire'] >= time()) {
+        unset($user['password']);
+        return $user;
     }
-    unset($user['password']);
-    return $user;
+
+    // 回退：B 端检验人员账号（sys_user）也可能登录 C 端。
+    // C 端 token 存在独立的 c_login_token 列（登录时不覆盖 B 端 login_token），
+    // 同一账号可以同时在线两端互不踢下线。
+    $su = q_one(
+        'SELECT * FROM sys_user WHERE c_login_token = ? AND is_del = 0 AND status = 1 AND identity IN ' . B_INSPECTOR_IDENTITIES,
+        [$token]
+    );
+    if ($su && (int) $su['c_token_expire'] >= time()) {
+        // 归一化成 c_user 的返回结构（B 端账号无设备绑定，device_sn 置空）
+        return [
+            'id'          => (int) $su['id'],
+            'account'     => $su['account'],
+            'name'        => $su['name'],
+            'device_sn'   => '',
+            'from_sys'    => true,
+        ];
+    }
+
+    if ($required) err('登录已过期，请重新登录', 401);
+    return null;
 }
 
 /** POST /c/login {account, password, deviceSn?} */
@@ -52,6 +76,34 @@ function api_c_login()
     if ($account === '' || $password === '') err('请输入账号和密码');
 
     $user = q_one('SELECT * FROM c_user WHERE account = ? AND is_del = 0', [$account]);
+
+    // C 端账号不存在时，回退尝试 B 端检验人员账号（sys_user，身份=检验员/检验人员）。
+    // 命中即发 token 走 C 端流程；密码/状态不对则继续走下方 c_user 的报错逻辑。
+    if (!$user) {
+        $su = q_one(
+            'SELECT * FROM sys_user WHERE account = ? AND is_del = 0 AND identity IN ' . B_INSPECTOR_IDENTITIES,
+            [$account]
+        );
+        if ($su && $su['password'] === md5($password)) {
+            if ((int) $su['status'] !== 1) err('账号已被停用，请联系管理员');
+            $token = generate_token();
+            // C 端 token 写独立列，不覆盖 B 端 login_token —— 同一账号可两端同时在线
+            q_update('sys_user', [
+                'c_login_token'  => $token,
+                'c_token_expire' => time() + C_TOKEN_TTL,
+                'last_time'      => date('Y-m-d H:i:s'),
+                'last_ip'        => $_SERVER['REMOTE_ADDR'] ?? '',
+            ], 'id = ?', [$su['id']]);
+            ok([
+                'token'     => $token,
+                'expiresIn' => C_TOKEN_TTL,
+                'id'        => (int) $su['id'],
+                'name'      => $su['name'],
+                'account'   => $su['account'],
+                'deviceSn'  => '',
+            ]);
+        }
+    }
 
     // 锁定检查
     if ($user && (int) $user['fail_count'] >= C_MAX_FAIL && (int) $user['lock_until'] > time()) {
@@ -106,7 +158,12 @@ function api_c_logout()
 {
     $user = current_cuser(false);
     if ($user) {
-        q_update('c_user', ['login_token' => '', 'token_expire' => 0], 'id = ?', [$user['id']]);
+        if (!empty($user['from_sys'])) {
+            // B 端检验人员账号：清独立的 C 端 token 列（不影响 B 端登录态）
+            q_update('sys_user', ['c_login_token' => '', 'c_token_expire' => 0], 'id = ?', [$user['id']]);
+        } else {
+            q_update('c_user', ['login_token' => '', 'token_expire' => 0], 'id = ?', [$user['id']]);
+        }
     }
     ok(null);
 }
@@ -152,12 +209,18 @@ function api_c_task_list()
             'custName'        => $w['cust_name'],
             'vavleModel'      => $w['vavle_model'],
             'vavleType'       => $w['vavle_type'],
+            'equipType'       => $w['equip_type'],          // 设备类型（基本信息面板展示）
             'setPress'        => $w['set_press'],
             'tightnessPress'  => $w['tightness_press'],
             'diameterNominal' => $w['diameter_nominal'],
             'seatSize'        => $w['seat_size'],
             'workingPress'    => $w['working_press'],
+            'pressNominal'    => $w['press_nominal'],       // 公称压力（基本信息面板展示）
+            'pressClassRangeMin' => $w['press_class_range_min'], // 压力级别范围起（校验设备自动量程选档用）
+            'pressClassRangeMax' => $w['press_class_range_max'], // 压力级别范围止
             'manuNo'          => $w['manu_no'],
+            'licenseNo'       => $w['license_no'],          // 制造许可证编号（基本信息面板展示）
+            'manufacturer'    => $w['manufacturer'],        // 制造单位（基本信息面板展示）
             'idNo'            => $w['id_no'],
             'inspector'       => $w['inspector'],
         ];
@@ -230,7 +293,8 @@ function api_c_task_result()
         'pressure_gauge_num', 'pressure_gauge_lifespan', 'pressure_gauge_num2',
         'pressure_gauge_lifespan2', 'pressure_gauge_accuracy', 'pressure_gauge_range',
         'device_model', 'device_sn', 'testing_pressure1', 'testing_pressure2',
-        'testing_pressure3', 'test_status',
+        'testing_pressure3', 'test_status', 'leak_rate',
+        'maintenance_info', 'curve_data1', 'curve_data2', 'curve_data3',
     ];
 
     $data = [];
@@ -271,5 +335,23 @@ function api_c_task_result()
         throw $e;
     }
 
-    ok(['orderCode' => $row['order_code'], 'status' => 'audit']);
+    // 报告链接（扫码/浏览器打开即 PDF 预览；地址取服务端局域网 IP，保证手机扫码可达）
+    $ip = (!empty($_SERVER['SERVER_ADDR']) && $_SERVER['SERVER_ADDR'] !== '127.0.0.1' && $_SERVER['SERVER_ADDR'] !== '::1')
+        ? $_SERVER['SERVER_ADDR']
+        : gethostbyname(gethostname());
+    $apiBase = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '/inspection-api/index.php')), '/');
+    $reportUrl = 'http://' . $ip . $apiBase . '/report.php?code=' . urlencode($row['order_code']);
+
+    ok(['orderCode' => $row['order_code'], 'status' => 'audit', 'reportUrl' => $reportUrl]);
+}
+
+/** GET /c/task/done 当前操作员已完成（结果已提交，工单离开待检验/检验中）的工单数量 */
+function api_c_task_done()
+{
+    $cuser = current_cuser();
+    $cnt = q_scalar(
+        "SELECT COUNT(*) FROM workorder WHERE is_del = 0 AND inspector = ? AND status NOT IN ('wait','inspection')",
+        [$cuser['name']]
+    );
+    ok(['doneCount' => (int) $cnt]);
 }

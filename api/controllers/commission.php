@@ -504,7 +504,29 @@ function api_commission_valve_update()
     }
     if (!$data) err('没有需要修改的字段');
     q_update('commission_valve', $data, 'id = ?', [$id]);
+
+    // 同步已生成工单的快照字段（已完成工单不动，保留已打印的历史数据）
+    q_update(
+        'workorder',
+        $data,
+        'valve_id = ? AND is_del = 0 AND status <> ?',
+        [$id, 'done']
+    );
     ok(null);
+}
+
+/** GET /commission/next_serial：预检流水号默认值 = 本月已用最大流水号 + 1（未用过则 01） */
+function api_commission_next_serial()
+{
+    $prefix = date('Ym');
+    $max = q_scalar(
+        "SELECT MAX(CAST(SUBSTRING(order_code, 7) AS UNSIGNED))
+         FROM workorder
+         WHERE is_del = 0 AND order_code LIKE CONCAT(?, '%') AND order_code NOT LIKE 'JY%'",
+        [$prefix]
+    );
+    $next = (int) $max + 1;
+    ok(['next' => str_pad((string) $next, 2, '0', STR_PAD_LEFT)]);
 }
 
 /**

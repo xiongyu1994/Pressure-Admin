@@ -233,6 +233,11 @@ export const useBusinessStore = defineStore('business', {
       await request.post('/commission/action', { id, action: 'delete' })
       await this.fetchCommissions()
     },
+    /** 预检流水号默认值（本月已用最大流水号 + 1） */
+    async fetchNextSerial() {
+      const data = await request.get('/commission/next_serial')
+      return data?.next ?? ''
+    },
     /** 预检通过：录入开抽流水号（后端校验唯一），状态变为「等待检验」 */
     async precheckCommission(id, serialNo) {
       const data = await request.post('/commission/action', { id, action: 'precheck', serialNo })

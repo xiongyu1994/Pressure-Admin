@@ -410,6 +410,13 @@ function openPrecheck(row) {
   precheckRowData.value = row
   serialNo.value = ''
   precheckShow.value = true
+  // 默认填充：本月已用最大流水号 + 1
+  store
+    .fetchNextSerial()
+    .then((next) => {
+      if (next && precheckShow.value) serialNo.value = String(next)
+    })
+    .catch(() => {})
 }
 
 async function confirmPrecheck() {
