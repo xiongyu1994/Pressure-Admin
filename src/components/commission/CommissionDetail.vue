@@ -117,7 +117,7 @@ const opsColumn = {
   key: 'ops',
   width: 170,
   render(row) {
-    return h(NSpace, [
+    return h(NSpace,() => [
       h(NButton, { size: 'tiny', secondary: true, type: 'primary', onClick: () => openValveEdit(row) }, { default: () => '编辑' }),
       h(NButton, { size: 'tiny', secondary: true, type: 'success', onClick: () => copyValve(row) }, { default: () => '复制' }),
       h(
@@ -374,10 +374,8 @@ function printLabels() {
 .sign-img {
   max-height: 64px;
   max-width: 220px;
-  padding: 2px 4px;
+  object-fit: contain;
   background: #fff;
-  border: 1px dashed #dcdfe6;
-  border-radius: 4px;
 }
 
 .sign-empty {

@@ -292,7 +292,7 @@ onBeforeUnmount(disposeCharts)
         </div>
         <div class="grid">
           <div class="item"><span class="label">校验编号:</span><span class="value">{{ dash(r.orderCode || row.orderCode) }}</span></div>
-          <div class="item"><span class="label">执行标准:</span><span class="value">{{ STANDARD_TEXT }}</span></div>
+          <div class="item"><span class="label">执行标准:</span><span class="value">{{ r.execStandard || STANDARD_TEXT }}</span></div>
           <div class="item"><span class="label">校验介质:</span><span class="value">{{ dash(r.testMedia) }}</span></div>
           <div class="item"><span class="label">校验介质温度:</span><span class="value">{{ dash(r.testTemprature) }}</span></div>
           <div class="item"><span class="label">外观检查:</span><span class="value">{{ dash(r.visualExamination) }}</span></div>

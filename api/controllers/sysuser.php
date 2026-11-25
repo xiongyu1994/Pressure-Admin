@@ -37,6 +37,7 @@ function api_sysuser_list()
             'site'      => isset($r['site']) ? (string) $r['site'] : '',
             'identity'  => $r['identity'],
             'sign'      => $r['sign'] ? true : false,
+            'signImg'   => (string) $r['sign'],
             'status'    => (int) $r['status'] === 1,
             'lastTime'  => $r['last_time'],
             'lastIp'    => $r['last_ip'],
@@ -131,4 +132,54 @@ function api_sysuser_status()
         'token_expire' => 0,
     ], 'id = ?', [$id]);
     ok(null);
+}
+
+/** 获取账号手机签名二维码地址 GET /sysuser/sign_qrcode?id=xx（与委托单签名同一 sign.php 页面） */
+function api_sysuser_sign_qrcode()
+{
+    $id = (int) param('id', 0);
+    if (!$id) err('缺少参数 id');
+    $row = q_one('SELECT id, account, name, unit_name, sign, sign_token, sign_time FROM sys_user WHERE id = ? AND is_del = 0', [$id]);
+    if (!$row) err('账号不存在');
+
+    // 每次获取二维码都刷新令牌并置为「待签」：只有本次扫码后提交的签名才算完成
+    $token = bin2hex(random_bytes(16));
+    q_update('sys_user', [
+        'sign_token'      => $token,
+        'sign_token_time' => date('Y-m-d H:i:s'),
+        'sign_pending'    => 1,
+    ], 'id = ?', [$id]);
+
+    if (defined('SIGN_BASE_URL') && SIGN_BASE_URL) {
+        $host = rtrim(SIGN_BASE_URL, '/');
+    } else {
+        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+        $host = $scheme . '://' . $_SERVER['HTTP_HOST'];
+    }
+    $dir = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'])), '/');
+    $url = $host . $dir . '/sign.php?t=' . $token;
+
+    ok([
+        'url'      => $url,
+        'token'    => $token,
+        'name'     => $row['name'],
+        'signed'   => !empty($row['sign']),
+        'signTime' => (string) $row['sign_time'],
+    ]);
+}
+
+/** 查询账号签名状态（PC 端轮询用） GET /sysuser/sign_status?id=xx */
+function api_sysuser_sign_status()
+{
+    $id = (int) param('id', 0);
+    if (!$id) err('缺少参数 id');
+    $row = q_one('SELECT sign, sign_time, sign_pending FROM sys_user WHERE id = ? AND is_del = 0', [$id]);
+    if (!$row) err('账号不存在');
+    // 已有历史签名但本次扫码还在等签（sign_pending=1）时不算完成，避免重新签名被立即判成功
+    $signed = !empty($row['sign']) && (int) $row['sign_pending'] === 0;
+    ok([
+        'signed'   => $signed,
+        'signTime' => (string) $row['sign_time'],
+        'signImg'  => (string) $row['sign'],
+    ]);
 }

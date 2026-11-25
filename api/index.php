@@ -113,6 +113,8 @@ try {
         'system/user/update'  => ['POST', true,  'api_sysuser_update',    'system:user:edit'],
         'system/user/delete'  => ['POST', true,  'api_sysuser_delete',    'system:user:delete'],
         'system/user/status'  => ['POST', true,  'api_sysuser_status',    'system:user:status'],
+        'system/user/sign_qrcode' => ['GET', true, 'api_sysuser_sign_qrcode', 'system:user:edit'],
+        'system/user/sign_status' => ['GET', true, 'api_sysuser_sign_status', 'system:user:edit'],
         // 角色权限设置
         'system/role/list'        => ['GET',  true, 'api_sysrole_list',        'system:role'],
         'system/role/add'         => ['POST', true, 'api_sysrole_add',         'system:role:add'],
@@ -146,6 +148,8 @@ try {
         'c/task/claim'        => ['POST', false, 'api_c_task_claim',  ''],
         'c/task/result'       => ['POST', false, 'api_c_task_result', ''],
         'c/task/done'         => ['GET',  false, 'api_c_task_done',   ''],
+        // 历史校验记录（校验记录预览弹窗：默认最近一次 + 按编号/日期查询）
+        'c/history/list'      => ['GET',  false, 'api_c_history_list', ''],
     ];
 
     if (!isset($routes[$route])) {

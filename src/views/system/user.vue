@@ -1,8 +1,9 @@
 <script setup>
-import { ref, reactive, computed, h, onMounted } from 'vue'
+import { ref, reactive, computed, h, onMounted, watch, onBeforeUnmount } from 'vue'
 import { useMessage } from 'naive-ui'
 import { NButton, NSwitch, NSpace, NTag, NPopconfirm } from 'naive-ui'
-import request from '@/utils/request'
+import QRCode from 'qrcode'
+import request, { API_BASE } from '@/utils/request'
 import { hasPerm } from '@/utils/permission'
 
 const message = useMessage()
@@ -178,6 +179,7 @@ const form = reactive({
   unitName: '',
   site: [],
   identity: '检验人员',
+  sign: '',
   status: false
 })
 
@@ -193,11 +195,12 @@ function openModal(row) {
       unitName: row.unitName,
       site: row.site ? String(row.site).split(',').filter(Boolean) : [],
       identity: row.identity,
+      sign: row.signImg || '',
       status: !!row.status
     })
   } else {
     editingId.value = null
-    Object.assign(form, { account: '', password: '', password2: '', name: '', phone: '', unitName: '', site: [], identity: '检验人员', status: false })
+    Object.assign(form, { account: '', password: '', password2: '', name: '', phone: '', unitName: '', site: [], identity: '检验人员', sign: '', status: false })
   }
   showModal.value = true
 }
@@ -221,6 +224,7 @@ async function save() {
     unitName: form.unitName,
     site: form.site.join(','),
     identity: form.identity,
+    sign: form.sign,
     status: form.status ? 1 : 0
   }
   saving.value = true
@@ -264,6 +268,83 @@ async function removeRow(row) {
     message.error(e.message || '删除失败')
   }
 }
+
+/* ---------------- 手机扫码签名（参照委托单签名，签名将用于 C 端安全阀报告） ---------------- */
+const signShow = ref(false)
+const signUrl = ref('')
+const qrData = ref('')
+const signLoading = ref(false)
+let signTimer = null
+
+/** 弹窗内签名预览地址 */
+const signPreviewUrl = computed(() =>
+  form.sign ? API_BASE + '/' + String(form.sign).replace(/^\/+/, '') : ''
+)
+
+function openSignModal() {
+  if (!editingId.value) {
+    message.warning('请先保存账号后再进行手机扫码签名')
+    return
+  }
+  signUrl.value = ''
+  qrData.value = ''
+  signShow.value = true
+  signLoading.value = true
+  request
+    .get('/system/user/sign_qrcode', { id: editingId.value })
+    .then(async (data) => {
+      signUrl.value = data.url
+      await refreshQr()
+      stopSignPoll()
+      signTimer = setInterval(() => checkUserSign(false), 3000)
+    })
+    .catch((e) => {
+      message.error(e.message || '获取签名二维码失败')
+      signShow.value = false
+    })
+    .finally(() => {
+      signLoading.value = false
+    })
+}
+
+/** 二维码内容可手改（如把 localhost 换成电脑局域网 IP），改完重新生成 */
+async function refreshQr() {
+  if (!signUrl.value) return
+  try {
+    qrData.value = await QRCode.toDataURL(signUrl.value, { width: 260, margin: 1 })
+  } catch {
+    qrData.value = ''
+  }
+}
+
+async function checkUserSign(manual) {
+  if (!editingId.value) return
+  try {
+    const data = await request.get('/system/user/sign_status', { id: editingId.value })
+    if (data.signed) {
+      stopSignPoll()
+      form.sign = data.signImg || ''
+      message.success('账号「' + form.name + '」已完成手机签名')
+      signShow.value = false
+    } else if (manual) {
+      message.info('尚未收到手机签名，请在手机上完成签名提交')
+    }
+  } catch (e) {
+    if (manual) message.error(e.message || '查询签名状态失败')
+  }
+}
+
+function stopSignPoll() {
+  if (signTimer) {
+    clearInterval(signTimer)
+    signTimer = null
+  }
+}
+
+watch(signShow, (v) => {
+  if (!v) stopSignPoll()
+})
+onBeforeUnmount(stopSignPoll)
 </script>
 
 <template>
@@ -315,7 +396,7 @@ async function removeRow(row) {
       v-model:show="showModal"
       preset="card"
       :title="editingId ? '编辑系统账号' : '新增系统账号'"
-      style="width: 640px"
+      style="width: 700px"
     >
       <n-form label-placement="left" label-width="90" size="small">
         <n-grid :cols="2" :x-gap="16">
@@ -351,9 +432,15 @@ async function removeRow(row) {
             </n-switch>
           </n-form-item-gi>
           <n-form-item-gi label="签名">
-            <n-upload :max="1" accept="image/*" default-upload="false">
-              <n-button size="small">上传签名</n-button>
-            </n-upload>
+            <div class="sign-field">
+              <div class="sign-box">
+                <img v-if="signPreviewUrl" :src="signPreviewUrl" class="sign-preview" alt="签名" />
+                <span v-else class="sign-empty">暂无签名</span>
+              </div>
+              <n-button size="tiny" quaternary type="primary" @click="openSignModal">
+                {{ signPreviewUrl ? '重新签名' : '上传签名' }}
+              </n-button>
+            </div>
           </n-form-item-gi>
         </n-grid>
       </n-form>
@@ -364,6 +451,34 @@ async function removeRow(row) {
         </div>
       </template>
     </n-modal>
+
+    <!-- 手机扫码签名（账号签名，用于 C 端安全阀报告展示） -->
+    <n-modal v-model:show="signShow" preset="card" title="手机扫码签名" style="width: 420px">
+      <n-spin :show="signLoading">
+        <div class="sign-body">
+          <div class="sign-tip">
+            账号：<b>{{ form.name }}</b>
+            <span v-if="form.unitName">（{{ form.unitName }}）</span>
+          </div>
+          <div class="qr-wrap">
+            <img v-if="qrData" :src="qrData" alt="签名二维码" class="qr-img" />
+            <n-empty v-else description="二维码生成中…" style="padding: 40px 0" />
+          </div>
+          <div class="sign-tip">二维码地址（手机无法访问时可把 localhost 改成电脑局域网 IP，改完自动重新生成）</div>
+          <n-input v-model:value="signUrl" size="small" @update:value="refreshQr" />
+          <div class="sign-tip sign-hint">
+            请使用手机微信「扫一扫」扫描二维码，在手机上完成手写签名并提交；签名完成后本弹窗自动关闭，
+            该签名将用于 C 端安全阀报告展示（已有签名可重新扫码覆盖）。
+          </div>
+        </div>
+      </n-spin>
+      <template #footer>
+        <div style="display: flex; justify-content: flex-end; gap: 10px">
+          <n-button @click="signShow = false">关闭</n-button>
+          <n-button type="primary" @click="checkUserSign(true)">刷新签名状态</n-button>
+        </div>
+      </template>
+    </n-modal>
   </div>
 </template>
 
@@ -371,5 +486,63 @@ async function removeRow(row) {
 .filter-bar {
   row-gap: 8px;
   margin-bottom: 10px;
+}
+
+.sign-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  max-width: 100%;
+
+  .sign-box {
+    width: 130px;
+    height: 42px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .sign-preview {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+  }
+
+  .sign-empty {
+    font-size: 12px;
+    color: #bbb;
+  }
+}
+
+.sign-body {
+  .sign-tip {
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 8px;
+
+    b {
+      color: #333;
+    }
+  }
+
+  .qr-wrap {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 10px;
+
+    .qr-img {
+      width: 260px;
+      height: 260px;
+    }
+  }
+
+  .sign-hint {
+    color: #999;
+    line-height: 1.7;
+    margin-top: 10px;
+  }
 }
 </style>

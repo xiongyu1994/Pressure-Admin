@@ -294,7 +294,9 @@ function api_c_task_result()
         'pressure_gauge_lifespan2', 'pressure_gauge_accuracy', 'pressure_gauge_range',
         'device_model', 'device_sn', 'testing_pressure1', 'testing_pressure2',
         'testing_pressure3', 'test_status', 'leak_rate',
+        'exec_standard',
         'maintenance_info', 'curve_data1', 'curve_data2', 'curve_data3',
+        'curve_duration1', 'curve_duration2', 'curve_duration3',
     ];
 
     $data = [];
@@ -336,13 +338,30 @@ function api_c_task_result()
     }
 
     // 报告链接（扫码/浏览器打开即 PDF 预览；地址取服务端局域网 IP，保证手机扫码可达）
-    $ip = (!empty($_SERVER['SERVER_ADDR']) && $_SERVER['SERVER_ADDR'] !== '127.0.0.1' && $_SERVER['SERVER_ADDR'] !== '::1')
-        ? $_SERVER['SERVER_ADDR']
-        : gethostbyname(gethostname());
     $apiBase = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '/inspection-api/index.php')), '/');
-    $reportUrl = 'http://' . $ip . $apiBase . '/report.php?code=' . urlencode($row['order_code']);
+    $reportUrl = 'http://' . report_server_ip() . $apiBase . '/report.php?code=' . urlencode($row['order_code']);
+
+    // 校验记录 docx：提交结果时同步生成（B 端已完成列表可下载 record.php?code=）。
+    // 生成失败只记日志、不影响存盘；B 端下载时若缺失会现场再生成。
+    try {
+        require_once __DIR__ . '/../lib/record_docx.php';
+        $woFull = q_one('SELECT * FROM workorder WHERE id = ?', [$id]);
+        $resFull = q_one('SELECT * FROM workorder_result WHERE workorder_id = ?', [$id]);
+        if ($woFull && $resFull) generate_record_docx_cached($woFull, $resFull);
+    } catch (Exception $e) { /* 忽略：下载时可现场生成 */ }
 
     ok(['orderCode' => $row['order_code'], 'status' => 'audit', 'reportUrl' => $reportUrl]);
+}
+
+/** 报告链接主机：优先服务端局域网 IPv4（手机扫码/打标二维码可达），回环地址时回退主机名解析 */
+function report_server_ip()
+{
+    $sa = isset($_SERVER['SERVER_ADDR']) ? $_SERVER['SERVER_ADDR'] : '';
+    if (!empty($sa) && $sa !== '127.0.0.1' && $sa !== '::1') return $sa;
+    $host = gethostname();
+    $h = gethostbyname($host);
+    if ($h !== $host && $h !== '0.0.0.0' && filter_var($h, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) return $h;
+    return $sa !== '' ? $sa : $h;
 }
 
 /** GET /c/task/done 当前操作员已完成（结果已提交，工单离开待检验/检验中）的工单数量 */
@@ -354,4 +373,100 @@ function api_c_task_done()
         [$cuser['name']]
     );
     ok(['doneCount' => (int) $cnt]);
+}
+
+/**
+ * GET /c/history/list?orderCode=&dateStart=&dateEnd=&limit=
+ * 历史校验记录（「校验记录预览」弹窗用）：只取已出结果（workorder_result 有记录）的工单，
+ * 按校验时间倒序 —— 调用方默认取第一条即「最近一次校验记录」。
+ * dateStart/dateEnd 按校验日期（workorder.inspector_time，缺省回退结果提交时间）过滤，格式 Y-m-d。
+ * 返回 { list: [ { id, orderCode, inspectorTime, 设备信息…, curves:[{no,peak,points}] } ], total }
+ */
+function api_c_history_list()
+{
+    current_cuser();
+
+    $limit = (int) param('limit', 20);
+    if ($limit < 1) $limit = 20;
+    if ($limit > 100) $limit = 100;
+
+    $where  = 'w.is_del = 0 AND r.id IS NOT NULL';
+    $params = [];
+
+    $orderCode = trim((string) param('orderCode', ''));
+    if ($orderCode !== '') {
+        $where .= ' AND w.order_code LIKE ?';
+        $params[] = "%$orderCode%";
+    }
+
+    $dateStart = trim((string) param('dateStart', ''));
+    $dateEnd   = trim((string) param('dateEnd', ''));
+    if ($dateStart !== '') {
+        $where .= ' AND COALESCE(w.inspector_time, r.create_time) >= ?';
+        $params[] = $dateStart . ' 00:00:00';
+    }
+    if ($dateEnd !== '') {
+        $where .= ' AND COALESCE(w.inspector_time, r.create_time) <= ?';
+        $params[] = $dateEnd . ' 23:59:59';
+    }
+
+    $rows = q_all(
+        workorder_select_sql() . "WHERE $where ORDER BY COALESCE(w.inspector_time, r.create_time) DESC, w.id DESC LIMIT $limit",
+        $params
+    );
+
+    // 报告地址（二维码 / 打标数据用）：http://<服务器IP>/inspection-api/report.php?code=<检验编号>
+    $apiBase = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '/inspection-api/index.php')), '/');
+
+    $list = [];
+    foreach ($rows as $row) {
+        $w = workorder_row($row);
+        $r = isset($w['result']) ? $w['result'] : [];
+
+        // 三次定压记录曲线：curveData1..3 是 JSON 数值数组（C 端存盘时写入）
+        $curves = [];
+        for ($n = 1; $n <= 3; $n++) {
+            $raw = isset($r['curveData' . $n]) ? (string) $r['curveData' . $n] : '';
+            if ($raw === '') continue;
+            $points = json_decode($raw, true);
+            if (!is_array($points) || !$points) continue;
+            // 峰值优先取 testing_pressureN（存盘时按抓取记录写入），缺失时取曲线最大值
+            $tp = isset($r['testingPressure' . $n]) ? $r['testingPressure' . $n] : null;
+            $peak = ($tp !== null && $tp !== '') ? (float) $tp : (float) max($points);
+            // 曲线时长（秒）：X 轴按「时间(s)」展示；历史旧数据未存时长时为 null（前端按默认值兜底）
+            $dur = isset($r['curveDuration' . $n]) && $r['curveDuration' . $n] !== null && $r['curveDuration' . $n] !== ''
+                ? (float) $r['curveDuration' . $n] : null;
+            $curves[] = ['no' => $n, 'peak' => $peak, 'points' => array_values($points), 'dur' => $dur];
+        }
+
+        $list[] = [
+            'id'                 => (int) $w['id'],
+            'orderCode'          => (string) $w['orderCode'],
+            'inspectorTime'      => (string) ($w['inspectorTime'] ?: ''),
+            'inspector'          => (string) $w['inspector'],
+            'custName'           => (string) $w['custName'],
+            'equipType'          => (string) ($w['equipType'] ?? ''),
+            'vavleType'          => (string) ($w['vavleType'] ?? ''),
+            'vavleModel'         => (string) ($w['vavleModel'] ?? ''),
+            'workingPress'       => $w['workingPress'] ?? null,
+            'setPress'           => $w['setPress'] ?? null,
+            'tightnessPress'     => $w['tightnessPress'] ?? null,
+            'manufacturer'       => (string) ($w['manufacturer'] ?? ''),
+            'workingMedia'       => (string) ($w['workingMedia'] ?? ''),
+            'pressClassRangeMin' => $w['pressClassRangeMin'] ?? null,
+            'pressClassRangeMax' => $w['pressClassRangeMax'] ?? null,
+            'testMedia'          => (string) ($r['testMedia'] ?? ''),
+            'execStandard'       => (string) ($r['execStandard'] ?? ''),
+            'testStatus'         => (string) ($r['testStatus'] ?? ''),
+            'maintenanceInfo'    => (string) ($r['maintenanceInfo'] ?? ''),
+            'note'               => (string) ($r['note'] ?? ''),
+            'manuNo'             => (string) ($w['manuNo'] ?? ''),
+            'periodYears'        => (int) ($w['periodYears'] ?? 1),
+            'diameterNominal'    => $w['diameterNominal'] ?? null,
+            'reportUrl'          => 'http://' . report_server_ip() . $apiBase . '/report.php?code=' . urlencode($w['orderCode']),
+            'curves'             => $curves,
+        ];
+    }
+
+    ok(['list' => $list, 'total' => count($list)]);
 }

@@ -248,6 +248,13 @@ export const useBusinessStore = defineStore('business', {
     signQrcode(id) {
       return request.get('/commission/sign_qrcode', { id })
     },
+    /** 系统账号手机扫码签名：二维码地址 / 签名状态轮询 */
+    sysUserSignQrcode(id) {
+      return request.get('/system/user/sign_qrcode', { id })
+    },
+    sysUserSignStatus(id) {
+      return request.get('/system/user/sign_status', { id })
+    },
     /** 轮询手机签名状态 */
     signStatus(id) {
       return request.get('/commission/sign_status', { id })

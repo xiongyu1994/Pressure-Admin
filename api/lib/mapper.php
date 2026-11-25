@@ -135,9 +135,13 @@ function result_row($row)
         'testStatus'             => $row['r_test_status'] ?? null,
         'maintenanceInfo'        => $row['r_maintenance_info'] ?? null,
         'leakRate'               => $row['r_leak_rate'] ?? null,
+        'execStandard'           => $row['r_exec_standard'] ?? null,
         'curveData1'             => $row['r_curve_data1'] ?? null,
         'curveData2'             => $row['r_curve_data2'] ?? null,
         'curveData3'             => $row['r_curve_data3'] ?? null,
+        'curveDuration1'         => $row['r_curve_duration1'] ?? null,
+        'curveDuration2'         => $row['r_curve_duration2'] ?? null,
+        'curveDuration3'         => $row['r_curve_duration3'] ?? null,
     ];
 }
 

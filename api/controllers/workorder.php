@@ -17,7 +17,9 @@ function workorder_select_sql()
         r.testing_pressure3 AS r_testing_pressure3, r.test_status AS r_test_status,
         r.maintenance_info AS r_maintenance_info,
         r.leak_rate AS r_leak_rate,
-        r.curve_data1 AS r_curve_data1, r.curve_data2 AS r_curve_data2, r.curve_data3 AS r_curve_data3
+        r.exec_standard AS r_exec_standard,
+        r.curve_data1 AS r_curve_data1, r.curve_data2 AS r_curve_data2, r.curve_data3 AS r_curve_data3,
+        r.curve_duration1 AS r_curve_duration1, r.curve_duration2 AS r_curve_duration2, r.curve_duration3 AS r_curve_duration3
         FROM workorder w
         LEFT JOIN workorder_result r ON r.workorder_id = w.id ';
 }

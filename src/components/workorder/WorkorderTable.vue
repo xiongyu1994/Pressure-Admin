@@ -4,7 +4,8 @@ import { useMessage } from 'naive-ui'
 import { NButton, NSpace, NTag, NPopconfirm } from 'naive-ui'
 import { useBusinessStore, WORKORDER_STATUS } from '@/store/business'
 import { hasPerm } from '@/utils/permission'
-import { buildReportHtml, buildRecordHtml, printHtml, downloadTxt } from '@/utils/print'
+import { printHtml, printPdfUrls, downloadTxt } from '@/utils/print'
+import { API_BASE } from '@/utils/request'
 import SubmitResultModal from './SubmitResultModal.vue'
 import BatchSubmitResultModal from './BatchSubmitResultModal.vue'
 import WorkorderDetail from './WorkorderDetail.vue'
@@ -131,7 +132,7 @@ const columns = computed(() => {
         return h(NSpace, { size: 4 }, { default: () => renderRowOps(row) })
       }
     },
-    { type: 'selection' },
+    { type: 'selection' ,fixed: 'left',},
     {
       title: '状态',
       key: 'status',
@@ -144,7 +145,7 @@ const columns = computed(() => {
     }
   ]
   if (props.showRejectReason) {
-    cols.push({ title: '退回原因', key: 'rejectReason', minWidth: 160, ellipsis: { tooltip: true } })
+    cols.push({ title: '退回原因', key: 'rejectReason',   minWidth: 160, ellipsis: { tooltip: true } })
   }
   cols.push(
     { title: '检验编号', key: 'orderCode', width: 110, fixed: 'left', sorter: 'default' },
@@ -269,12 +270,12 @@ function renderRowOps(row) {
     ops.push(
       h(
         NButton,
-        { size: 'tiny', type: 'primary', quaternary: true, onClick: () => printReport(row) },
+        { size: 'tiny', type: 'primary', quaternary: true, onClick: () => openReportDialog(row) },
         { default: () => '校验报告' }
       ),
       h(
         NButton,
-        { size: 'tiny', type: 'primary', quaternary: true, onClick: () => printRecord(row) },
+        { size: 'tiny', type: 'primary', quaternary: true, onClick: () => openRecordDialog(row) },
         { default: () => '校验记录' }
       )
     )
@@ -417,56 +418,169 @@ async function markPrintedSafe(ids) {
   }
 }
 
-function printReport(row) {
+/* ---------------- 校验报告：打印 / 下载 docx ---------------- */
+const reportShow = ref(false)
+const reportRow = ref(null)
+const docxLoading = ref(false)
+const recordLoading = ref(false)
+
+function openReportDialog(row) {
+  reportRow.value = row
+  reportShow.value = true
+}
+
+/** 打印校验报告：后端 docx 转 PDF 后调起打印（与下载 docx 同款模板样式） */
+async function confirmPrintReport() {
+  const row = reportRow.value
+  if (!row || docxLoading.value) return
+  docxLoading.value = true
   try {
-    printHtml('安全阀校验报告', buildReportHtml(row))
-    if (props.status === 'print') {
-      markPrintedSafe(row.id)
-    }
+    await printPdfUrl(
+      `${API_BASE}/report.php?code=${encodeURIComponent(row.orderCode)}`,
+      `校验报告_${row.orderCode}`
+    )
+    reportShow.value = false
+    if (props.status === 'print') markPrintedSafe(row.id)
   } catch (e) {
-    message.error(e.message)
+    message.error(e.message || '打印失败')
+  } finally {
+    docxLoading.value = false
   }
 }
 
-function printRecord(row) {
+/* ---------------- 校验记录：打印 / 下载 docx（与校验报告弹窗同款） ---------------- */
+const recordShow = ref(false)
+const recordRow = ref(null)
+
+function openRecordDialog(row) {
+  recordRow.value = row
+  recordShow.value = true
+}
+
+/** 打印校验记录：后端 docx 转 PDF 后调起打印（与下载 docx 同款模板样式） */
+async function confirmPrintRecord() {
+  const row = recordRow.value
+  if (!row || recordLoading.value) return
+  recordLoading.value = true
   try {
-    printHtml('安全阀校验记录', buildRecordHtml(row))
-    if (props.status === 'print') {
-      markPrintedSafe(row.id)
-    }
+    await printPdfUrl(
+      `${API_BASE}/record.php?code=${encodeURIComponent(row.orderCode)}&fmt=pdf`,
+      `校验记录_${row.orderCode}`
+    )
+    recordShow.value = false
+    if (props.status === 'print') markPrintedSafe(row.id)
   } catch (e) {
-    message.error(e.message)
+    message.error(e.message || '打印失败')
+  } finally {
+    recordLoading.value = false
+  }
+}
+
+/** 下载 B 端模板生成的校验报告 docx（二维码/签名/数据已填充） */
+async function downloadReportDocx() {
+  const row = reportRow.value
+  if (!row || docxLoading.value) return
+  docxLoading.value = true
+  try {
+    const url = `${API_BASE}/report.php?code=${encodeURIComponent(row.orderCode)}&fmt=docx`
+    const res = await fetch(url)
+    const ct = res.headers.get('content-type') || ''
+    if (!res.ok || !ct.includes('wordprocessingml')) {
+      throw new Error('报告生成失败，请检查报告模板是否存在')
+    }
+    const blob = await res.blob()
+    const objectUrl = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = objectUrl
+    a.download = `安全阀校验报告_${row.orderCode}.docx`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 2000)
+    message.success(`已下载「${row.orderCode}」校验报告`)
+    reportShow.value = false
+    if (props.status === 'print') markPrintedSafe(row.id)
+  } catch (e) {
+    message.error(e.message || '下载失败')
+  } finally {
+    docxLoading.value = false
+  }
+}
+
+/** 下载校验记录 docx（record.php 填充模板生成，与校验报告下载同类） */
+async function downloadRecordDocx() {
+  const row = recordRow.value
+  if (!row || recordLoading.value) return
+  recordLoading.value = true
+  try {
+    const url = `${API_BASE}/record.php?code=${encodeURIComponent(row.orderCode)}`
+    const res = await fetch(url)
+    const ct = res.headers.get('content-type') || ''
+    if (!res.ok || !ct.includes('wordprocessingml')) {
+      throw new Error('校验记录生成失败，请检查记录模板是否存在')
+    }
+    const blob = await res.blob()
+    const objectUrl = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = objectUrl
+    a.download = `安全阀校验记录_${row.orderCode}.docx`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 2000)
+    message.success(`已下载「${row.orderCode}」校验记录`)
+    recordShow.value = false
+    if (props.status === 'print') markPrintedSafe(row.id)
+  } catch (e) {
+    message.error(e.message || '下载失败')
+  } finally {
+    recordLoading.value = false
   }
 }
 
 /* ---------------- 批量工具栏 ---------------- */
-function batchPrintReport() {
+/** 批量打印校验报告：逐份后端 PDF 合并打印（与下载 docx 同款模板样式） */
+const batchPrintLoading = ref(false)
+
+async function batchPrintReport() {
   const rows = list.value.filter((w) => checkedKeys.value.includes(w.id))
   if (!rows.length) {
     message.warning('请先勾选需要打印的工单')
     return
   }
-  const body = rows.map(buildReportHtml).join('<div style="page-break-after:always"></div>')
+  if (batchPrintLoading.value) return
+  batchPrintLoading.value = true
   try {
-    printHtml('批量校验报告', body)
+    await printPdfUrls(
+      rows.map((r) => `${API_BASE}/report.php?code=${encodeURIComponent(r.orderCode)}`),
+      '批量校验报告'
+    )
     if (props.status === 'print') markPrintedSafe(rows.map((r) => r.id))
   } catch (e) {
-    message.error(e.message)
+    message.error(e.message || '批量打印失败')
+  } finally {
+    batchPrintLoading.value = false
   }
 }
 
-function batchPrintRecord() {
+async function batchPrintRecord() {
   const rows = list.value.filter((w) => checkedKeys.value.includes(w.id))
   if (!rows.length) {
     message.warning('请先勾选需要打印的工单')
     return
   }
-  const body = rows.map(buildRecordHtml).join('<div style="page-break-after:always"></div>')
+  if (batchPrintLoading.value) return
+  batchPrintLoading.value = true
   try {
-    printHtml('批量校验记录', body)
+    await printPdfUrls(
+      rows.map((r) => `${API_BASE}/record.php?code=${encodeURIComponent(r.orderCode)}&fmt=pdf`),
+      '批量校验记录'
+    )
     if (props.status === 'print') markPrintedSafe(rows.map((r) => r.id))
   } catch (e) {
-    message.error(e.message)
+    message.error(e.message || '批量打印失败')
+  } finally {
+    batchPrintLoading.value = false
   }
 }
 
@@ -574,8 +688,8 @@ function rowProps(row) {
     <!-- 批量工具栏 -->
     <div v-if="batchPrint" class="toolbar">
       <n-space>
-        <n-button size="small" type="primary" v-perm="printPerm()" @click="batchPrintReport">批量打印校验报告</n-button>
-        <n-button size="small" type="primary" v-perm="printPerm()" @click="batchPrintRecord">批量打印校验记录</n-button>
+        <n-button size="small" type="primary" :loading="batchPrintLoading" v-perm="printPerm()" @click="batchPrintReport">批量打印校验报告</n-button>
+        <n-button size="small" type="primary" :loading="batchPrintLoading" v-perm="printPerm()" @click="batchPrintRecord">批量打印校验记录</n-button>
         <n-button size="small" v-perm="printPerm()" @click="printLedger">打印台账</n-button>
         <n-button size="small" v-perm="exportPerm()" @click="exportMark">导出打标记录-txt</n-button>
       </n-space>
@@ -597,6 +711,38 @@ function rowProps(row) {
     <WorkorderDetail v-model:show="detailShow" :row="detailRow" />
     <SubmitResultModal v-model:show="submitShow" :row="submitRow" />
     <BatchSubmitResultModal v-model:show="batchResultShow" :rows="list.filter((w) => checkedKeys.includes(w.id))" />
+
+    <!-- 校验报告：打印 / 下载 docx -->
+    <n-modal v-model:show="reportShow" preset="card" title="信息" style="width: 380px">
+      <div class="report-confirm">
+        <p class="report-confirm-text">确认要打印吗？</p>
+        <p class="report-confirm-sub" v-if="reportRow">
+          校验编号：{{ reportRow.orderCode }}
+        </p>
+      </div>
+      <template #footer>
+        <div style="display: flex; justify-content: flex-end; gap: 10px">
+          <n-button type="primary" :disabled="docxLoading" @click="confirmPrintReport">打印</n-button>
+          <n-button :loading="docxLoading" @click="downloadReportDocx">下载</n-button>
+        </div>
+      </template>
+    </n-modal>
+
+    <!-- 校验记录：打印 / 下载 docx（与校验报告同款确认弹窗） -->
+    <n-modal v-model:show="recordShow" preset="card" title="信息" style="width: 380px">
+      <div class="report-confirm">
+        <p class="report-confirm-text">确认要打印吗？</p>
+        <p class="report-confirm-sub" v-if="recordRow">
+          校验编号：{{ recordRow.orderCode }}
+        </p>
+      </div>
+      <template #footer>
+        <div style="display: flex; justify-content: flex-end; gap: 10px">
+          <n-button type="primary" :disabled="recordLoading" @click="confirmPrintRecord">打印</n-button>
+          <n-button :loading="recordLoading" @click="downloadRecordDocx">下载</n-button>
+        </div>
+      </template>
+    </n-modal>
 
     <!-- 退回原因 -->
     <n-modal v-model:show="rejectShow" preset="card" :title="status === 'approval' ? '审批退回' : '审核退回'" style="width: 460px">
@@ -641,6 +787,22 @@ function rowProps(row) {
       color: #2b6de8;
       padding: 0 2px;
     }
+  }
+}
+
+/* 校验报告确认弹窗 */
+.report-confirm {
+  padding: 6px 0 2px;
+
+  .report-confirm-text {
+    font-size: 14px;
+    color: #333;
+  }
+
+  .report-confirm-sub {
+    margin-top: 6px;
+    font-size: 12px;
+    color: #999;
   }
 }
 </style>

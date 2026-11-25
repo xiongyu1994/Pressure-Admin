@@ -20,6 +20,10 @@ CREATE TABLE IF NOT EXISTS `sys_user` (
   `permissions` TEXT COMMENT '权限标识，逗号分隔，*为全部权限（role_id 为 0 时生效）',
   `role_id` INT NOT NULL DEFAULT 0 COMMENT '关联角色，0=使用自身 permissions',
   `sign` VARCHAR(255) DEFAULT '' COMMENT '签名图片路径',
+  `sign_token` VARCHAR(64) DEFAULT '' COMMENT '手机签名令牌',
+  `sign_token_time` DATETIME DEFAULT NULL COMMENT '签名令牌签发时间',
+  `sign_pending` TINYINT DEFAULT 0 COMMENT '1=本次二维码待签 0=已完成',
+  `sign_time` DATETIME DEFAULT NULL COMMENT '签名时间',
   `status` TINYINT DEFAULT 1 COMMENT '1启用 0停用',
   `last_time` DATETIME DEFAULT NULL COMMENT '最后登录时间',
   `last_ip` VARCHAR(50) DEFAULT '' COMMENT '最后登录IP',
@@ -265,6 +269,7 @@ CREATE TABLE IF NOT EXISTS `workorder_result` (
   `visual_examination` VARCHAR(10) COMMENT '外观检查',
   `disassembly_inspection` VARCHAR(10) COMMENT '拆卸检查',
   `note` VARCHAR(255) COMMENT '备注',
+  `exec_standard` VARCHAR(255) DEFAULT '' COMMENT '执行标准（多选拼接文本）',
   `pressure_gauge_num` VARCHAR(30) COMMENT '压力表编号',
   `pressure_gauge_lifespan` VARCHAR(20) COMMENT '压力表有效期',
   `pressure_gauge_num2` VARCHAR(30) COMMENT '压力表2编号',
@@ -281,6 +286,9 @@ CREATE TABLE IF NOT EXISTS `workorder_result` (
   `curve_data1` MEDIUMTEXT COMMENT '第1次试验压力-时间曲线数据(JSON)',
   `curve_data2` MEDIUMTEXT COMMENT '第2次试验压力-时间曲线数据(JSON)',
   `curve_data3` MEDIUMTEXT COMMENT '第3次试验压力-时间曲线数据(JSON)',
+  `curve_duration1` DECIMAL(6,2) DEFAULT NULL COMMENT '第1条曲线记录时长(秒)',
+  `curve_duration2` DECIMAL(6,2) DEFAULT NULL COMMENT '第2条曲线记录时长(秒)',
+  `curve_duration3` DECIMAL(6,2) DEFAULT NULL COMMENT '第3条曲线记录时长(秒)',
   `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='检验结果';
 

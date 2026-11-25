@@ -8,7 +8,7 @@
  *  流程：uploads/tpl/tpl_check_report_v2.docx 模板（预置二维码/签名占位图）
  *        → ZipArchive 覆盖 media 内容 + 替换文本占位符
  *        → 写转换 job 到 _queue → 计划任务 worker（交互会话 COM 可用）转 PDF
- *        → uploads/report/{检验编号}.pdf 缓存 → inline 输出
+ *        → uploads/report/{校验年月}/{检验编号}.pdf 缓存（按年月分目录、永久留存）→ inline 输出
  *
  *  二维码地址使用局域网 IP（SERVER_ADDR，回环时取本机 hostname 解析），
  *  手机扫码后即可在同一局域网内打开 PDF 报告。
@@ -18,6 +18,7 @@ error_reporting(E_ERROR | E_PARSE);
 require __DIR__ . '/config.php';
 require __DIR__ . '/lib/db.php';
 require __DIR__ . '/lib/phpqrcode.php';
+require_once __DIR__ . '/lib/docx_tpl.php';   // docx 模板填充共用工具（校验记录 record.php 也用）
 
 /** php.exe 路径（worker/VBS 用）：Web 下 PHP_BINARY 通常是 php-cgi.exe，取同目录的 php.exe */
 if (!defined('PHP_CLI_PATH')) {
@@ -66,89 +67,19 @@ function find_workorder($code)
 /* ============================ 模板填充 ============================ */
 
 /*
- * 模板采用 media 覆盖方案：tpl_check_report_v2.docx 由 Word COM 预先改造
- * （lib/build_tpl_v2.php）——图片占位符处已预置固定占位图，引用关系固定：
- *   word/media/image1.png  二维码占位图（模板内 2 处，21mm×21mm，rId12）
- *   word/media/image3.png  校验员签名占位图（2 处，24mm×12mm，rId14）
- *   word/media/image2.png  机构章（模板自带，不动）
- * 运行时只需用 ZipArchive 覆盖 media 内容 + 替换文本占位符，无需改 XML 结构。
+ * 模板采用 media 覆盖方案：tpl_check_report_v3.docx 由 Word COM 预先改造
+ * （lib/build_tpl_v2.php 生成 v2，lib/build_tpl_v3.php 在其上加审批签名位）——
+ * 图片占位符处已预置固定占位图，运行时只需覆盖 media 内容 + 替换文本占位符。
+ *
+ * 模板内三张占位图通过图片描述符（docPr descr）标识，不依赖 imageN 编号
+ * （Word 另存会重排编号，实测 v3 中审批图变成了 image3.png）：
+ *   descr="_ph_qr"    二维码（21mm×21mm，2 处）
+ *   descr="_ph_sign"  校验员签名（24mm×12mm）
+ *   descr="_ph_sec"   审核员（审批）签名（24mm×12mm）
+ *   image2.png        机构章（模板自带，不动）
  */
-define('TPL_REPORT', __DIR__ . '/uploads/tpl/tpl_check_report_v2.docx');
-define('MEDIA_QR', 'word/media/image1.png');
-define('MEDIA_SIGN', 'word/media/image3.png');
+define('TPL_REPORT', __DIR__ . '/uploads/tpl/tpl_check_report_v3.docx');
 define('WORKER_TASK', 'InspectionPdfWorker');   // PDF 转换计划任务名（worker 见 lib/convert_worker.php）
-
-/**
- * 阶段 1：把被 Word 拆分进多个 run 的占位符合并成完整纯文本。
- * 例：`${erweima:width=2</w:t></w:r>...<w:t>1</w:t>...<w:t>mm}` → `${erweima:width=21mm:height=21mm}`
- * 合并结果放回第一个文本位置（XML 标签全部丢弃）。
- */
-function normalize_placeholders($xml)
-{
-    $out = '';
-    $i = 0;
-    $len = strlen($xml);
-    while (($pos = strpos($xml, '${', $i)) !== false) {
-        $j = $pos + 2;
-        $text = '';
-        $end = -1;
-        while ($j < $len) {
-            $ch = $xml[$j];
-            if ($ch === '<') {
-                $close = strpos($xml, '>', $j);
-                if ($close === false) break;
-                $j = $close + 1;
-                continue;
-            }
-            if ($ch === '}') { $end = $j; break; }
-            if ($ch === '$') break;
-            $text .= $ch;
-            $j++;
-        }
-        if ($end === -1) {
-            $out .= substr($xml, $i, $pos - $i + 2);
-            $i = $pos + 2;
-            continue;
-        }
-        // 整个区间（含中间标签）替换为纯占位符文本
-        $out .= substr($xml, $i, $pos - $i) . '${' . $text . '}';
-        $i = $end + 1;
-    }
-    $out .= substr($xml, $i);
-    return $out;
-}
-
-/** 判断 $pos 是否处于某个 <w:t> 文本节点内部 */
-function inside_text_node($xml, $pos)
-{
-    $open = strrpos(substr($xml, 0, $pos), '<w:t');
-    if ($open === false) return false;
-    $close = strrpos(substr($xml, 0, $pos), '</w:t>');
-    return $close === false || $close < $open;
-}
-
-/**
- * 阶段 2：替换规整后的占位符（文本替换；模板内已无图片占位符，
- * rev_sec_sign 等图片名替换为空字符串）。
- */
-function apply_placeholders($xml, $resolve)
-{
-    $i = 0;
-    while (($pos = strpos($xml, '${', $i)) !== false) {
-        $close = strpos($xml, '}', $pos);
-        if ($close === false) break;
-        $name = trim(substr($xml, $pos + 2, $close - $pos - 2));
-        $val = $resolve($name);
-        if ($val === null) {
-            $i = $close + 1;
-            continue;
-        }
-        $val = htmlspecialchars((string) $val, ENT_XML1);
-        $xml = substr($xml, 0, $pos) . $val . substr($xml, $close + 1);
-        $i = $pos + strlen($val);
-    }
-    return $xml;
-}
 
 /** 组装填充数据（占位符名 → 值） */
 function build_field_map($wo, $res, $qrUrl)
@@ -202,24 +133,11 @@ function build_field_map($wo, $res, $qrUrl)
         'note'                  => $note,
         'inspector_time'        => $insTime ? date('Y-m-d', strtotime($insTime)) : '',
         'last_inspector_time'   => $nextTime,
-        'first_rev_sec_time'    => '',                     // 审批时间：暂无审批人签名体系，留空
+        // 审批日期与校验日期保持一致（取同一天，不单独记审批时间）
+        'first_rev_sec_time'    => $insTime ? date('Y-m-d', strtotime($insTime)) : '',
         '__qr_url'              => $qrUrl,
         '__inspector_sign'      => inspector_sign_path($wo['inspector']),
     ];
-}
-
-/** 校验员签名图片绝对路径（sys_user.sign，无签名返回 ''） */
-function inspector_sign_path($inspectorName)
-{
-    if (!$inspectorName) return '';
-    try {
-        $u = q_one('SELECT sign FROM sys_user WHERE name = ? AND is_del = 0 AND status = 1 ORDER BY id DESC LIMIT 1', [$inspectorName]);
-        if ($u && !empty($u['sign'])) {
-            $p = __DIR__ . '/' . ltrim(str_replace('\\', '/', $u['sign']), '/');
-            if (is_file($p)) return $p;
-        }
-    } catch (Exception $e) { /* 忽略 */ }
-    return '';
 }
 
 /** 生成失败时记录原因（uploads/report/_error.log），便于排查 */
@@ -228,20 +146,15 @@ function gen_log($msg)
     file_put_contents(__DIR__ . '/uploads/report/_error.log', '[' . date('H:i:s') . '] ' . $msg . "\n", FILE_APPEND);
 }
 
-/** 覆盖 zip 内指定 media 条目（先删后加，避免重复条目） */
-function zip_replace_media($zip, $name, $bin)
-{
-    if ($zip->locateName($name) === false) return false;
-    $zip->deleteName($name);
-    $zip->addFromString($name, $bin);
-    return true;
-}
-
-/** 生成报告 PDF；成功返回 true */
-function generate_pdf($wo, $res, $pdfPath)
+/**
+ * 按模板生成填充后的校验报告 docx（二维码/签名已嵌入、占位符已替换）。
+ * 成功返回临时 docx 的绝对路径；失败返回 ''（失败时会清理临时文件并写日志）。
+ * B 端「校验报告 → 下载」直接输出该文件，PDF 流程也复用它。
+ */
+function build_report_docx($wo, $res)
 {
     $tpl = TPL_REPORT;
-    if (!is_file($tpl)) { gen_log('模板不存在: ' . $tpl); return false; }
+    if (!is_file($tpl)) { gen_log('模板不存在: ' . $tpl); return ''; }
 
     $url = report_base_url() . '/report.php?code=' . urlencode($wo['order_code']);
     $fields = build_field_map($wo, $res, $url);
@@ -255,35 +168,59 @@ function generate_pdf($wo, $res, $pdfPath)
         QRcode::png($fields['__qr_url'], $qrPng, QR_ECLEVEL_M, 7, 2);
     } catch (Exception $e) {
         gen_log('二维码生成失败: ' . $e->getMessage());
-        return false;
+        return '';
     }
     $qrBin = is_file($qrPng) ? file_get_contents($qrPng) : null;
     @unlink($qrPng);
-    if (!$qrBin) { gen_log('二维码 PNG 为空'); return false; }
+    if (!$qrBin) { gen_log('二维码 PNG 为空'); return ''; }
 
     // 2. 签名 PNG（无签名用透明占位图盖掉模板预置占位图）
     $blank = file_get_contents(__DIR__ . '/uploads/tpl/_blank.png');
     $signBin = $fields['__inspector_sign'] && is_file($fields['__inspector_sign'])
         ? file_get_contents($fields['__inspector_sign']) : $blank;
+    // 审批（审核员）签名：取 sys_user 中身份=审核员、有签名图的最新账号
+    $secSign = approver_sign_path();
+    $secSignBin = $secSign && is_file($secSign) ? file_get_contents($secSign) : $blank;
 
     // 3. 复制模板为临时 docx（不碰模板原件）
     $tmpDocx = $tmpDir . '/_tmp_' . md5($wo['order_code'] . microtime()) . '.docx';
-    if (!copy($tpl, $tmpDocx)) { gen_log('模板复制失败'); return false; }
+    if (!copy($tpl, $tmpDocx)) { gen_log('模板复制失败'); return ''; }
 
-    // 4. 打开临时副本：覆盖 media（二维码 + 签名）+ 替换文本占位符
+    // 4. 打开临时副本：覆盖 media（二维码 + 两个签名）+ 替换文本占位符
     $zip = new ZipArchive();
-    if ($zip->open($tmpDocx) !== true) { gen_log('临时 docx 打开失败'); @unlink($tmpDocx); return false; }
+    if ($zip->open($tmpDocx) !== true) { gen_log('临时 docx 打开失败'); @unlink($tmpDocx); return ''; }
 
-    if (!zip_replace_media($zip, MEDIA_QR, $qrBin)) { gen_log('二维码 media 条目缺失'); $zip->close(); @unlink($tmpDocx); return false; }
-    zip_replace_media($zip, MEDIA_SIGN, $signBin);
+    // media 文件名由模板内图片描述符（docPr descr）反查：Word 另存会重排 imageN 编号，
+    // 写死文件名不可靠。descr 约定：_ph_qr=二维码、_ph_sign=校验员签名、_ph_sec=审核员签名
+    $mediaQr   = media_by_descr($zip, '_ph_qr');
+    $mediaSign = media_by_descr($zip, '_ph_sign');
+    $mediaSec  = media_by_descr($zip, '_ph_sec');
+    if (!$mediaQr || !$mediaSign) {
+        gen_log('模板占位图缺失 qr=' . $mediaQr . ' sign=' . $mediaSign);
+        $zip->close(); @unlink($tmpDocx); return '';
+    }
+    if (!zip_replace_media($zip, $mediaQr, $qrBin)) {
+        gen_log('二维码 media 条目缺失: ' . $mediaQr);
+        $zip->close(); @unlink($tmpDocx); return '';
+    }
+    zip_replace_media($zip, $mediaSign, $signBin);
+    if ($mediaSec) zip_replace_media($zip, $mediaSec, $secSignBin);
+    else gen_log('模板无审批签名占位图（_ph_sec），审批栏将为空');
 
     $docXml = $zip->getFromName('word/document.xml');
-    if (!$docXml) { gen_log('document.xml 读取失败'); $zip->close(); @unlink($tmpDocx); return false; }
+    if (!$docXml) { gen_log('document.xml 读取失败'); $zip->close(); @unlink($tmpDocx); return ''; }
 
     // 5. 替换文本占位符（含被 Word 拆分进多个 run 的占位符；图片占位符名替换为空）
-    $resolve = function ($name) use ($fields) {
+    // 模板里 ${first_rev_sec_time} 有两处：审批格内（应显示日期）+ 印章格下方遗留副本（应留空，
+    // 否则 PDF 里会多出一个孤立的日期），故只填第一处、其余置空。
+    $revSecCnt = 0;
+    $resolve = function ($name) use ($fields, &$revSecCnt) {
         if (preg_match('/^(erweima|inspector_sign|rev_sec_sign):width/', $name)) {
             return '';   // 图片占位符已由模板预置图承担，文字清除
+        }
+        if ($name === 'first_rev_sec_time') {
+            $revSecCnt++;
+            return $revSecCnt === 1 ? (string) ($fields['first_rev_sec_time'] ?? '') : '';
         }
         if (array_key_exists($name, $fields) && strpos($name, '__') !== 0) {
             return $fields[$name];
@@ -295,10 +232,20 @@ function generate_pdf($wo, $res, $pdfPath)
     $dom = new DOMDocument();
     if (@$dom->loadXML($newXml) !== true) {
         gen_log('替换后的 document.xml 不是合法 XML');
-        $zip->close(); @unlink($tmpDocx); return false;
+        $zip->close(); @unlink($tmpDocx); return '';
     }
     $zip->addFromString('word/document.xml', $newXml);
     $zip->close();
+
+    return $tmpDocx;
+}
+
+/** 生成报告 PDF；成功返回 true */
+function generate_pdf($wo, $res, $pdfPath)
+{
+    $tmpDocx = build_report_docx($wo, $res);
+    if ($tmpDocx === '' || !is_file($tmpDocx)) return false;
+    $tmpDir = dirname($tmpDocx);
 
     // 6. 队列 + 计划任务 worker 转 PDF
     //    Apache(php-cgi) 会话下 WPS/Word COM 激活失败（0x80040154），
@@ -356,6 +303,46 @@ function ensure_worker_task()
 
 /* ============================ 入口 ============================ */
 
+/**
+ * 报告存储路径：按校验年月分目录 uploads/report/{YYYYMM}/{编号}.pdf。
+ * 月份取校验时间（缺失回退结果提交时间）；报告生成后永久留存、系统不做任何自动删除，
+ * 磁盘按 ~0.23MB/份 估算，两年 10 万份约 23GB，按月目录便于整月归档/备份。
+ */
+function report_pdf_path($code, $insTime)
+{
+    $m = $insTime ? date('Ym', strtotime($insTime)) : date('Ym');
+    return __DIR__ . '/uploads/report/' . $m . '/' . $code . '.pdf';
+}
+
+/** 报告 docx 缓存路径（B 端「下载」用）：uploads/report/{YYYYMM}/{编号}.docx */
+function report_docx_path($code, $insTime)
+{
+    $m = $insTime ? date('Ym', strtotime($insTime)) : date('Ym');
+    return __DIR__ . '/uploads/report/' . $m . '/' . $code . '.docx';
+}
+
+/**
+ * 查找已缓存的报告 PDF（供扫码直接读取，命中即不再重新生成）：
+ * 校验年月目录 → 旧版根目录（历史文件兼容）→ 兜底扫全部年月子目录
+ * （如手动迁移/补抓导致文件不在校验月目录下也能找到）。
+ * 返回绝对路径；未找到返回 ''。
+ */
+function find_cached_pdf($code, $insTime)
+{
+    $base = __DIR__ . '/uploads/report';
+    if ($insTime) {
+        $p = $base . '/' . date('Ym', strtotime($insTime)) . '/' . $code . '.pdf';
+        if (is_file($p)) return $p;
+    }
+    $p = $base . '/' . $code . '.pdf';          // 旧版（不分目录）缓存兼容
+    if (is_file($p)) return $p;
+    foreach (glob($base . '/20*', GLOB_ONLYDIR) as $d) {
+        $p = $d . '/' . $code . '.pdf';
+        if (is_file($p)) return $p;
+    }
+    return '';
+}
+
 $code = isset($_GET['code']) ? trim($_GET['code']) : '';
 if ($code === '') html_error('缺少报告编号参数 code');
 
@@ -370,13 +357,50 @@ if (!$wo) html_error('未找到校验编号「' . htmlspecialchars($code) . '」
 $res = q_one('SELECT * FROM workorder_result WHERE workorder_id = ?', [$wo['id']]);
 if (!$res) html_error('校验编号「' . htmlspecialchars($code) . '」尚未提交校验结果');
 
-$dir = __DIR__ . '/uploads/report';
-@mkdir($dir, 0777, true);
-$pdfPath = $dir . '/' . $code . '.pdf';
+$insTime = $wo['inspector_time'] ?: ($res['create_time'] ?? '');
 
-// 缓存：PDF 比数据旧（存盘更新过）才重新生成
+/* ---------------- 下载 docx：report.php?code=xxx&fmt=docx ---------------- */
+if (isset($_GET['fmt']) && $_GET['fmt'] === 'docx') {
+    $docxPath = report_docx_path($code, $insTime);
+    @mkdir(dirname($docxPath), 0777, true);
+    $latestData = max(strtotime($wo['update_time'] ?: '0'), strtotime($res['create_time'] ?: '0'));
+
+    // 缓存命中（文件存在且不比数据旧）直接输出，否则按模板现场生成
+    if (!is_file($docxPath) || filemtime($docxPath) < $latestData) {
+        $tmp = build_report_docx($wo, $res);
+        if ($tmp === '' || !is_file($tmp)) {
+            html_error('报告生成失败，请检查模板文件 uploads/tpl/tpl_check_report_v3.docx 是否存在');
+        }
+        if (!@rename($tmp, $docxPath)) {
+            // 跨盘/被占用时退化为复制
+            if (!@copy($tmp, $docxPath)) {
+                @unlink($tmp);
+                html_error('报告文件写入失败，请检查 uploads/report 目录权限');
+            }
+            @unlink($tmp);
+        }
+    }
+
+    $fname = '安全阀校验报告_' . $code . '.docx';
+    header('Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    header("Content-Disposition: attachment; filename=\"report_" . $code . ".docx\"; filename*=UTF-8''" . rawurlencode($fname));
+    header('Content-Length: ' . filesize($docxPath));
+    header('Cache-Control: no-store');
+    readfile($docxPath);
+    exit;
+}
+
+$pdfPath = report_pdf_path($code, $insTime);
+@mkdir(dirname($pdfPath), 0777, true);
+
+// 缓存：已有 PDF 且比数据新（存盘未更新过）直接读缓存；否则重新生成到校验年月目录
 $latest = max(strtotime($wo['update_time'] ?: '0'), strtotime($res['create_time'] ?: '0'));
-if (!is_file($pdfPath) || filemtime($pdfPath) < $latest) {
+$cached = find_cached_pdf($code, $insTime);
+if ($cached !== '' && filemtime($cached) >= $latest) {
+    $pdfPath = $cached;
+} else {
+    // 过期/不存在的旧缓存删掉，统一收敛到年月目录，避免新旧两份并存
+    if ($cached !== '') @unlink($cached);
     if (!generate_pdf($wo, $res, $pdfPath)) {
         html_error('报告生成失败，请联系管理员检查服务器 Word COM 环境');
     }

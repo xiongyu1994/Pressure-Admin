@@ -1,8 +1,65 @@
+import { PDFDocument } from 'pdf-lib'
+
+/**
+ * 打印后端生成的 PDF（与「下载 docx」同款模板样式）：
+ * fetch 取回 PDF blob → 新窗口内嵌 iframe（blob URL 同源可调用 print）→ 自动调起打印
+ */
+export async function printPdfUrl(url, title) {
+  return printPdfUrls([url], title)
+}
+
+/**
+ * 批量打印多份 PDF：逐份 fetch（onProgress 汇报进度）→ pdf-lib 合并为一个 PDF
+ * → 新窗口内嵌 iframe 自动调起打印。任一份失败即整体报错。
+ */
+export async function printPdfUrls(urls, title, onProgress) {
+  // 先同步开窗口（用户手势内调用，避免被弹窗拦截），转换期间窗口内显示进度
+  const win = window.open('', '_blank')
+  if (!win) {
+    throw new Error('浏览器拦截了打印窗口，请允许弹出窗口后重试')
+  }
+  win.document.write(`<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><title>${title}</title>
+<style>body{margin:0;font-family:sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;color:#666}</style>
+</head><body><p id="st">正在生成打印内容，请稍候…</p></body></html>`)
+  win.document.close()
+  const setTip = (t) => {
+    try { win.document.getElementById('st').textContent = t } catch (e) { /* 窗口已关闭 */ }
+  }
+
+  try {
+    const merged = await PDFDocument.create()
+    let done = 0
+    for (const url of urls) {
+      setTip(`正在生成打印内容 ${done + 1}/${urls.length}，请稍候…`)
+      onProgress && onProgress(done, urls.length)
+      const res = await fetch(url)
+      const ct = res.headers.get('content-type') || ''
+      if (!res.ok || !ct.includes('application/pdf')) {
+        throw new Error(`打印内容生成失败（第 ${done + 1} 份），请稍后重试`)
+      }
+      const buf = await res.arrayBuffer()
+      const doc = await PDFDocument.load(buf)
+      const pages = await merged.copyPages(doc, doc.getPageIndices())
+      pages.forEach((p) => merged.addPage(p))
+      done++
+    }
+    const bytes = await merged.save()
+    const objectUrl = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }))
+    win.document.write(`<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><title>${title}</title>
+<style>html,body{margin:0;height:100%}iframe{border:0;width:100%;height:100%}</style>
+</head><body><iframe src="${objectUrl}" onload="setTimeout(function(){try{this.contentWindow.focus();this.contentWindow.print()}catch(e){}}.bind(this),500)"></iframe></body></html>`)
+    win.document.close()
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 60000)
+  } catch (e) {
+    try { win.close() } catch (e2) { /* 忽略 */ }
+    throw e
+  }
+}
+
 /**
  * 通用打印：把 HTML 写入新窗口并调起打印
  */
-export function printHtml(title, bodyHtml) {
-  const win = window.open('', '_blank', 'width=900,height=650')
+export function printHtml(title, bodyHtml) {  const win = window.open('', '_blank', 'width=900,height=650')
   if (!win) {
     throw new Error('浏览器拦截了打印窗口，请允许弹出窗口后重试')
   }
