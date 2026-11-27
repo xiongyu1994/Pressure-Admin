@@ -598,17 +598,67 @@ function printLedger() {
   )
 }
 
+// 打标导出：内容与 C 端一键打标（PreviewModal.buildMarkCsvLine）完全一致，
+// 按「一键打标.orzx」模板内嵌样例的 26 段逗号格式生成（模板按段号分发）：
+//   seg1/22=产品编号 seg2/3/4=整定压力(值/整数位/小数两位) seg5~10=辅助段(按样例补 0)
+//   seg11~15=校验年个位/2位/4位/月/日 seg16~20=下次校验同构 seg21=分隔符
+//   seg23=报告二维码URL seg24=校验编号 seg25=空 seg26=公称通径
+const pad2n = (n) => String(n).padStart(2, '0')
+const markDateParts = (d) => [
+  String(d.getFullYear() % 10),
+  String(d.getFullYear() % 100),
+  String(d.getFullYear()),
+  pad2n(d.getMonth() + 1),
+  pad2n(d.getDate())
+]
+// 下次校验日期 = 校验日期 + 周期年 − 1 天（与报告/铭牌口径一致）
+const markNextDate = (w) => {
+  const base = w.inspectorTime ? new Date(String(w.inspectorTime).replace(/-/g, '/')) : null
+  if (!base || Number.isNaN(base.getTime())) return null
+  const d = new Date(base)
+  d.setFullYear(d.getFullYear() + Math.max(1, Number(w.periodYears) || 1))
+  d.setDate(d.getDate() - 1)
+  return d
+}
+const buildMarkLine = (w) => {
+  const chk = w.inspectorTime ? new Date(String(w.inspectorTime).replace(/-/g, '/')) : null
+  const ok = (d) => d && !Number.isNaN(d.getTime())
+  const dP = ok(chk) ? markDateParts(chk) : ['', '', '', '', '']
+  const nP = ok(markNextDate(w)) ? markDateParts(markNextDate(w)) : ['', '', '', '', '']
+  const sp = Number(w.setPress) || 0
+  const manuNo = w.manuNo || ''
+  const reportUrl = `${API_BASE}/report.php?code=${encodeURIComponent(w.orderCode)}`
+  return [
+    manuNo,                              // 1 产品编号
+    sp.toFixed(2),                       // 2 整定压力
+    String(Math.floor(sp)),              // 3 压力整数位
+    sp.toFixed(2).split('.')[1] || '00', // 4 压力小数两位
+    sp.toFixed(2),                       // 5 辅助字段（样例同压力）
+    '0',                                 // 6 辅助字段（未被引用）
+    '0',                                 // 7 辅助字段（样例 -16）
+    '0',                                 // 8 辅助字段（样例 0.76）
+    '0',                                 // 9 辅助字段（未被引用）
+    '0',                                 // 10 辅助字段（样例 -24）
+    dP[0], dP[1], dP[2], dP[3], dP[4],   // 11-15 校验日期拆位
+    nP[0], nP[1], nP[2], nP[3], nP[4],   // 16-20 下次校验日期拆位
+    '/',                                 // 21 分隔符（样例固定）
+    manuNo,                              // 22 产品编号（样例与段1相同）
+    reportUrl,                           // 23 报告二维码地址
+    w.orderCode || '',                   // 24 校验编号
+    '',                                  // 25 空（样例为空）
+    w.diameterNominal ?? ''              // 26 公称通径
+  ].join(',')
+}
+
 function exportMark() {
   const rows = list.value.filter((w) => checkedKeys.value.includes(w.id))
   if (!rows.length) {
     message.warning('请先勾选需要导出的工单')
     return
   }
-  const content = rows
-    .map((w) => `${w.orderCode},${w.idNo || ''},${w.manuNo},${w.vavleModel},${w.setPress},${w.result?.testStatus || ''}`)
-    .join('\n')
+  const content = rows.map(buildMarkLine).join('\r\n') + '\r\n'
   downloadTxt(`打标记录-${Date.now()}.txt`, content)
-  message.success(`已导出 ${rows.length} 条打标记录`)
+  message.success(`已导出 ${rows.length} 条打标记录（与 C 端打标数据同格式）`)
 }
 
 function rowProps(row) {

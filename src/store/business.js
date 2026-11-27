@@ -87,6 +87,7 @@ export const useBusinessStore = defineStore('business', {
     inspectorRanking: [],
     unitRanking: [],
     chartData: { months: [], audited: [], unaudited: [] },
+    sites: [],
 
     /* 各数据源独立的加载状态：页面按需调用对应接口，不做全局预加载 */
     loading: {
@@ -109,6 +110,7 @@ export const useBusinessStore = defineStore('business', {
         inspectorRanking: [],
         unitRanking: [],
         chartData: { months: [], audited: [], unaudited: [] },
+        sites: [],
         loading: {
           units: false,
           commissions: false,
@@ -128,6 +130,14 @@ export const useBusinessStore = defineStore('business', {
         this.units = data.list || data || []
       } finally {
         this.loading.units = false
+      }
+    },
+    async fetchSites() {
+      try {
+        const data = await request.get('/workbench/sites')
+        this.sites = data.list || data || []
+      } catch {
+        this.sites = []
       }
     },
     async fetchCommissions() {

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount, h } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount, h } from 'vue'
 import * as echarts from 'echarts'
 import { NIcon } from 'naive-ui'
 import {
@@ -22,9 +22,8 @@ const statList = computed(() => [
   { label: '总客户数', value: store.stats.customerTotal, icon: PeopleOutline, color: '#18a058' }
 ])
 
-const companyOptions = computed(() =>
-  store.units.slice(0, 8).map((u) => ({ label: u.name, value: u.id }))
-)
+/** 图表筛选下拉：站点（校验人员所属站点），非送检单位 */
+const companyOptions = computed(() => store.sites.map((s) => ({ label: s.name, value: s.name })))
 const company = ref(null)
 
 /* ---------- 校验统计图表（来自 workbench/chart 接口） ---------- */
@@ -71,7 +70,7 @@ async function refreshChart() {
     await store.fetchChart({
       start: fmtMonth(rangeStart.value),
       end: fmtMonth(rangeEnd.value),
-      custName: company.value ? companyName.value : ''
+      site: company.value ? companyName.value : ''
     })
   } catch {
     /* 接口异常时保留旧数据 */
@@ -81,16 +80,51 @@ async function refreshChart() {
 
 function handleResize() {
   chart && chart.resize()
+  pieChart && pieChart.resize()
 }
+
+/* ---------- 安全阀检验统计饼图（待检验 / 已检验，来自 workbench/stats） ---------- */
+const pieRef = ref(null)
+let pieChart = null
+
+const pieOption = computed(() => {
+  const s = store.stats
+  return {
+    color: ['#1fc2b4', '#9b7ede'],
+    tooltip: { trigger: 'item', formatter: '{b}: {c}（{d}%）' },
+    legend: { bottom: 0, icon: 'circle', itemWidth: 10, textStyle: { fontSize: 12, color: '#606266' } },
+    series: [
+      {
+        type: 'pie',
+        radius: '62%',
+        center: ['50%', '44%'],
+        label: { formatter: '{b}', color: '#606266', fontSize: 12 },
+        labelLine: { length: 12, length2: 8 },
+        data: [
+          { name: '待检验', value: Number(s.waitTotal) || 0 },
+          { name: '已检验', value: Number(s.checkedTotal) || 0 }
+        ]
+      }
+    ]
+  }
+})
+
+/* stats 接口返回后刷新饼图 */
+watch(
+  () => [store.stats.waitTotal, store.stats.checkedTotal],
+  () => pieChart && pieChart.setOption(pieOption.value)
+)
 
 onMounted(() => {
   chart = echarts.init(chartRef.value)
   chart.setOption(buildOption())
+  pieChart = echarts.init(pieRef.value)
+  pieChart.setOption(pieOption.value)
   window.addEventListener('resize', handleResize)
-  // 工作台只加载本页需要的接口：统计卡片 + 两个排名 + 使用单位下拉 + 图表数据
+  // 工作台只加载本页需要的接口：统计卡片 + 两个排名 + 站点下拉 + 图表数据
   store.fetchStats().catch(() => {})
   store.fetchRanks().catch(() => {})
-  store.fetchUnits().catch(() => {})
+  store.fetchSites().catch(() => {})
   refreshChart()
 })
 
@@ -103,27 +137,38 @@ onBeforeUnmount(() => {
 /* ---------- 检验人员排名 / 送检单位排名（workbench/rank 接口） ---------- */
 const inspectorRanking = computed(() => store.inspectorRanking)
 
-const medals = ['🥇', '🥈', '🥉']
-
-function rankRender(medalsArr) {
+/** 前三名绶带奖牌序号，其余纯数字 */
+function rankRender() {
   return (row) => {
     if (row.rank <= 3) {
-      return h('span', { class: 'medal' }, medalsArr[row.rank - 1])
+      return h('span', { class: 'medal-badge m' + row.rank }, String(row.rank))
     }
     return h('span', { style: 'color:#606266' }, String(row.rank))
   }
 }
 
 const inspectorColumns = [
-  { title: '排名', key: 'rank', width: 56, align: 'center', render: (r) => String(r.rank) },
+  { title: '排名', key: 'rank', width: 56, align: 'center', render: rankRender() },
   { title: '姓名', key: 'name', width: 80 },
   { title: '检验机构', key: 'org', ellipsis: { tooltip: true } },
   { title: '检验数量', key: 'count', width: 80, align: 'right' }
 ]
 
 const unitColumns = [
-  { title: '排名', key: 'rank', width: 56, align: 'center', render: rankRender(medals) },
-  { title: '单位', key: 'unit', ellipsis: { tooltip: true } },
+  { title: '排名', key: 'rank', width: 56, align: 'center', render: rankRender() },
+  {
+    title: '单位',
+    key: 'unit',
+    align: 'center',
+    render(r) {
+      // 超长换行显示，不用省略号
+      return h(
+        'span',
+        { style: 'display:inline-block;word-break:break-all;white-space:normal;line-height:1.5' },
+        r.unit
+      )
+    }
+  },
   { title: '送检数量', key: 'count', width: 84, align: 'right' }
 ]
 </script>
@@ -139,7 +184,7 @@ const unitColumns = [
           :options="companyOptions"
           filterable
           clearable
-          placeholder="全部单位"
+          placeholder="全部站点"
           style="width: 280px"
           size="small"
           @update:value="refreshChart"
@@ -194,15 +239,22 @@ const unitColumns = [
         </div>
         <div ref="chartRef" class="cc-chart"></div>
       </div>
+
+      <!-- 饼图 + 检验人员排名 -->
+      <div class="bottom-row">
+        <div class="page-card pie-card">
+          <div class="card-title">安全阀检验统计</div>
+          <div ref="pieRef" class="pie-chart"></div>
+        </div>
+        <div class="page-card rank-inline">
+          <div class="card-title">检验人员排名</div>
+          <n-data-table size="small" :columns="inspectorColumns" :data="inspectorRanking" :bordered="false" :bottom-bordered="false" />
+        </div>
+      </div>
     </div>
 
-    <!-- 右侧栏：检验人员排名 + 送检单位排名 -->
+    <!-- 右侧栏：送检单位排名 -->
     <div class="dash-side">
-      <div class="page-card rank-card">
-        <div class="card-title">检验人员排名</div>
-        <n-data-table size="small" :columns="inspectorColumns" :data="inspectorRanking" :bordered="false" :bottom-bordered="false" />
-      </div>
-
       <div class="page-card rank-card">
         <div class="card-title">送检单位排名</div>
         <div class="rc-search">
@@ -305,8 +357,28 @@ const unitColumns = [
   }
 }
 
+/* 饼图 + 检验人员排名 并排一行 */
+.bottom-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  align-items: stretch;
+
+  .pie-card,
+  .rank-inline {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .pie-chart {
+    flex: 1;
+    min-height: 260px;
+    width: 100%;
+  }
+}
+
 .dash-side {
-  width: 320px;
+  width: 400px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
@@ -326,5 +398,61 @@ const unitColumns = [
   align-items: center;
   gap: 6px;
   margin-bottom: 10px;
+}
+</style>
+
+<!-- 排名列奖牌样式必须全局：span 在 n-data-table 内部渲染，scoped 选择器匹配不到 -->
+<style lang="scss">
+/* 排名列前三名奖牌（蓝色绶带 + 金/银/铜圆牌） */
+.medal-badge {
+  position: relative;
+  z-index: 0;
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+  margin-top: 9px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1;
+
+  &::before,
+  &::after {
+    content: '';
+    position: absolute;
+    top: -8px;
+    width: 6px;
+    height: 13px;
+    background: linear-gradient(180deg, #5aa0f2, #3c7fe0);
+    z-index: -1;
+  }
+
+  &::before {
+    left: 5px;
+    transform: skewX(-14deg);
+  }
+
+  &::after {
+    right: 5px;
+    transform: skewX(14deg);
+  }
+
+  &.m1 {
+    background: radial-gradient(circle at 35% 30%, #ffd76e, #f5a623 60%, #e08e0b);
+    box-shadow: 0 1px 3px rgba(224, 142, 11, 0.5);
+  }
+
+  &.m2 {
+    background: radial-gradient(circle at 35% 30%, #e6dcf8, #c0abe6 60%, #a68fd2);
+    box-shadow: 0 1px 3px rgba(166, 143, 210, 0.5);
+  }
+
+  &.m3 {
+    background: radial-gradient(circle at 35% 30%, #f5c6a6, #e09a70 60%, #cb8052);
+    box-shadow: 0 1px 3px rgba(203, 128, 82, 0.5);
+  }
 }
 </style>
